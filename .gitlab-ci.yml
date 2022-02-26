@@ -23,20 +23,23 @@ before_script:
 
 build:
   stage: build
-  script: gradle --daemon build
+  script: gradle --daemon load
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: push
     paths:
       - build
+      - runtime
       - .gradle
 
 test:
   stage: test
-  script: gradle loadSave test
+  script: gradle test --info
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull
     paths:
       - build
+      - runtime
       - .gradle
+
