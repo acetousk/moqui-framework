@@ -18,12 +18,15 @@ variables:
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
+  - ls -la 
+  - which java
+  - which gradle
   - gradle getRuntime
-  # - gradle downloadElasticSearch
+  - gradle downloadElasticSearch
 
 build:
   stage: build
-  script: gradle addRuntime
+  script: gradle build
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: push
