@@ -24,7 +24,7 @@ build:
   stage: build
   script: 
     - ./gradlew load
-    - ls -la runtime
+    - ls -la runtime/elasticsearch
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: push
@@ -36,8 +36,8 @@ build:
 test:
   stage: test
   script: 
-    - ls -la runtime
-    - ./gradlew test --info
+    - ls -la runtime/elasticsearch
+    - ./gradlew load test --scan
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull
@@ -45,4 +45,3 @@ test:
       - build
       - runtime
       - .gradle
-
