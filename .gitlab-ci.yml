@@ -22,9 +22,7 @@ before_script:
 build:
   stage: build
   script: 
-    - ./gradlew load
-    - ./gradlew test --info
-    # - ls -la runtime/elasticsearch
+    - ./gradlew build
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: push
@@ -33,14 +31,15 @@ build:
       - runtime
       - .gradle
 
-# test:
-#   stage: test
-#   script: 
-#     - ls -la runtime/elasticsearch
-#   cache:
-#     key: "$CI_COMMIT_REF_NAME"
-#     policy: pull
-#     paths:
-#       - build
-#       - runtime
-#       - .gradle
+test:
+  stage: test
+  script: 
+    - ./gradlew load
+    - ./gradlew test --info
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - build
+      - runtime
+      - .gradle
