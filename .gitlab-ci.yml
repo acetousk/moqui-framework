@@ -7,7 +7,7 @@
 # https://gradle.org/
 # https://github.com/gradle/gradle
 
-image: gradle:5.6.4-jdk8
+image: openjdk:8-alpine
 
 # Disable the Gradle daemon for Continuous Integration servers as correctness
 # is usually a priority over speed in CI environments. Using a fresh
@@ -18,12 +18,12 @@ variables:
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
-  - gradle --daemon getRuntime
-  - gradle --daemon downloadElasticSearch
+  - ./gradlew getRuntime
+  - ./gradlew downloadElasticSearch
 
 build:
   stage: build
-  script: gradle --daemon load
+  script: ./gradlew load
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: push
@@ -34,7 +34,7 @@ build:
 
 test:
   stage: test
-  script: gradle test --info
+  script: ./gradlew test --info
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull
