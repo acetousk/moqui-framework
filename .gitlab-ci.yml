@@ -18,13 +18,13 @@ variables:
 
 before_script:
   - ./gradlew getRuntime
-  - ./gradlew downloadElasticSearch
 
 build:
   stage: build
   script: 
     - ./gradlew load
-    - ls -la runtime/elasticsearch
+    - ./gradlew test --info
+    # - ls -la runtime/elasticsearch
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: push
@@ -33,15 +33,14 @@ build:
       - runtime
       - .gradle
 
-test:
-  stage: test
-  script: 
-    - ls -la runtime/elasticsearch
-    - ./gradlew load test --scan
-  cache:
-    key: "$CI_COMMIT_REF_NAME"
-    policy: pull
-    paths:
-      - build
-      - runtime
-      - .gradle
+# test:
+#   stage: test
+#   script: 
+#     - ls -la runtime/elasticsearch
+#   cache:
+#     key: "$CI_COMMIT_REF_NAME"
+#     policy: pull
+#     paths:
+#       - build
+#       - runtime
+#       - .gradle
