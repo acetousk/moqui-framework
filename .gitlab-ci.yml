@@ -17,13 +17,14 @@ variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
 before_script:
-  - export GRADLE_USER_HOME=`pwd`/.gradle
   - ./gradlew getRuntime
   - ./gradlew downloadElasticSearch
 
 build:
   stage: build
-  script: ./gradlew load
+  script: 
+    - ./gradlew load
+    - ls -la runtime
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: push
@@ -34,7 +35,9 @@ build:
 
 test:
   stage: test
-  script: ./gradlew test --info
+  script: 
+    - ls -la runtime
+    - ./gradlew test --info
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: pull
