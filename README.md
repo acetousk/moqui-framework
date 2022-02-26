@@ -38,3 +38,4 @@ Get started with Moqui development quickly using the Tutorial at:
 For comprehensive documentation of Moqui Framework see the wiki based documentation on moqui.org (*running on Moqui HiveMind*):
  
 <https://www.moqui.org/m/docs/framework>
+
