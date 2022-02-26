@@ -18,8 +18,8 @@ variables:
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
-  - gradle downloadElasticSearch
   - gradle getRuntime
+  # - gradle downloadElasticSearch
 
 build:
   stage: build
