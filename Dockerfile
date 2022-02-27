@@ -6,7 +6,17 @@ COPY . ./
 RUN gradle getRuntime addRuntime
 RUN unzip -qo moqui-plus-runtime.war
 
-FROM openjdk:8-jdk AS test
+FROM builder AS test
+CMD ["./gradlew", "load", "test", "--info"]
+
+FROM builder AS dev
+EXPOSE 8080
+EXPOSE 9200
+EXPOSE 9300
+ENTRYPOINT ["java", "-jar", "moqui-plus-runtime.war", "port=8080"]
+CMD ["conf=conf/MoquiDevConf.xml"]
+
+FROM openjdk:8-jdk AS production
 WORKDIR /opt/moqui
 COPY --from=builder /opt/moqui/WEB-INF WEB-INF
 COPY --from=builder /opt/moqui/META-INF META-INF
@@ -18,7 +28,6 @@ COPY --from=builder /opt/moqui/runtime runtime
 EXPOSE 8080
 EXPOSE 9200
 EXPOSE 9300
-EXPOSE 5601
 ENTRYPOINT ["java", "-cp", ".", "MoquiStart", "port=8080"]
 HEALTHCHECK --interval=30s --timeout=600ms --start-period=120s CMD curl -f -H "X-Forwarded-Proto: https" -H "X-Forwarded-Ssl: on" http://localhost/status || exit 1
-CMD ["conf=conf/MoquiDevConf.xml"]
+CMD ["conf=conf/MoquiProductionConf.xml"]
