@@ -16,7 +16,7 @@ EXPOSE 9300
 ENTRYPOINT ["java", "-jar", "moqui-plus-runtime.war", "port=8080"]
 CMD ["conf=conf/MoquiDevConf.xml"]
 
-FROM openjdk:8-jdk AS production
+FROM openjdk:8-jre AS production
 WORKDIR /opt/moqui
 COPY --from=builder /opt/moqui/WEB-INF WEB-INF
 COPY --from=builder /opt/moqui/META-INF META-INF
