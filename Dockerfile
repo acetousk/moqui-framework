@@ -1,35 +1,24 @@
-# Builds a minimal docker image with openjdk and moqui with various volumes for configuration and persisted data outside the container
-# NOTE: add components, build and if needed load data before building a docker image with this
+# syntax=docker/dockerfile:1
 
-FROM openjdk:8-jdk
-MAINTAINER Moqui Framework <moqui@googlegroups.com>
-
+FROM gradle:5.6.4-jdk8 AS builder
 WORKDIR /opt/moqui
+COPY . ./
+RUN gradle getRuntime addRuntime
+RUN unzip -qo moqui-plus-runtime.war
 
-# for running from the war directly, preffered approach unzips war in advance (see docker-build.sh that does this)
-#COPY moqui.war .
-# copy files from unzipped moqui.war file
-COPY WEB-INF WEB-INF
-COPY META-INF META-INF
-COPY *.class ./
-COPY execlib execlib
-
-# always want the runtime directory
-COPY runtime runtime
-
-# exposed as volumes for configuration purposes
-VOLUME ["/opt/moqui/runtime/conf", "/opt/moqui/runtime/lib", "/opt/moqui/runtime/classes", "/opt/moqui/runtime/ecomponent"]
-# exposed as volumes to persist data outside the container, recommended
-VOLUME ["/opt/moqui/runtime/log", "/opt/moqui/runtime/txlog", "/opt/moqui/runtime/sessions", "/opt/moqui/runtime/db"]
-
-# Main Servlet Container Port
-EXPOSE 80
-
-# this is to run from the war file directly, preferred approach unzips war file in advance
-# ENTRYPOINT ["java", "-jar", "moqui.war"]
-ENTRYPOINT ["java", "-cp", ".", "MoquiStart", "port=80"]
-
+FROM openjdk:8-jdk AS test
+WORKDIR /opt/moqui
+COPY --from=builder /opt/moqui/WEB-INF WEB-INF
+COPY --from=builder /opt/moqui/META-INF META-INF
+COPY --from=builder /opt/moqui/*.class ./
+COPY --from=builder /opt/moqui/execlib execlib
+COPY --from=builder /opt/moqui/runtime runtime
+#VOLUME ["/opt/moqui/runtime/conf", "/opt/moqui/runtime/lib", "/opt/moqui/runtime/classes", "/opt/moqui/runtime/ecomponent"]
+#VOLUME ["/opt/moqui/runtime/log", "/opt/moqui/runtime/txlog", "/opt/moqui/runtime/sessions", "/opt/moqui/runtime/db"]
+EXPOSE 8080
+EXPOSE 9200
+EXPOSE 9300
+EXPOSE 5601
+ENTRYPOINT ["java", "-cp", ".", "MoquiStart", "port=8080"]
 HEALTHCHECK --interval=30s --timeout=600ms --start-period=120s CMD curl -f -H "X-Forwarded-Proto: https" -H "X-Forwarded-Ssl: on" http://localhost/status || exit 1
-# specify this as a default parameter if none are specified with docker exec/run, ie run production by default
-CMD ["conf=conf/MoquiProductionConf.xml"]
-
+CMD ["conf=conf/MoquiDevConf.xml"]
