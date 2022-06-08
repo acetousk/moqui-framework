@@ -85,6 +85,7 @@
     <component name="moqui-de_DE-addon" group="mckhoi" version="" branch="master"/><!-- no releases -->
     <component name="moqui-graphql" group="shendepu" version="" branch="master"/><!-- no releases -->
     <component name="moqui-react-ssr" group="shendepu" version="" branch="master"/><!-- no releases -->
+    <component name="moqui-react-ssr-demo" group="shendepu" version="" branch="master"/><!-- no releases -->
     <component name="moqui-zh_CN-addon" group="chunlinyao" version="" branch="master"/><!-- no releases -->
     <!-- moqui-fop replacement use alibaba easyexcel for excel output -->
     <component name="moqui-easyexcel" group="chunlinyao" version="" branch="master"/><!-- no releases -->
