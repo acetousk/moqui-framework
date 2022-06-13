@@ -17,20 +17,20 @@ COPY execlib execlib
 # always want the runtime directory
 COPY runtime runtime
 
-# create user for elasticsearch and chown corresponding files
-RUN groupadd -r elasticsearch && useradd --no-log-init -r -d /opt/moqui/runtime/elasticsearch -g elasticsearch elasticsearch && chown -R elasticsearch:elasticsearch runtime/elasticsearch
+# create user for opensearch and chown corresponding files
+RUN groupadd -r opensearch && useradd --no-log-init -r -d /opt/moqui/runtime/opensearch -g opensearch opensearch && chown -R opensearch:opensearch runtime/opensearch
 
 # exposed as volumes for configuration purposes
 VOLUME ["/opt/moqui/runtime/conf", "/opt/moqui/runtime/lib", "/opt/moqui/runtime/classes", "/opt/moqui/runtime/ecomponent"]
 # exposed as volumes to persist data outside the container, recommended
-VOLUME ["/opt/moqui/runtime/log", "/opt/moqui/runtime/txlog", "/opt/moqui/runtime/sessions", "/opt/moqui/runtime/db", "/opt/moqui/runtime/elasticsearch"]
+VOLUME ["/opt/moqui/runtime/log", "/opt/moqui/runtime/txlog", "/opt/moqui/runtime/sessions", "/opt/moqui/runtime/db", "/opt/moqui/runtime/opensearch"]
 
 # Main Servlet Container Port
 EXPOSE 80
-# ElasticSearch HTTP Port
+# opensearch HTTP Port
 EXPOSE 9200
-# ElasticSearch Cluster (TCP Transport) Port
-EXPOSE 9300
+# opensearch Cluster (TCP Transport) Port
+EXPOSE 9600
 # Hazelcast Cluster Port
 EXPOSE 5701
 
