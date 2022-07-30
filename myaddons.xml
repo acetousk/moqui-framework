@@ -21,6 +21,7 @@
     
     <!-- Component Sets -->
     <component-set name="custom" components="PopCommerce,HiveMind,MarbleERP,PopRestStore"/>
+    <component-set name="vue-storefront" components="PopCommerce,MarbleERP,PopRestStore"/>
 
     <!-- Release builds:
         gradle getComponentSet -PcomponentSet=custom -PlocationType=release
