@@ -56,18 +56,13 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Configure AWS credentials
+      id: config-aws-credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
-
-    - name: Get Task Definition
-      id: get-task-def
-      run: |
-        aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION_NAME }} --output json > ${{ env.ECS_TASK_DEFINITION }}
-        cat ${{ env.ECS_TASK_DEFINITION }}
-      
+    
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
@@ -86,6 +81,17 @@ jobs:
         docker tag acetousk/moqui $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+    - name: Get Task Definition
+      id: get-task-def
+      run: |
+        aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION_NAME }} --output json > ${{ env.ECS_TASK_DEFINITION }}
+#        echo "::set-output name=file::${{ env.ECS_TASK_DEFINITION }}"
+
+    - name: Cat Task Definition
+      id: cat-task-def
+      run: |
+        cat ${{ env.ECS_TASK_DEFINITION }}
 
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
