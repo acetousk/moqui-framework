@@ -38,6 +38,7 @@ env:
   ECS_CLUSTER: ${{ secrets.MY_ECS_CLUSTER }}                 # set this to your Amazon ECS cluster name
   ECS_TASK_DEFINITION: ${{ secrets.MY_ECS_TASK_DEFINITION }} # set this to the path to your Amazon ECS task definition
                                                              # file, e.g. .aws/task-definition.json
+  ECS_TASK_DEFINITION_NAME: ${{ secrets.MY_ECS_TASK_DEFINITION_NAME }} # set this to the name to your Amazon ECS task definition
   CONTAINER_NAME: ${{ secrets.MY_CONTAINER_NAME }}           # set this to the name of the container in the
                                                              # containerDefinitions section of your task definition
 
@@ -61,6 +62,11 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
+    - name: Get Task Definition
+      id: get-task-def
+      run: |
+        aws ecs describe-task-definition --task-definition ${{ ECS_TASK_DEFINITION_NAME }} --output json > ${{ env.ECS_TASK_DEFINITION }}
+      
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
