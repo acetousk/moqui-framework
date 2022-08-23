@@ -15,7 +15,7 @@ else
   echo "cd into the $MOQUI_HOME directory"; START_PATH=$(pwd); cd $MOQUI_HOME
 
   if [ ! -d $MOQUI_HOME/runtime ]; then echo "Getting runtime"; ./gradlew $GRADLE_ARGS getRuntime; fi
-  if [ ! -d $MOQUI_HOME/runtime/elasticsearch/bin ]; then echo "Installing ElasticSearch"; ./gradlew $GRADLE_ARGS downloadElasticSearch; fi
+  if [ ! -d $MOQUI_HOME/runtime/opensearch/bin ]; then echo "Installing OpenSearch"; ./gradlew $GRADLE_ARGS downloadOpenSearch; fi
 
   if [ -n "$GRADLE_COMMAND" ]; then echo "Running gradle $GRADLE_ARGS $GRADLE_COMMAND"; ./gradlew $GRADLE_ARGS "$GRADLE_COMMAND"; fi
 
