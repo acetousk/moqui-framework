@@ -65,7 +65,7 @@ jobs:
     - name: Get Task Definition
       id: get-task-def
       run: |
-        aws ecs describe-task-definition --task-definition ${{ ECS_TASK_DEFINITION_NAME }} --output json > ${{ env.ECS_TASK_DEFINITION }}
+        aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION_NAME }} --output json > ${{ env.ECS_TASK_DEFINITION }}
       
     - name: Login to Amazon ECR
       id: login-ecr
