@@ -15,11 +15,11 @@ RUN ["sh", "start.sh"]
 RUN ["unzip", "-q", "-o", "moqui-plus-runtime.war"]
 ONBUILD RUN groupadd -r opensearch && useradd --no-log-init -r -d /opt/moqui/runtime/opensearch -g opensearch opensearch && chown -R opensearch:opensearch runtime/opensearch
 
-FROM start AS test
-EXPOSE $webapp_http_port
-EXPOSE $open_search_port
-ENTRYPOINT ["gradle", "test"]
-CMD ["--info"]
+#FROM start AS test
+#EXPOSE $webapp_http_port
+#EXPOSE $open_search_port
+#ENTRYPOINT ["gradle", "test"]
+#CMD ["--info"]
 
 FROM openjdk:11-jre AS builder
 ONBUILD WORKDIR /opt/moqui
@@ -40,8 +40,8 @@ EXPOSE $open_search_port
 EXPOSE $open_search_cluster_port
 CMD ["conf=conf/MoquiDevConf.xml", "port=$webapp_http_port"]
 
-FROM dev AS dev-hazelcast
-EXPOSE $hazelcast_port
+#FROM dev AS dev-hazelcast
+#EXPOSE $hazelcast_port
 
 FROM builder AS production
 EXPOSE $webapp_http_port
