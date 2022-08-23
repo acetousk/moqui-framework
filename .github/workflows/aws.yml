@@ -86,11 +86,12 @@ jobs:
       id: get-task-def
       run: |
         aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION_NAME }} --output json > ${{ env.ECS_TASK_DEFINITION }}
-        sed '2,3d' ${{ env.ECS_TASK_DEFINITION }} >> ${{ env.ECS_TASK_DEFINITION }}.tmp && mv ${{ env.ECS_TASK_DEFINITION }}.tmp ${{ env.ECS_TASK_DEFINITION }}
+        sed '1,3d' ${{ env.ECS_TASK_DEFINITION }} >> ${{ env.ECS_TASK_DEFINITION }}.tmp && mv ${{ env.ECS_TASK_DEFINITION }}.tmp ${{ env.ECS_TASK_DEFINITION }}
         export STARTLINE=$(grep -n "family" ${{ env.ECS_TASK_DEFINITION }}  | awk '{print $1}' FS=":")
         export ENDLINE=$(grep -c ".*" ${{ env.ECS_TASK_DEFINITION }})
-        sed "${STARTLINE},${ENDLINE-1}d" ${{ env.ECS_TASK_DEFINITION }} >> ${{ env.ECS_TASK_DEFINITION }}.tmp && mv ${{ env.ECS_TASK_DEFINITION }}.tmp ${{ env.ECS_TASK_DEFINITION }}
-        echo "}" >> ${{ env.ECS_TASK_DEFINITION }}
+        sed "${STARTLINE},${ENDLINE}d" ${{ env.ECS_TASK_DEFINITION }} >> ${{ env.ECS_TASK_DEFINITION }}.tmp && mv ${{ env.ECS_TASK_DEFINITION }}.tmp ${{ env.ECS_TASK_DEFINITION }}
+        sed '$d' ${{ env.ECS_TASK_DEFINITION }} >> ${{ env.ECS_TASK_DEFINITION }}.tmp && mv ${{ env.ECS_TASK_DEFINITION }}.tmp ${{ env.ECS_TASK_DEFINITION }}
+        echo "]" >> ${{ env.ECS_TASK_DEFINITION }}
         cat ${{ env.ECS_TASK_DEFINITION }}
 
 
