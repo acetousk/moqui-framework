@@ -307,16 +307,6 @@ class ScreenRenderImpl implements ScreenRender {
         String formListFindId = ec.contextStack.getByString("formListFindId")
         if ((formListFindId == null || formListFindId.isEmpty()) && screenUrlInfo.targetScreen != null) {
             // get user's default saved find if there is one
-            String userId = ec.userFacade.getUserId()
-            if (userId != null) {
-                EntityValue formListFindUserDefault = ec.entityFacade.find("moqui.screen.form.FormListFindUserDefault")
-                        .condition("userId", userId).condition("screenLocation", screenUrlInfo.targetScreen.location)
-                        .disableAuthz().useCache(true).one()
-                if (formListFindUserDefault != null) {
-                    formListFindId = (String) formListFindUserDefault.get("formListFindId")
-                    ec.contextStack.put("formListFindId", formListFindId)
-                }
-            }
         }
         if ("_clear".equals(formListFindId)) {
             formListFindId = null
@@ -356,19 +346,6 @@ class ScreenRenderImpl implements ScreenRender {
             screenUrlInstance.addParameters(web.requestParameters)
 
             // check for pageSize parameter, if set save in current user's preference, if not look up from user pref
-            if (ec.userFacade.userId != null) {
-                String pageSize = web.requestParameters.get("pageSize")
-                String userPageSize = ec.userFacade.getPreference("screen.user.page.size")
-                if (pageSize != null && pageSize.isInteger()) {
-                    if (!pageSize.equals(userPageSize))
-                        ec.userFacade.setPreference("screen.user.page.size", pageSize)
-                } else {
-                    if (userPageSize != null && userPageSize.isInteger()) {
-                        // don't add to parameters, just set internally: web.requestParameters.put("pageSize", userPageSize)
-                        ec.contextStack.put("pageSize", userPageSize)
-                    }
-                }
-            }
         }
 
         // check webapp settings for each screen in the path
@@ -731,10 +708,8 @@ class ScreenRenderImpl implements ScreenRender {
             String requireAuthentication = screenNode.attribute("require-authentication")
             if ("anonymous-all".equals(requireAuthentication)) {
                 ec.artifactExecutionFacade.setAnonymousAuthorizedAll()
-                loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             } else if ("anonymous-view".equals(requireAuthentication)) {
                 ec.artifactExecutionFacade.setAnonymousAuthorizedView()
-                loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             }
 
             if (sd.alwaysActions != null) sd.alwaysActions.run(ec)
@@ -750,7 +725,6 @@ class ScreenRenderImpl implements ScreenRender {
             }
         } finally {
             ec.artifactExecutionFacade.pop(aei)
-            if (loggedInAnonymous) ec.userFacade.logoutAnonymousOnly()
         }
 
         return ri
@@ -770,10 +744,8 @@ class ScreenRenderImpl implements ScreenRender {
         try {
             if (requireAuthentication == "anonymous-all") {
                 ec.artifactExecutionFacade.setAnonymousAuthorizedAll()
-                loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             } else if (requireAuthentication == "anonymous-view") {
                 ec.artifactExecutionFacade.setAnonymousAuthorizedView()
-                loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             }
 
             if (runAlwaysActions && sd.alwaysActions != null) sd.alwaysActions.run(ec)
@@ -787,7 +759,6 @@ class ScreenRenderImpl implements ScreenRender {
         } finally {
             // all done so pop the artifact info; don't bother making sure this is done on errors/etc like in a finally clause because if there is an error this will help us know how we got there
             ec.artifactExecutionFacade.pop(aei)
-            if (loggedInAnonymous) ec.userFacade.logoutAnonymousOnly()
         }
     }
 
@@ -973,9 +944,7 @@ class ScreenRenderImpl implements ScreenRender {
 
         WebFacadeImpl wfi = ec.getWebImpl()
         String requireAuthentication = currentSd.screenNode?.attribute("require-authentication")
-        String userId = ec.getUser().getUserId()
-        if ((requireAuthentication == null || requireAuthentication.length() == 0 || requireAuthentication == "true")
-                && (userId == null || userId.length() == 0) && !ec.userFacade.getLoggedInAnonymous()) {
+        if ((requireAuthentication == null || requireAuthentication.length() == 0 || requireAuthentication == "true")) {
             if (logger.isInfoEnabled()) logger.info("Screen at location ${currentSd.location}, which is part of ${screenUrlInfo.fullPathNameList} under screen ${screenUrlInfo.fromSd.location} requires authentication but no user is currently logged in.")
             // save the request as a save-last to use after login
             if (wfi != null && screenUrlInfo.fileResourceRef == null) {
@@ -2172,32 +2141,11 @@ class ScreenRenderImpl implements ScreenRender {
 
         EntityFacadeImpl entityFacade = sfi.ecfi.entityFacade
         // see if there is a user setting for the theme
-        String themeId = entityFacade.fastFindOne("moqui.security.UserScreenTheme", true, true, ec.userFacade.userId, stteId)?.screenThemeId
         // if no user theme see if group a user is in has a theme
-        if (themeId == null || themeId.length() == 0) {
-            // use reverse alpha so ALL_USERS goes last...
-            List<String> userGroupIdSet = new ArrayList(new TreeSet(ec.user.getUserGroupIdSet())).reverse(true)
-            EntityList groupThemeList = entityFacade.find("moqui.security.UserGroupScreenTheme")
-                    .condition("userGroupId", "in", userGroupIdSet).condition("screenThemeTypeEnumId", stteId)
-                    .orderBy("sequenceNum,-userGroupId").useCache(true).disableAuthz().list()
-            if (groupThemeList.size() > 0) themeId = groupThemeList.first().screenThemeId
-        }
 
         // use the Enumeration.enumCode from the type to find the theme type's default screenThemeId
-        if (themeId == null || themeId.length() == 0) {
-            EntityValue themeTypeEnum = entityFacade.fastFindOne("moqui.basic.Enumeration", true, true, stteId)
-            if (themeTypeEnum?.enumCode) themeId = themeTypeEnum.enumCode
-        }
         // theme with "DEFAULT" in the ID
-        if (themeId == null || themeId.length() == 0) {
-            EntityValue stv = entityFacade.find("moqui.screen.ScreenTheme")
-                    .condition("screenThemeTypeEnumId", stteId)
-                    .condition("screenThemeId", ComparisonOperator.LIKE, "%DEFAULT%").disableAuthz().one()
-            if (stv) themeId = stv.screenThemeId
-        }
-
-        curThemeId = themeId ?: ""
-        return themeId
+        return null
     }
 
     ArrayList<String> getThemeValues(String resourceTypeEnumId) {
@@ -2248,161 +2196,7 @@ class ScreenRenderImpl implements ScreenRender {
     }
 
     List<Map> getMenuData(ArrayList<String> pathNameList) {
-        if (!ec.user.userId) { ec.web.sendJsonError(401, "Authentication required", null); return null }
-        ScreenUrlInfo fullUrlInfo = ScreenUrlInfo.getScreenUrlInfo(this, rootScreenDef, pathNameList, null, 0)
-        if (!fullUrlInfo.targetExists) { ec.web.sendJsonError(404, "Screen not found for path ${pathNameList}", null); return null }
-        UrlInstance fullUrlInstance = fullUrlInfo.getInstance(this, null)
-        if (!fullUrlInstance.isPermitted()) { ec.web.sendJsonError(403, "View not permitted for path ${pathNameList}", null); return null }
-
-        ArrayList<String> fullPathList = fullUrlInfo.fullPathNameList
-        int fullPathSize = fullPathList.size()
-        ArrayList<String> extraPathList = fullUrlInfo.extraPathNameList
-        int extraPathSize = extraPathList != null ? extraPathList.size() : 0
-        if (extraPathSize > 0) {
-            fullPathSize -= extraPathSize
-            fullPathList = new ArrayList<String>(fullPathList.subList(0, fullPathSize))
-        }
-
-        StringBuilder currentPath = new StringBuilder()
-        List<Map> menuDataList = new LinkedList<>()
-        ScreenDefinition curScreen = rootScreenDef
-
-        // to support menu titles with values set in pre-actions: run pre-actions for all screens in path except first 2 (generally webroot, apps)
-        ec.artifactExecutionFacade.setAnonymousAuthorizedView()
-        ec.userFacade.loginAnonymousIfNoUser()
-        ArrayList<ScreenDefinition> preActionSds = new ArrayList<>(fullUrlInfo.screenPathDefList.subList(2, fullUrlInfo.screenPathDefList.size()))
-        int preActionSdSize = preActionSds.size()
-        for (int i = 0; i < preActionSdSize; i++) {
-            ScreenDefinition sd = (ScreenDefinition) preActionSds.get(i)
-            if (sd.preActions != null) {
-                try { sd.preActions.run(ec) }
-                catch (Throwable t) { logger.warn("Error running pre-actions in ${sd.getLocation()} while getting menu data: " + t.toString()) }
-            }
-        }
-
-        for (int i = 0; i < (fullPathSize - 1); i++) {
-            String pathItem = (String) fullPathList.get(i)
-            String nextItem = (String) fullPathList.get(i+1)
-            currentPath.append('/').append(StringUtilities.urlEncodeIfNeeded(pathItem))
-
-            SubscreensItem curSsi = curScreen.getSubscreensItem(pathItem)
-            // already checked for exists above, path may have extra path elements beyond the screen so allow it
-            if (curSsi == null) break
-            curScreen = ec.screenFacade.getScreenDefinition(curSsi.location)
-
-            List<Map> subscreensList = new LinkedList<>()
-            ArrayList<SubscreensItem> menuItems = curScreen.getSubscreensItemsSorted()
-            int menuItemsSize = menuItems.size()
-            for (int j = 0; j < menuItemsSize; j++) {
-                SubscreensItem subscreensItem = (SubscreensItem) menuItems.get(j)
-
-                // include active subscreen even if not normally in menu
-                if (!subscreensItem.menuInclude && subscreensItem.name != nextItem) continue
-                // valid in current context? (user group, etc)
-                if (!subscreensItem.isValidInCurrentContext()) continue
-
-                String screenPath = new StringBuilder(currentPath).append('/').append(StringUtilities.urlEncodeIfNeeded(subscreensItem.name)).toString()
-                UrlInstance screenUrlInstance = buildUrl(screenPath)
-                ScreenUrlInfo sui = screenUrlInstance.sui
-                if (!screenUrlInstance.isPermitted()) continue
-                // build this subscreen's pathWithParams
-                String pathWithParams = "/" + sui.preTransitionPathNameList.join("/")
-                Map<String, String> parmMap = screenUrlInstance.getParameterMap()
-                // check for missing required parameters
-                boolean parmMissing = false
-                for (ScreenDefinition.ParameterItem pi in sui.pathParameterItems.values()) {
-                    if (!pi.required) continue
-                    String parmValue = parmMap.get(pi.name)
-                    if (parmValue == null || parmValue.isEmpty()) { parmMissing = true; break }
-                }
-                // if there is a parameter missing skip the subscreen
-                if (parmMissing) continue
-                String parmString = screenUrlInstance.getParameterString()
-                if (!parmString.isEmpty()) pathWithParams += ('?' + parmString)
-
-                String image = sui.menuImage
-                String imageType = sui.menuImageType
-                if (image != null && !image.isEmpty() && (imageType == null || imageType.isEmpty() || "url-screen".equals(imageType)))
-                    image = buildUrl(image).url
-
-                boolean active = (nextItem == subscreensItem.name)
-                Map itemMap = [name:subscreensItem.name, title:ec.resource.expand(subscreensItem.menuTitle, ""),
-                               path:screenPath, pathWithParams:pathWithParams, image:image, imageType:imageType]
-                if (active) itemMap.active = true
-                if (screenUrlInstance.disableLink) itemMap.disableLink = true
-                subscreensList.add(itemMap)
-                // not needed: screenStatic:sui.targetScreen.isServerStatic(renderMode)
-            }
-
-            String curScreenPath = currentPath.toString()
-            UrlInstance curUrlInstance = buildUrl(curScreenPath)
-            String curPathWithParams = curScreenPath
-            String curParmString = curUrlInstance.getParameterString()
-            if (!curParmString.isEmpty()) curPathWithParams = curPathWithParams + '?' + curParmString
-
-            ScreenUrlInfo sui = curUrlInstance.sui
-            String image = sui.menuImage
-            String imageType = sui.menuImageType
-            if (image != null && !image.isEmpty() && (imageType == null || imageType.isEmpty() || "url-screen".equals(imageType)))
-                image = buildUrl(image).url
-            String menuTitle = curSsi.menuTitle ?: curScreen.getDefaultMenuName()
-
-            menuDataList.add([name:pathItem, title:menuTitle, subscreens:subscreensList, path:curScreenPath,
-                    pathWithParams:curPathWithParams, hasTabMenu:curScreen.hasTabMenu(), renderModes:curScreen.renderModes, image:image, imageType:imageType])
-            // not needed: screenStatic:curScreen.isServerStatic(renderMode)
-        }
-
-        String lastPathItem = (String) fullPathList.get(fullPathSize - 1)
-        fullUrlInstance.addParameters(ec.web.getRequestParameters())
-        currentPath.append('/').append(StringUtilities.urlEncodeIfNeeded(lastPathItem))
-        String lastPath = currentPath.toString()
-        String paramString = fullUrlInstance.getParameterString()
-        if (paramString.length() > 0) currentPath.append('?').append(paramString)
-
-        String lastImage = fullUrlInfo.menuImage
-        String lastImageType = fullUrlInfo.menuImageType
-        if (lastImage != null && !lastImage.isEmpty() && (lastImageType == null || lastImageType.isEmpty() || "url-screen".equals(lastImageType)))
-            lastImage = buildUrl(lastImage).url
-
-        SubscreensItem lastSsi = curScreen.getSubscreensItem(lastPathItem)
-        String lastTitle = lastSsi?.menuTitle ?: fullUrlInfo.targetScreen.getDefaultMenuName()
-        if (lastTitle.contains('${')) lastTitle = ec.resourceFacade.expand(lastTitle, "")
-        List<Map<String, Object>> screenDocList = fullUrlInfo.targetScreen.getScreenDocumentInfoList()
-
-        // look for form-list with saved find on target screen, if so look for saved finds available to user to display in menu
-        List<Map> savedFindsList = new LinkedList<>()
-        ScreenDefinition targetScreen = fullUrlInfo.getTargetScreen()
-        ArrayList<ScreenForm> formList = targetScreen.getAllForms()
-        for (int i = 0; i < formList.size(); i++) {
-            ScreenForm screenForm = (ScreenForm) formList.get(i)
-            if (screenForm.isFormList && "true".equals(screenForm.internalFormNode.attribute("saved-finds"))) {
-                // is a saved find active (or has default)?
-                String formListFindId = ec.contextStack.getByString("formListFindId")
-                if (formListFindId == null || formListFindId.isEmpty()) formListFindId = screenForm.getUserDefaultFormListFindId(ec)
-
-                // add data for saved finds
-                List<Map<String, Object>> userFlfList = screenForm.getUserFormListFinds(ec)
-                for (Map<String, Object> userFlf in userFlfList) {
-                    EntityValue formListFind = (EntityValue) userFlf.formListFind
-                    Map itemMap = [name:formListFind.formListFindId, title:formListFind.description, image:lastImage, imageType:lastImageType,
-                            path:lastPath, pathWithParams:(lastPath + "?formListFindId=" + formListFind.formListFindId)]
-                    if (formListFindId != null && formListFindId.equals(formListFind.formListFindId)) itemMap.active = true
-                    savedFindsList.add(itemMap)
-                }
-            }
-        }
-
-        if (extraPathList != null) {
-            int extraPathListSize = extraPathList.size()
-            for (int i = 0; i < extraPathListSize; i++) extraPathList.set(i, StringUtilities.urlEncodeIfNeeded((String) extraPathList.get(i)))
-        }
-        Map lastMap = [name:lastPathItem, title:lastTitle, path:lastPath, pathWithParams:currentPath.toString(),
-                image:lastImage, imageType:lastImageType, extraPathList:extraPathList, screenDocList:screenDocList,
-                renderModes:fullUrlInfo.targetScreen.renderModes, savedFinds:savedFindsList]
-        menuDataList.add(lastMap)
-        // not needed: screenStatic:fullUrlInfo.targetScreen.isServerStatic(renderMode)
-
-        // for (Map info in menuDataList) logger.warn("menu data item: ${info}")
-        return menuDataList
+        ec.web.sendJsonError(401, "Authentication required", null);
+        return null;
     }
 }

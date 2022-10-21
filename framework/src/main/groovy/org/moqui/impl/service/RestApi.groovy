@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -24,7 +24,6 @@ import org.moqui.entity.EntityFind
 import org.moqui.impl.context.ArtifactExecutionInfoImpl
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
-import org.moqui.impl.context.UserFacadeImpl
 import org.moqui.impl.entity.EntityDefinition
 import org.moqui.impl.entity.FieldInfo
 import org.moqui.impl.util.RestSchemaUtil
@@ -230,18 +229,15 @@ class RestApi {
             serviceName = serviceNode.attribute("name")
         }
         RestResult run(List<String> pathList, ExecutionContext ec) {
-            if ((requireAuthentication == null || requireAuthentication.length() == 0 || "true".equals(requireAuthentication)) &&
-                    !ec.getUser().getUsername()) {
+            if ((requireAuthentication == null || requireAuthentication.length() == 0 || "true".equals(requireAuthentication)) ) {
                 throw new AuthenticationRequiredException("User must be logged in to call service ${serviceName}")
             }
 
             boolean loggedInAnonymous = false
             if ("anonymous-all".equals(requireAuthentication)) {
                 ec.artifactExecution.setAnonymousAuthorizedAll()
-                loggedInAnonymous = ec.getUser().loginAnonymousIfNoUser()
             } else if ("anonymous-view".equals(requireAuthentication)) {
                 ec.artifactExecution.setAnonymousAuthorizedView()
-                loggedInAnonymous = ec.getUser().loginAnonymousIfNoUser()
             }
 
             try {
@@ -249,7 +245,6 @@ class RestApi {
                 ServiceDefinition.nestedRemoveNullsFromResultMap(result)
                 return new RestResult(result, null)
             } finally {
-                if (loggedInAnonymous) ((UserFacadeImpl) ec.getUser()).logoutAnonymousOnly()
             }
         }
 
@@ -349,18 +344,15 @@ class RestApi {
         }
         RestResult run(List<String> pathList, ExecutionContext ec) {
             // for entity ops authc always required
-            if ((requireAuthentication == null || requireAuthentication.length() == 0 || "true".equals(requireAuthentication)) &&
-                    !ec.getUser().getUsername()) {
+            if ((requireAuthentication == null || requireAuthentication.length() == 0 || "true".equals(requireAuthentication)) ) {
                 throw new AuthenticationRequiredException("User must be logged in for operaton ${operation} on entity ${entityName}")
             }
 
             boolean loggedInAnonymous = false
             if ("anonymous-all".equals(requireAuthentication)) {
                 ec.artifactExecution.setAnonymousAuthorizedAll()
-                loggedInAnonymous = ec.getUser().loginAnonymousIfNoUser()
             } else if ("anonymous-view".equals(requireAuthentication)) {
                 ec.artifactExecution.setAnonymousAuthorizedView()
-                loggedInAnonymous = ec.getUser().loginAnonymousIfNoUser()
             }
 
             try {
@@ -404,7 +396,6 @@ class RestApi {
                     throw new IllegalArgumentException("Entity operation ${operation} not supported, must be one of: one, list, count, create, update, store, delete")
                 }
             } finally {
-                if (loggedInAnonymous) ((UserFacadeImpl) ec.getUser()).logoutAnonymousOnly()
             }
         }
 
@@ -650,10 +641,8 @@ class RestApi {
             boolean loggedInAnonymous = false
             if ("anonymous-all".equals(requireAuthentication)) {
                 ec.artifactExecutionFacade.setAnonymousAuthorizedAll()
-                loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             } else if ("anonymous-view".equals(requireAuthentication)) {
                 ec.artifactExecutionFacade.setAnonymousAuthorizedView()
-                loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             }
 
             try {
@@ -675,7 +664,6 @@ class RestApi {
                 }
             } finally {
                 ec.artifactExecutionFacade.pop(aei)
-                if (loggedInAnonymous) ec.userFacade.logoutAnonymousOnly()
             }
         }
 

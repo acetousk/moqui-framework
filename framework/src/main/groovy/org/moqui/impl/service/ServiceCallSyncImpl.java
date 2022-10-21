@@ -199,12 +199,11 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
 
         // always try to login the user if parameters are specified
         if (username != null && password != null && username.length() > 0 && password.length() > 0) {
-            userLoggedIn = eci.getUser().loginUser(username, password);
             // if user was not logged in we should already have an error message in place so just return
             if (!userLoggedIn) return null;
         }
 
-        if (sd != null && "true".equals(sd.authenticate) && eci.userFacade.getUsername() == null && !eci.userFacade.getLoggedInAnonymous()) {
+        if (sd != null && "true".equals(sd.authenticate)) {
             if (ignorePreviousError) eci.messageFacade.popErrors();
             throw new AuthenticationRequiredException("User must be logged in to call service " + serviceName);
         }
@@ -261,10 +260,8 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         boolean loggedInAnonymous = false;
         if (sd != null && "anonymous-all".equals(sd.authenticate)) {
             eci.artifactExecutionFacade.setAnonymousAuthorizedAll();
-            loggedInAnonymous = eci.userFacade.loginAnonymousIfNoUser();
         } else if (sd != null && "anonymous-view".equals(sd.authenticate)) {
             eci.artifactExecutionFacade.setAnonymousAuthorizedView();
-            loggedInAnonymous = eci.userFacade.loginAnonymousIfNoUser();
         }
 
         // handle sd.serviceNode."@semaphore"; do this BEFORE local transaction created, etc so waiting for this doesn't cause TX timeout
@@ -400,12 +397,9 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
             }
 
             try {
-                if (userLoggedIn) eci.userFacade.logoutLocal();
             } catch (Throwable t) {
                 logger.error("Error logging out user after call to service " + serviceName, t);
             }
-
-            if (loggedInAnonymous) eci.userFacade.logoutAnonymousOnly();
 
             // all done so pop the artifact info
             eci.artifactExecutionFacade.pop(aei);

@@ -752,7 +752,7 @@ public class ServiceDefinition {
                 // handle after date/time/date-time depending on type of parameter, support "now" too
                 Calendar compareCal;
                 if ("now".equals(after)) {
-                    compareCal = eci.getL10n().parseDateTime(eci.getL10n().format(eci.getUser().getNowTimestamp(), format), format);
+                    compareCal = eci.getL10n().parseDateTime(eci.getL10n().format(new java.util.Date(), format), format);
                 } else {
                     compareCal = eci.getL10n().parseDateTime(after, format);
                 }
@@ -768,7 +768,7 @@ public class ServiceDefinition {
                 // handle after date/time/date-time depending on type of parameter, support "now" too
                 Calendar compareCal;
                 if ("now".equals(before)) {
-                    compareCal = eci.getL10n().parseDateTime(eci.getL10n().format(eci.getUser().getNowTimestamp(), format), format);
+                    compareCal = eci.getL10n().parseDateTime(eci.getL10n().format(new java.util.Date(), format), format);
                 } else {
                     compareCal = eci.getL10n().parseDateTime(before, format);
                 }

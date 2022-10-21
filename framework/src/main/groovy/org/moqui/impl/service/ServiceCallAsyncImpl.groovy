@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -98,7 +98,6 @@ class ServiceCallAsyncImpl extends ServiceCallImpl implements ServiceCallAsync {
         AsyncServiceInfo() { }
         AsyncServiceInfo(ExecutionContextImpl eci, String serviceName, Map<String, Object> parameters) {
             ecfiLocal = eci.ecfi
-            threadUsername = eci.userFacade.username
             this.serviceName = serviceName
             this.parameters = new HashMap<>(parameters)
         }
@@ -137,7 +136,7 @@ class ServiceCallAsyncImpl extends ServiceCallImpl implements ServiceCallAsync {
                 // check for active ExecutionContext
                 ExecutionContextImpl activeEc = getEcfi().activeContext.get()
                 if (activeEc != null) {
-                    logger.error("In ServiceCallAsync service ${serviceName} there is already an ExecutionContext for user ${activeEc.user.username} (from ${activeEc.forThreadId}:${activeEc.forThreadName}) in this thread ${Thread.currentThread().id}:${Thread.currentThread().name}, destroying")
+                    logger.error("In ServiceCallAsync service ${serviceName} there is already an ExecutionContext for user ... (from ${activeEc.forThreadId}:${activeEc.forThreadName}) in this thread ${Thread.currentThread().id}:${Thread.currentThread().name}, destroying")
                     try {
                         activeEc.destroy()
                     } catch (Throwable t) {
@@ -146,8 +145,6 @@ class ServiceCallAsyncImpl extends ServiceCallImpl implements ServiceCallAsync {
                 }
 
                 threadEci = getEcfi().getEci()
-                if (threadUsername != null && threadUsername.length() > 0)
-                    threadEci.userFacade.internalLoginUser(threadUsername, false)
 
                 // NOTE: authz is disabled because authz is checked before queueing
                 Map<String, Object> result = threadEci.serviceFacade.sync().name(serviceName).parameters(parameters).disableAuthz().call()

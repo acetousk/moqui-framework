@@ -50,7 +50,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     private WebFacade webFacade = (WebFacade) null;
     private WebFacadeImpl webFacadeImpl = (WebFacadeImpl) null;
 
-    public final UserFacadeImpl userFacade;
     public final MessageFacadeImpl messageFacade;
     public final ArtifactExecutionFacadeImpl artifactExecutionFacade;
     public final L10nFacadeImpl l10nFacade;
@@ -81,7 +80,6 @@ public class ExecutionContextImpl implements ExecutionContext {
         // createLoc = new BaseException("ec create");
 
         activeEntityFacade = ecfi.entityFacade;
-        userFacade = new UserFacadeImpl(this);
         messageFacade = new MessageFacadeImpl();
         artifactExecutionFacade = new ArtifactExecutionFacadeImpl(this);
         l10nFacade = new L10nFacadeImpl(this);
@@ -127,7 +125,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     @Override public @Nullable WebFacade getWeb() { return webFacade; }
     public @Nullable WebFacadeImpl getWebImpl() { return webFacadeImpl; }
 
-    @Override public @Nonnull UserFacade getUser() { return userFacade; }
     @Override public @Nonnull MessageFacade getMessage() { return messageFacade; }
     @Override public @Nonnull ArtifactExecutionFacade getArtifactExecution() { return artifactExecutionFacade; }
     @Override public @Nonnull L10nFacade getL10n() { return l10nFacade; }
@@ -147,25 +144,7 @@ public class ExecutionContextImpl implements ExecutionContext {
 
     @Override
     public @Nonnull List<NotificationMessage> getNotificationMessages(@Nullable String topic) {
-        String userId = userFacade.getUserId();
-        if (userId == null || userId.isEmpty()) return new ArrayList<>();
-
-        List<NotificationMessage> nmList = new ArrayList<>();
-        boolean alreadyDisabled = artifactExecutionFacade.disableAuthz();
-        try {
-            EntityFind nmbuFind = activeEntityFacade.find("moqui.security.user.NotificationMessageByUser").condition("userId", userId);
-            if (topic != null && !topic.isEmpty()) nmbuFind.condition("topic", topic);
-            EntityList nmbuList = nmbuFind.list();
-            for (EntityValue nmbu : nmbuList) {
-                NotificationMessageImpl nmi = new NotificationMessageImpl(ecfi);
-                nmi.populateFromValue(nmbu);
-                nmList.add(nmi);
-            }
-        } finally {
-            if (!alreadyDisabled) artifactExecutionFacade.enableAuthz();
-        }
-
-        return nmList;
+        return new ArrayList<>();
     }
 
     @Override
@@ -175,16 +154,10 @@ public class ExecutionContextImpl implements ExecutionContext {
         webFacadeImpl = wfi;
 
         // now that we have the webFacade in place we can do init UserFacade
-        userFacade.initFromHttpRequest(request, response);
         // for convenience (and more consistent code in screen actions, services, etc) add all requestParameters to the context
         contextStack.putAll(webFacadeImpl.getRequestParameters());
         // this is the beginning of a request, so trigger before-request actions
         wfi.runBeforeRequestActions();
-
-        String userId = userFacade.getUserId();
-        if (userId != null && !userId.isEmpty()) MDC.put("moqui_userId", userId);
-        String visitorId = userFacade.getVisitorId();
-        if (visitorId != null && !visitorId.isEmpty()) MDC.put("moqui_visitorId", visitorId);
 
         if (loggerDirect.isTraceEnabled()) loggerDirect.trace("ExecutionContextImpl WebFacade initialized");
     }
@@ -260,9 +233,6 @@ public class ExecutionContextImpl implements ExecutionContext {
             if (threadEci != null) {
                 // ecfi.useExecutionContextInThread(threadEci);
                 ExecutionContextImpl eci = ecfi.getEci();
-                String threadUsername = threadEci.userFacade.getUsername();
-                if (threadUsername != null && !threadUsername.isEmpty())
-                    eci.userFacade.internalLoginUser(threadUsername, false);
                 if (threadEci.artifactExecutionFacade.authzDisabled)
                     eci.artifactExecutionFacade.disableAuthz();
             }

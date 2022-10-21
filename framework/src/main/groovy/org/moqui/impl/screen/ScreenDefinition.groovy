@@ -673,10 +673,8 @@ class ScreenDefinition {
         boolean loggedInAnonymous = false
         if ("anonymous-all".equals(requireAuthentication)) {
             sri.ec.artifactExecutionFacade.setAnonymousAuthorizedAll()
-            loggedInAnonymous = sri.ec.userFacade.loginAnonymousIfNoUser()
         } else if ("anonymous-view".equals(requireAuthentication)) {
             sri.ec.artifactExecutionFacade.setAnonymousAuthorizedView()
-            loggedInAnonymous = sri.ec.userFacade.loginAnonymousIfNoUser()
         }
 
         // logger.info("Rendering screen ${location}, screenNode: \n${screenNode}")
@@ -685,7 +683,6 @@ class ScreenDefinition {
             rootSection.render(sri)
         } finally {
             sri.ec.artifactExecutionFacade.pop(aei)
-            if (loggedInAnonymous) sri.ec.userFacade.logoutAnonymousOnly()
         }
     }
 
@@ -728,11 +725,8 @@ class ScreenDefinition {
     }
 
     List<Map<String, Object>> getScreenDocumentInfoList() {
-        String localeString = sfi.ecfi.getEci().userFacade.getLocale().toString()
-        int localeUnderscoreIndex = localeString.indexOf('_')
         String langString = null
         // look for locale match, lang only match, or null
-        if (localeUnderscoreIndex > 0) langString = localeString.substring(0, localeUnderscoreIndex)
 
         // do very simple cached query for all, then filter in iterator by locale
         EntityList list = sfi.ecfi.entityFacade.find("moqui.screen.ScreenDocument").condition("screenLocation", location)
@@ -743,7 +737,6 @@ class ScreenDefinition {
         for (int i = 0; i < listSize; i++) {
             EntityValue screenDoc = (EntityValue) list.get(i)
             String docLocale = screenDoc.getNoCheckSimple("locale")
-            if (docLocale != null && (!localeString.equals(docLocale) || (langString != null && !langString.equals(docLocale)))) continue
             String title = screenDoc.getNoCheckSimple("docTitle")
             if (title == null) {
                 String loc = screenDoc.getNoCheckSimple("docLocation")
@@ -932,10 +925,8 @@ class ScreenDefinition {
             boolean loggedInAnonymous = false
             if (requireAuthentication == "anonymous-all") {
                 ec.artifactExecutionFacade.setAnonymousAuthorizedAll()
-                loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             } else if (requireAuthentication == "anonymous-view") {
                 ec.artifactExecutionFacade.setAnonymousAuthorizedView()
-                loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             }
 
             try {
@@ -1006,7 +997,6 @@ class ScreenDefinition {
                 // all done so pop the artifact info; don't bother making sure this is done on errors/etc like in a finally
                 // clause because if there is an error this will help us know how we got there
                 ec.artifactExecutionFacade.pop(aei)
-                if (loggedInAnonymous) ec.userFacade.logoutAnonymousOnly()
             }
         }
     }
@@ -1292,7 +1282,7 @@ class ScreenDefinition {
         boolean isValidInCurrentContext() {
             ExecutionContextImpl eci = parentScreen.sfi.getEcfi().getEci()
             // if the subscreens item is limited to a UserGroup make sure user is in that group
-            if (userGroupId && !(userGroupId in eci.getUser().getUserGroupIdSet())) return false
+            return false
 
             return true
         }

@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -85,7 +85,7 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
             // create the ServiceJobRun record
             String parametersString = JsonOutput.toJson(parameters)
             Map jobRunResult = ecfi.service.sync().name("create", "moqui.service.job.ServiceJobRun")
-                    .parameters([jobName:jobName, userId:eci.user.userId, parameters:parametersString] as Map<String, Object>)
+                    .parameters([jobName:jobName, userId:null, parameters:parametersString] as Map<String, Object>)
                     .disableAuthz().requireNewTransaction(true).call()
             jobRunId = jobRunResult.jobRunId
         } else {
@@ -144,8 +144,6 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
         ServiceJobCallable(ExecutionContextImpl eci, Map<String, Object> serviceJob, String jobRunId, Timestamp lastRunTime,
                            boolean clearLock, Map<String, Object> parameters) {
             ecfi = eci.ecfi
-            threadUsername = eci.userFacade.username
-            currentUserId = eci.userFacade.userId
             jobName = (String) serviceJob.jobName
             jobDescription = (String) serviceJob.description
             serviceName = (String) serviceJob.serviceName
@@ -214,7 +212,7 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
                 // check for active ExecutionContext
                 ExecutionContextImpl activeEc = ecfi.activeContext.get()
                 if (activeEc != null) {
-                    logger.error("In ServiceCallJob ${jobName} service ${serviceName} there is already an ExecutionContext for user ${activeEc.user.username} (from ${activeEc.forThreadId}:${activeEc.forThreadName}) in this thread ${Thread.currentThread().id}:${Thread.currentThread().name}, destroying")
+                    logger.error("In ServiceCallJob ${jobName} service ${serviceName} there is already an ExecutionContext for user ... (from ${activeEc.forThreadId}:${activeEc.forThreadName}) in this thread ${Thread.currentThread().id}:${Thread.currentThread().name}, destroying")
                     try {
                         activeEc.destroy()
                     } catch (Throwable t) {
@@ -224,17 +222,10 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
 
                 // get a fresh ExecutionContext
                 threadEci = ecfi.getEci()
-                if (threadUsername != null && threadUsername.length() > 0)
-                    threadEci.userFacade.internalLoginUser(threadUsername, false)
 
                 // set hostAddress, hostName, runThread, startTime on ServiceJobRun
                 InetAddress localHost = ecfi.getLocalhostAddress()
                 // NOTE: no need to run async or separate thread, is in separate TX because no wrapping TX for these service calls
-                ecfi.serviceFacade.sync().name("update", "moqui.service.job.ServiceJobRun")
-                        .parameters([jobRunId:jobRunId, hostAddress:(localHost?.getHostAddress() ?: '127.0.0.1'),
-                            hostName:(localHost?.getHostName() ?: 'localhost'), runThread:Thread.currentThread().getName(),
-                            startTime:threadEci.user.nowTimestamp] as Map<String, Object>)
-                        .disableAuthz().call()
 
                 if (lastRunTime != (Object) null) parameters.put("lastRunTime", lastRunTime)
 
@@ -267,7 +258,7 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
                 if (messages != null && messages.length() > 4000) messages = messages.substring(0, 4000)
                 String errors = hasError ? threadEci.messageFacade.getErrorsString() : null
                 if (errors != null && errors.length() > 4000) errors = errors.substring(0, 4000)
-                Timestamp nowTimestamp = threadEci.userFacade.nowTimestamp
+                Timestamp nowTimestamp = null
 
                 // before calling other services clear out errors or they won't run
                 if (hasError) threadEci.messageFacade.clearErrors()

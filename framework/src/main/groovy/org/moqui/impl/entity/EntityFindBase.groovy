@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -503,12 +503,6 @@ abstract class EntityFindBase implements EntityFind {
                     addedConditions = true
                 }
             } else if (inputFieldsMap.get(fn + "_period")) {
-                List<Timestamp> range = ec.user.getPeriodRange((String) inputFieldsMap.get(fn + "_period"),
-                        (String) inputFieldsMap.get(fn + "_poffset"), (String) inputFieldsMap.get(fn + "_pdate"))
-                EntityCondition fromCond = efi.entityConditionFactory.makeCondition(fn, EntityCondition.GREATER_THAN_EQUAL_TO, range.get(0))
-                EntityCondition thruCond = efi.entityConditionFactory.makeCondition(fn, EntityCondition.LESS_THAN, range.get(1))
-                if (fi.hasAggregateFunction) { this.havingCondition(fromCond); this.havingCondition(thruCond) }
-                else { this.condition(fromCond); this.condition(thruCond) }
                 addedConditions = true
             } else {
                 // these will handle range-find and date-find

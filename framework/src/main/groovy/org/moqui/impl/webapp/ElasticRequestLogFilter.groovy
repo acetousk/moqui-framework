@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -17,7 +17,6 @@ import groovy.transform.CompileStatic
 import org.moqui.Moqui
 import org.moqui.impl.context.ElasticFacadeImpl.ElasticClientImpl
 import org.moqui.impl.context.ExecutionContextFactoryImpl
-import org.moqui.impl.context.UserFacadeImpl
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -124,7 +123,6 @@ class ElasticRequestLogFilter implements Filter {
         // always flush the buffer so we can get the final time; this is for some reason NECESSARY for the wrapper otherwise content doesn't make it through
         response.flushBuffer()
 
-        String clientIp = UserFacadeImpl.getClientIp(request, null, ecfi)
         String serverIp = request.getLocalAddr()
         // IPv6 addresses sometimes have square braces around them, ElasticSearch doesn't like that so strip them if found
         // NOTE: clientIp already has square braces removed by getClientIp()
@@ -150,7 +148,7 @@ class ElasticRequestLogFilter implements Filter {
         // final time after streaming response (ie flush response)
         long finalTime = System.currentTimeMillis() - startTime
 
-        Map reqMap = ['@timestamp':startTime, remote_ip:clientIp, remote_user:request.getRemoteUser(),
+        Map reqMap = ['@timestamp':startTime, remote_ip:"", remote_user:request.getRemoteUser(),
                 server_ip:serverIp, content_type:response.getContentType(),
                 request_method:request.getMethod(), request_scheme:request.getScheme(), request_host:request.getServerName(),
                 request_path:request.getRequestURI(), request_query:request.getQueryString(), http_version:httpVersion,

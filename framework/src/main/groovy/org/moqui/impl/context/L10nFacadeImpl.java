@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -46,11 +46,9 @@ public class L10nFacadeImpl implements L10nFacade {
 
     public L10nFacadeImpl(ExecutionContextImpl eci) { this.eci = eci; }
 
-    protected Locale getLocale() { return eci.userFacade.getLocale(); }
-    protected TimeZone getTimeZone() { return eci.userFacade.getTimeZone(); }
 
     @Override
-    public String localize(String original) { return localize(original, getLocale()); }
+    public String localize(String original) { return localize(original, null); }
     @Override
     public String localize(String original, Locale locale) {
         if (original == null) return "";
@@ -60,7 +58,6 @@ public class L10nFacadeImpl implements L10nFacade {
             throw new BaseArtifactException("Original String cannot be more than 255 characters long, passed in string was " + originalLength + " characters long");
         }
 
-        if (locale == null) locale = getLocale();
         String localeString = locale.toString();
 
         String cacheKey = original.concat("::").concat(localeString);
@@ -100,10 +97,10 @@ public class L10nFacadeImpl implements L10nFacade {
     }
 
     @Override
-    public String formatCurrency(Object amount, String uomId) { return formatCurrency(amount, uomId, null, getLocale()); }
+    public String formatCurrency(Object amount, String uomId) { return formatCurrency(amount, uomId, null, null); }
     @Override
     public String formatCurrency(Object amount, String uomId, Integer fractionDigits) {
-        return formatCurrency(amount, uomId, fractionDigits, getLocale());
+        return formatCurrency(amount, uomId, fractionDigits, null);
     }
     @Override
     public String formatCurrency(Object amount, String uomId, Integer fractionDigits, Locale locale) {
@@ -117,7 +114,6 @@ public class L10nFacadeImpl implements L10nFacade {
         }
 
         Currency currency = uomId != null && uomId.length() > 0 ? Currency.getInstance(uomId) : null;
-        if (locale == null) locale = getLocale();
         if (currency != null) {
             NumberFormat nf = NumberFormat.getCurrencyInstance(locale);
             nf.setCurrency(currency);
@@ -152,21 +148,7 @@ public class L10nFacadeImpl implements L10nFacade {
 
     @Override
     public Time parseTime(String input, String format) {
-        Locale curLocale = getLocale();
-        TimeZone curTz = getTimeZone();
         if (format == null || format.isEmpty()) format = "HH:mm:ss.SSS";
-        Calendar cal = calendarValidator.validate(input, format, curLocale, curTz);
-        if (cal == null) cal = calendarValidator.validate(input, "HH:mm:ss", curLocale, curTz);
-        if (cal == null) cal = calendarValidator.validate(input, "HH:mm", curLocale, curTz);
-        if (cal == null) cal = calendarValidator.validate(input, "h:mm a", curLocale, curTz);
-        if (cal == null) cal = calendarValidator.validate(input, "h:mm:ss a", curLocale, curTz);
-        // also try the full ISO-8601, times may come in that way (even if funny with a date of 1970-01-01)
-        if (cal == null) cal = calendarValidator.validate(input, "yyyy-MM-dd'T'HH:mm:ssZ", curLocale, curTz);
-        if (cal != null) {
-            Time time = new Time(cal.getTimeInMillis());
-            // logger.warn("============== parseTime input=${input} cal=${cal} long=${cal.getTimeInMillis()} time=${time} time long=${time.getTime()} util date=${new java.util.Date(cal.getTimeInMillis())} timestamp=${new java.sql.Timestamp(cal.getTimeInMillis())}")
-            return time;
-        }
 
         // try interpreting the String as a long
         try {
@@ -179,8 +161,6 @@ public class L10nFacadeImpl implements L10nFacade {
         return null;
     }
     public String formatTime(Time input, String format, Locale locale, TimeZone tz) {
-        if (locale == null) locale = getLocale();
-        if (tz == null) tz = getTimeZone();
         if (format == null || format.isEmpty()) format = "HH:mm:ss";
         String timeStr = calendarValidator.format(input, format, locale, tz);
         // logger.warn("============= formatTime input=${input} timeStr=${timeStr} long=${input.getTime()}")
@@ -190,7 +170,6 @@ public class L10nFacadeImpl implements L10nFacade {
     @Override
     public java.sql.Date parseDate(String input, String format) {
         if (format == null || format.isEmpty()) format = "yyyy-MM-dd";
-        Locale curLocale = getLocale();
 
         // NOTE DEJ 20150317 Date parsing in terms of time zone causes funny issues because the time part of the long
         //   since epoch representation is lost going to/from the DB, especially since the time portion is set to 0 and
@@ -207,15 +186,7 @@ public class L10nFacadeImpl implements L10nFacade {
         if (cal == null) cal = calendarValidator.validate(input, "yyyy-MM-dd'T'HH:mm:ssZ", curLocale, curTz)
         */
 
-        Calendar cal = calendarValidator.validate(input, format, curLocale);
-        if (cal == null) cal = calendarValidator.validate(input, "MM/dd/yyyy", curLocale);
         // also try the full ISO-8601, dates may come in that way
-        if (cal == null) cal = calendarValidator.validate(input, "yyyy-MM-dd'T'HH:mm:ssZ", curLocale);
-        if (cal != null) {
-            java.sql.Date date = new java.sql.Date(cal.getTimeInMillis());
-            // logger.warn("============== parseDate input=${input} cal=${cal} long=${cal.getTimeInMillis()} date=${date} date long=${date.getTime()} util date=${new java.util.Date(cal.getTimeInMillis())} timestamp=${new java.sql.Timestamp(cal.getTimeInMillis())}")
-            return date;
-        }
 
         // try interpreting the String as a long
         try {
@@ -228,7 +199,6 @@ public class L10nFacadeImpl implements L10nFacade {
         return null;
     }
     public String formatDate(java.util.Date input, String format, Locale locale, TimeZone tz) {
-        if (locale == null) locale = getLocale();
         // if (tz == null) tz = getTimeZone();
         if (format == null || format.isEmpty()) format = "yyyy-MM-dd";
         // See comment in parseDate for why we are ignoring the time zone
@@ -256,8 +226,8 @@ public class L10nFacadeImpl implements L10nFacade {
     @Override
     public Timestamp parseTimestamp(final String input, final String format, final Locale locale, final TimeZone timeZone) {
         if (input == null || input.isEmpty()) return null;
-        Locale curLocale = locale != null ? locale : getLocale();
-        TimeZone curTz = timeZone != null ? timeZone : getTimeZone();
+        Locale curLocale = locale != null ? locale : null;
+        TimeZone curTz = timeZone != null ? timeZone : null;
         Calendar cal = null;
         if (format != null && !format.isEmpty()) cal = calendarValidator.validate(input, format, curLocale, curTz);
 
@@ -303,17 +273,16 @@ public class L10nFacadeImpl implements L10nFacade {
     }
 
     @Override public Calendar parseDateTime(String input, String format) {
-        return calendarValidator.validate(input, format, getLocale(), getTimeZone()); }
+        return null;
+    }
     @Override public String formatDateTime(Calendar input, String format, Locale locale, TimeZone tz) {
-        if (locale == null) locale = getLocale();
-        if (tz == null) tz = getTimeZone();
         return calendarValidator.format(input, format, locale, tz);
     }
 
     @Override public BigDecimal parseNumber(String input, String format) {
-        return bigDecimalValidator.validate(input, format, getLocale()); }
+        return null;
+    }
     @Override public String formatNumber(Number input, String format, Locale locale) {
-        if (locale == null) locale = getLocale();
         if (format == null || format.isEmpty()) {
             // BigDecimalValidator defaults to 3 decimal digits, if no format specified we don't want to truncate so small, use better defaults
             NumberFormat nf = locale != null ? NumberFormat.getNumberInstance(locale) : NumberFormat.getNumberInstance();
@@ -329,13 +298,11 @@ public class L10nFacadeImpl implements L10nFacade {
 
     @Override
     public String format(Object value, String format) {
-        return this.format(value, format, getLocale(), getTimeZone());
+        return this.format(value, format, null, null);
     }
     @Override
     public String format(Object value, String format, Locale locale, TimeZone tz) {
         if (value == null) return "";
-        if (locale == null) locale = getLocale();
-        if (tz == null) tz = getTimeZone();
         Class<?> valueClass = value.getClass();
         if (valueClass == String.class) return (String) value;
         if (valueClass == Timestamp.class) return formatTimestamp((Timestamp) value, format, locale, tz);

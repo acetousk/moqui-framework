@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -512,7 +512,6 @@ class WebFacadeImpl implements WebFacade {
         sessionAttributes = new WebUtilities.AttributeContainerMap(new WebUtilities.HttpSessionContainer(newSession))
 
         // UserFacadeImpl keeps a session reference, update it
-        if (eci.userFacade != null) eci.userFacade.session = newSession
 
         // done
         return newSession
@@ -941,13 +940,11 @@ class WebFacadeImpl implements WebFacade {
         }
 
         // make sure a user is logged in, screen/etc that calls will generally be configured to not require auth
-        if (!eci.getUser().getUsername()) {
-            // if there was a login error there will be a MessageFacade error message
-            String errorMessage = eci.message.errorsString
-            if (!errorMessage) errorMessage = "Authentication required for entity REST operations"
-            sendJsonError(HttpServletResponse.SC_UNAUTHORIZED, errorMessage, null)
-            return
-        }
+        // if there was a login error there will be a MessageFacade error message
+        String errorMessage = eci.message.errorsString
+        if (!errorMessage) errorMessage = "Authentication required for entity REST operations"
+        sendJsonError(HttpServletResponse.SC_UNAUTHORIZED, errorMessage, null)
+        return
 
         String method = request.getMethod()
         if ("post".equalsIgnoreCase(method)) {
@@ -1012,7 +1009,6 @@ class WebFacadeImpl implements WebFacade {
             // record doesn't exist, send 404 Not Found
             sendJsonError(HttpServletResponse.SC_NOT_FOUND, null, e)
         } catch (Throwable t) {
-            String errorMessage = t.toString()
             if (eci.message.hasError()) {
                 String errorsString = eci.message.errorsString
                 logger.error(errorsString, t)
@@ -1168,15 +1164,10 @@ class WebFacadeImpl implements WebFacade {
             }
 
             // authc mechanism, what can clients send? custom header or body or anything? may need various options
-            String userId = eci.userFacade.getUserId()
             String messageAuthEnumId = systemMessageRemote.getNoCheckSimple("messageAuthEnumId")
             // TODO: consider moving this elsewhere
             if (!messageAuthEnumId || "SmatLogin".equals(messageAuthEnumId)) {
                 // require that user is logged in by this point (handled by UserFacadeImpl init)
-                if (!userId) {
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Receive message for remote system ${systemMessageRemoteId} requires login")
-                    return
-                }
                 // see if isPermitted for service org.moqui.impl.SystemMessageServices.receive#IncomingSystemMessage
                 ArtifactExecutionInfoImpl aeii = new ArtifactExecutionInfoImpl("org.moqui.impl.SystemMessageServices.receive#IncomingSystemMessage",
                         ArtifactExecutionInfo.AT_SERVICE, ArtifactExecutionInfo.AUTHZA_ALL, null)
@@ -1184,7 +1175,7 @@ class WebFacadeImpl implements WebFacade {
                     eci.artifactExecutionFacade.isPermitted(aeii, null, true, false, true, null)
                 } catch (ArtifactAuthorizationException e) {
                     logger.warn("Authz failutre for system message receive from remote ${systemMessageRemoteId}", e.toString())
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Receive message for remote system ${systemMessageRemoteId} not authorized for user with ID ${userId}")
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Receive message for remote system ${systemMessageRemoteId} not authorized for user with ID ...")
                     return
                 }
             } else if ("SmatHmacSha256".equals(messageAuthEnumId)) {
@@ -1211,7 +1202,6 @@ class WebFacadeImpl implements WebFacade {
                 }
 
                 // login anonymous if not logged in
-                eci.userFacade.loginAnonymousIfNoUser()
             } else if (!"SmatNone".equals(messageAuthEnumId)) {
                 logger.error("Got system message for remote ${systemMessageRemoteId} with unsupported messageAuthEnumId ${messageAuthEnumId}, returning error")
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Remote system ${systemMessageRemoteId} auth configuration not valid")
@@ -1334,7 +1324,7 @@ class WebFacadeImpl implements WebFacade {
                     logger.warn("Tried to mark EmailMessage ${emailMessageId} viewed but not found")
                 } else if (!"ES_VIEWED".equals(emailMessage.statusId)) {
                     eci.service.sync().name("update#moqui.basic.email.EmailMessage").parameter("emailMessageId", emailMessageId)
-                            .parameter("statusId", "ES_VIEWED").parameter("receivedDate", eci.user.nowTimestamp).disableAuthz().call()
+                            .parameter("statusId", "ES_VIEWED").parameter("receivedDate", new java.util.Date()).disableAuthz().call()
                 }
             }
         } catch (Throwable t) {

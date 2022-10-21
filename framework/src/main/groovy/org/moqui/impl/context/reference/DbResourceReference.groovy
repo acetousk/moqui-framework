@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -39,7 +39,7 @@ class DbResourceReference extends BaseResourceReference {
     String resourceId = (String) null
 
     DbResourceReference() { }
-    
+
     @Override ResourceReference init(String location, ExecutionContextFactoryImpl ecf) {
         this.ecf = ecf
         this.location = location
@@ -179,7 +179,7 @@ class DbResourceReference extends BaseResourceReference {
                                      rootVersionName:versionName, fileData:fileObj]).call()
                 ExecutionContextImpl eci = ecf.getEci()
                 ecf.service.sync().name("create", "moqui.resource.DbResourceFileHistory")
-                        .parameters([resourceId:resourceId, versionDate:eci.userFacade.nowTimestamp, userId:eci.userFacade.userId,
+                        .parameters([resourceId:resourceId, versionDate:new java.util.Date(), userId:null,
                                      isDiff:"N"]).call() // NOTE: no fileData, for non-diff only past versions
             }
         }
@@ -197,7 +197,7 @@ class DbResourceReference extends BaseResourceReference {
         ExecutionContextImpl eci = ecf.getEci()
         Map createOut = ecf.service.sync().name("create", "moqui.resource.DbResourceFileHistory")
                 .parameters([resourceId:resourceId, previousVersionName:currentVersionName,
-                             versionDate:eci.userFacade.nowTimestamp, userId:eci.userFacade.userId,
+                             versionDate:new java.util.Date(), userId:null,
                              isDiff:"N"]).call()  // NOTE: no fileData, for non-diff only past versions
         String newVersionName = createOut.versionName
         if (!dbrf.rootVersionName) dbrf.rootVersionName = currentVersionName ?: newVersionName

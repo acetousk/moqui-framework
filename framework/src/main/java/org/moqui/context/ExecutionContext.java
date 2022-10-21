@@ -57,7 +57,6 @@ public interface ExecutionContext {
     @Nullable WebFacade getWeb();
 
     /** For information about the user and user preferences (including locale, time zone, currency, etc). */
-    @Nonnull UserFacade getUser();
 
     /** For user messages including general feedback, errors, and field-specific validation errors. */
     @Nonnull MessageFacade getMessage();

@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -92,7 +92,7 @@ class MoquiServlet extends HttpServlet {
         // check for active ExecutionContext
         ExecutionContextImpl activeEc = ecfi.activeContext.get()
         if (activeEc != null) {
-            logger.warn("In MoquiServlet.service there is already an ExecutionContext for user ${activeEc.user.username} (from ${activeEc.forThreadId}:${activeEc.forThreadName}) in this thread (${Thread.currentThread().id}:${Thread.currentThread().name}), destroying")
+            logger.warn("In MoquiServlet.service there is already an ExecutionContext for user ... (from ${activeEc.forThreadId}:${activeEc.forThreadName}) in this thread (${Thread.currentThread().id}:${Thread.currentThread().name}), destroying")
             try {
                 activeEc.destroy()
             } catch (Throwable t) {
@@ -268,7 +268,7 @@ class MoquiServlet extends HttpServlet {
             ec.makeNotificationMessage().topic("WebServletError").type(NotificationMessage.danger)
                     .title('''Web Error ${errorCode?:''} (${username?:'no user'}) ${path?:''} ${message?:'N/A'}''')
                     .message([errorCode:errorCode, errorType:errorType, message:message, exception:origThrowable?.toString(),
-                        path:ec.web?.getPathInfo(), parameters:ec.web?.getRequestParameters(), username:ec.user.username] as Map<String, Object>)
+                        path:ec.web?.getPathInfo(), parameters:ec.web?.getRequestParameters(), username:""] as Map<String, Object>)
                     .send()
         }
 
