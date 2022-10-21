@@ -15,7 +15,6 @@ package org.moqui.context;
 
 import groovy.lang.GroovyClassLoader;
 import org.moqui.entity.EntityFacade;
-import org.moqui.screen.ScreenFacade;
 import org.moqui.service.ServiceFacade;
 
 import javax.annotation.Nonnull;
@@ -77,7 +76,6 @@ public interface ExecutionContextFactory {
     @Nonnull ServiceFacade getService();
 
     /** For rendering screens for general use (mostly for things other than web pages or web page snippets). */
-    @Nonnull ScreenFacade getScreen();
 
     /** Get the framework ClassLoader, aware of all additional classes in runtime and in components. */
     @Nonnull ClassLoader getClassLoader();

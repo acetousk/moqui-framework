@@ -24,8 +24,6 @@ import javax.servlet.http.HttpServlet
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
-import org.moqui.screen.ScreenRender
-
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 
 import javax.xml.transform.stream.StreamSource
@@ -79,9 +77,6 @@ class MoquiFopServlet extends HttpServlet {
             ec.web.requestAttributes.put("moquiRequestStartTime", startTime)
 
             ArrayList<String> pathInfoList = ec.web.getPathInfoList()
-            ScreenRender sr = ec.screen.makeRender().webappName(moquiWebappName).renderMode("xsl-fo")
-                    .rootScreenFromHost(request.getServerName()).screenPath(pathInfoList)
-            xslFoText = sr.render()
 
             // logger.warn("======== XSL-FO content:\n${xslFoText}")
             if (logger.traceEnabled) logger.trace("XSL-FO content:\n${xslFoText}")
@@ -110,9 +105,6 @@ class MoquiFopServlet extends HttpServlet {
             }
 
             if (logger.infoEnabled) logger.info("Finished XSL-FO request to ${pathInfoList}, content type ${response.getContentType()} in ${System.currentTimeMillis()-startTime}ms; session ${request.session.id} thread ${Thread.currentThread().id}:${Thread.currentThread().name}")
-        } catch (ScreenResourceNotFoundException e) {
-            logger.warn((String) "Web Resource Not Found: " + e.message)
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, e.message)
         } catch (Throwable t) {
             logger.error("Error transforming XSL-FO content:\n${xslFoText}", t)
             throw t

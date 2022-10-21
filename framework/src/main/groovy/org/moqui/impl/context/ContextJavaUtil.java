@@ -27,7 +27,6 @@ import org.jetbrains.annotations.NotNull;
 import org.moqui.entity.EntityFind;
 import org.moqui.entity.EntityList;
 import org.moqui.entity.EntityValue;
-import org.moqui.impl.screen.ScreenRenderImpl;
 import org.moqui.util.ContextStack;
 import org.moqui.util.LiteStringMap;
 import org.slf4j.Logger;
@@ -71,7 +70,7 @@ public class ContextJavaUtil {
         if (value instanceof CharSequence || value instanceof Number || value instanceof java.util.Date) {
             return value;
         } else if (value instanceof EntityFind || value instanceof ExecutionContextImpl ||
-                value instanceof ScreenRenderImpl || value instanceof ContextStack) {
+                value instanceof ContextStack) {
             // intentionally skip, commonly left in context by entity-find XML action
             return null;
         } else if (value instanceof EntityValue) {

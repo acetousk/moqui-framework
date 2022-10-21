@@ -19,7 +19,6 @@ import java.util.concurrent.Future;
 
 import groovy.lang.Closure;
 import org.moqui.entity.EntityFacade;
-import org.moqui.screen.ScreenFacade;
 import org.moqui.service.ServiceFacade;
 import org.moqui.util.ContextBinding;
 import org.moqui.util.ContextStack;
@@ -87,7 +86,6 @@ public interface ExecutionContext {
     @Nonnull ServiceFacade getService();
 
     /** For rendering screens for general use (mostly for things other than web pages or web page snippets). */
-    @Nonnull ScreenFacade getScreen();
 
     /** This should be called by a filter or servlet at the beginning of an HTTP request to initialize a web facade
      * for the current thread. */

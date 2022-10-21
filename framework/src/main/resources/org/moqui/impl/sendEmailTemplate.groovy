@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -289,33 +289,13 @@ static void renderScreenAttachment(EntityValue emailTemplate, HtmlEmail email, E
                 .screenPath(screenPath).renderMode(renderMode).lastStandalone("true")
     }
 
-    if (ec.screenFacade.isRenderModeText(renderMode)) {
-        String attachmentText = attachmentRender.render()
-        if (attachmentText == null) return
-        if (attachmentText.trim().length() == 0) return
 
-        if (renderMode == "xsl-fo") {
-            // use ResourceFacade.xslFoTransform() to change to PDF, then attach that
-            try {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream()
-                ec.resource.xslFoTransform(new StreamSource(new StringReader(attachmentText)), null, baos, "application/pdf")
-                email.attach(new ByteArrayDataSource(baos.toByteArray(), "application/pdf"), filenameExp, "")
-            } catch (Exception e) {
-                logger.warn("Error generating PDF from XSL-FO: ${e.toString()}")
-            }
-        } else {
-            String mimeType = contentType ?: ec.screenFacade.getMimeTypeByMode(renderMode)
-            DataSource dataSource = new ByteArrayDataSource(attachmentText, mimeType)
-            email.attach(dataSource, filenameExp, "")
-        }
-    } else {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream()
-        attachmentRender.render(baos)
+    ByteArrayOutputStream baos = new ByteArrayOutputStream()
+    attachmentRender.render(baos)
 
-        String mimeType = contentType ?: ec.screenFacade.getMimeTypeByMode(renderMode)
-        DataSource dataSource = new ByteArrayDataSource(baos.toByteArray(), mimeType)
-        email.attach(dataSource, filenameExp, "")
-    }
+    String mimeType = contentType ?: null
+    DataSource dataSource = new ByteArrayDataSource(baos.toByteArray(), mimeType)
+    email.attach(dataSource, filenameExp, "")
 }
 
 static boolean isDomainAllowed(String emailAddress, ArrayList<String> toDomainList) {
