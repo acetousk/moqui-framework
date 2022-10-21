@@ -866,7 +866,7 @@ class WebFacadeImpl implements WebFacade {
             sendJsonError(HttpServletResponse.SC_NOT_FOUND, null, e)
         } catch (Throwable t) {
             logger.warn((String) "General error in entity REST: " + t.toString(), t)
-            sendJsonError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, errorMessage, null)
+            sendJsonError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, null, null)
         }
     }
 
