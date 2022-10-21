@@ -137,28 +137,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     @Override public @Nonnull ServiceFacade getService() { return serviceFacade; }
     @Override public @Nonnull ScreenFacade getScreen() { return screenFacade; }
 
-    @Override public @Nonnull NotificationMessage makeNotificationMessage() { return new NotificationMessageImpl(ecfi); }
-
-    @Override
-    public @Nonnull List<NotificationMessage> getNotificationMessages(@Nullable String topic) {
-        String userId = userFacade.getUserId();
-        if (userId == null || userId.isEmpty()) return new ArrayList<>();
-
-        List<NotificationMessage> nmList = new ArrayList<>();
-        try {
-            EntityFind nmbuFind = activeEntityFacade.find("moqui.security.user.NotificationMessageByUser").condition("userId", userId);
-            if (topic != null && !topic.isEmpty()) nmbuFind.condition("topic", topic);
-            EntityList nmbuList = nmbuFind.list();
-            for (EntityValue nmbu : nmbuList) {
-                NotificationMessageImpl nmi = new NotificationMessageImpl(ecfi);
-                nmi.populateFromValue(nmbu);
-                nmList.add(nmi);
-            }
-        } finally {
-        }
-
-        return nmList;
-    }
 
     @Override
     public void initWebFacade(@Nonnull String webappMoquiName, @Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response) {
