@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -17,7 +17,6 @@ import groovy.json.JsonOutput
 import groovy.transform.CompileStatic
 import org.moqui.BaseArtifactException
 import org.moqui.Moqui
-import org.moqui.context.NotificationMessage
 import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
 import org.moqui.impl.context.ExecutionContextFactoryImpl
@@ -245,7 +244,6 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
                             .transactionTimeout(transactionTimeout).disableAuthz().call()
                 } catch (Throwable t) {
                     logger.error("Error in service job call", t)
-                    threadEci.messageFacade.addError(t.toString())
                 }
 
                 // set endTime, results, messages, errors on ServiceJobRun
@@ -262,15 +260,9 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
                     }
                 }
 
-                boolean hasError = threadEci.messageFacade.hasError()
-                String messages = threadEci.messageFacade.getMessagesString()
-                if (messages != null && messages.length() > 4000) messages = messages.substring(0, 4000)
-                String errors = hasError ? threadEci.messageFacade.getErrorsString() : null
-                if (errors != null && errors.length() > 4000) errors = errors.substring(0, 4000)
                 Timestamp nowTimestamp = threadEci.userFacade.nowTimestamp
 
                 // before calling other services clear out errors or they won't run
-                if (hasError) threadEci.messageFacade.clearErrors()
 
                 // clear the ServiceJobRunLock if there is one
                 if (clearLock) {
@@ -278,56 +270,18 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
                             .parameter("jobName", jobName).parameter("jobRunId", null)
                             .disableAuthz()
                     // if there was an error set lastRunTime to previous
-                    if (hasError) scs.parameter("lastRunTime", lastRunTime)
                     scs.call()
                 }
 
                 // NOTE: no need to run async or separate thread, is in separate TX because no wrapping TX for these service calls
-                ecfi.serviceFacade.sync().name("update", "moqui.service.job.ServiceJobRun")
-                        .parameters([jobRunId:jobRunId, endTime:nowTimestamp, results:resultString,
-                            messages:messages, hasError:(hasError ? 'Y' : 'N'), errors:errors] as Map<String, Object>)
-                        .disableAuthz().call()
 
                 // notifications
                 Map<String, Object> msgMap = (Map<String, Object>) null
                 EntityList serviceJobUsers = (EntityList) null
-                if (topic || hasError) {
-                    msgMap = new HashMap<>()
-                    msgMap.put("serviceCallRun", [jobName:jobName, description:jobDescription, jobRunId:jobRunId,
-                          endTime:nowTimestamp, messages:messages, hasError:hasError, errors:errors])
-                    msgMap.put("parameters", parameters)
-                    msgMap.put("results", results)
-
-                    serviceJobUsers = threadEci.entityFacade.find("moqui.service.job.ServiceJobUser")
-                            .condition("jobName", jobName).useCache(true).disableAuthz().list()
-                }
 
                 // if topic send NotificationMessage
-                if (topic) {
-                    NotificationMessage nm = threadEci.makeNotificationMessage().topic(topic)
-                    nm.message(msgMap)
-
-                    if (currentUserId) nm.userId(currentUserId)
-                    for (EntityValue serviceJobUser in serviceJobUsers)
-                        if (serviceJobUser.receiveNotifications != 'N') nm.userId((String) serviceJobUser.userId)
-
-                    nm.type(hasError ? NotificationMessage.danger : NotificationMessage.success)
-                    nm.send()
-                }
 
                 // if hasError send general error notification
-                if (hasError) {
-                    NotificationMessage nm = threadEci.makeNotificationMessage().topic("ServiceJobError")
-                            .type(NotificationMessage.danger)
-                            .title('''Job Error ${serviceCallRun.jobName?:''} [${serviceCallRun.jobRunId?:''}] ${serviceCallRun.errors?:'N/A'}''')
-                            .message(msgMap)
-
-                    if (currentUserId) nm.userId(currentUserId)
-                    for (EntityValue serviceJobUser in serviceJobUsers)
-                        if (serviceJobUser.receiveNotifications != 'N') nm.userId((String) serviceJobUser.userId)
-
-                    nm.send()
-                }
 
                 return results
             } catch (Throwable t) {

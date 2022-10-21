@@ -760,10 +760,6 @@ class EntityDataFeed {
                                 try {
                                     ecfi.serviceFacade.sync().name(serviceName).parameters([dataFeedId:dataFeedAndDocument.dataFeedId,
                                             feedStamp:feedStamp, documentList:documents]).call()
-                                    if (threadEci.messageFacade.hasError()) {
-                                        logger.error("Error calling DataFeed ${dataFeedAndDocument.dataFeedId} service ${serviceName}: ${threadEci.messageFacade.getErrorsString()}")
-                                        threadEci.messageFacade.clearErrors()
-                                    }
                                 } catch (Throwable t) {
                                     logger.error("Error calling DataFeed ${dataFeedAndDocument.dataFeedId} service ${serviceName}", t)
                                 }
@@ -823,10 +819,6 @@ class EntityDataFeed {
                                     .parameters([dataFeedId:dataFeedAndDocument.dataFeedId, feedStamp:feedStamp,
                                             dataDocumentId:dataDocumentId, documentId:documentId]).call()
                             servicesCalled.add(serviceName)
-                            if (threadEci.messageFacade.hasError()) {
-                                logger.error("Error calling DataFeed ${dataFeedAndDocument.dataFeedId} delete service ${serviceName} for entity ${entityName} PK ${deleteEv.getPrimaryKeys()}: ${threadEci.messageFacade.getErrorsString()}")
-                                threadEci.messageFacade.clearErrors()
-                            }
                         } catch (Throwable t) {
                             logger.error("Error calling DataFeed ${dataFeedAndDocument.dataFeedId} delete service ${serviceName} for entity ${entityName} PK ${deleteEv.getPrimaryKeys()}", t)
                         }

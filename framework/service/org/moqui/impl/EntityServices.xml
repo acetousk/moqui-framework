@@ -182,16 +182,6 @@ along with this software (see the LICENSE.md file). If not, see
                 </if>
 
                 <script><![CDATA[
-                    def nm = ec.makeNotificationMessage()
-                    nm.topic((String) document._type).message((Map<String, Object>) document).userIds((Set) userIdSet)
-                    def notificationTopic = nm.getNotificationTopic()
-                    if (notificationTopic == null && document._type) {
-                        def dataDocument = ec.entity.find("moqui.entity.document.DataDocument").condition("dataDocumentId", document._type).useCache(true).one()
-                        if (dataDocument.documentTitle) nm.title(dataDocument.documentTitle)
-                        def dataDocumentLinks = dataDocument.findRelated("links", null, null, true, false)
-                        if (dataDocumentLinks) nm.link(dataDocumentLinks[0].linkUrl)
-                    }
-                    nm.send()
                 ]]></script>
             </iterate>
         </actions>

@@ -2349,7 +2349,6 @@ class ScreenForm {
                 .condition("formListFindId", formListFindId).useCache(false).one() : null
 
         if (cs.containsKey("DeleteFind")) {
-            if (flf == null) { ec.messageFacade.addError("Saved find with ID ${formListFindId} not found, not deleting"); return null }
 
             // delete FormListFindUserDefault that reference this formListFindId for this user
             ec.entity.find("moqui.screen.form.FormListFindUserDefault").condition("userId", userId)
@@ -2379,15 +2378,10 @@ class ScreenForm {
         }
 
         if (cs.containsKey("ScheduleFind")) {
-            if (flf == null) { ec.messageFacade.addError("Saved find with ID ${formListFindId} not found, not scheduling"); return null }
-            if (!userId) { ec.messageFacade.addError("No user logged in, not scheduling saved find with ID ${formListFindId}"); return formListFindId }
 
             String renderMode = (String) cs.getByString("renderMode") ?: "csv"
             String screenPath = (String) cs.getByString("screenPath")
             String cronSelected = (String) cs.getByString("cronSelected")
-
-            if (!screenPath) { ec.messageFacade.addError("Screen Path not specified, not scheduling saved find with ID ${formListFindId}"); return formListFindId }
-            if (!cronSelected) { ec.messageFacade.addError("Cron Schedule not specified, not scheduling saved find with ID ${formListFindId}"); return formListFindId }
 
             String emailSubject = flf.getString("description") + ' ${ec.l10n.format(ec.user.nowTimestamp, null)}'
 
@@ -2395,8 +2389,6 @@ class ScreenForm {
                     noResultsAbort:"Y", cronExpression:cronSelected, emailTemplateId:"SCREEN_RENDER", emailSubject:emailSubject,
                     userId:userId] as Map<String, Object>
             ec.serviceFacade.sync().name("create#moqui.screen.ScreenScheduled").parameters(screenScheduledMap).disableAuthz().call()
-
-            ec.messageFacade.addMessage("Saved find scheduled to send by email")
 
             return formListFindId
         }
@@ -2408,7 +2400,6 @@ class ScreenForm {
         }
 
         String formLocation = cs.getByString("formLocation")
-        if (!formLocation) { ec.message.addError("No form location specified, cannot process saved find"); return null; }
 
         // example location: component://SimpleScreens/screen/SimpleScreens/Accounting/Reports/InvoiceAgingDetail.xml.form_list$InvoiceAgingList
         // example location with extension: component://SimpleScreens/screen/SimpleScreens/Accounting/Reports/InvoiceAgingDetail.xml.form_list$InvoiceAgingList#123456
@@ -2425,18 +2416,14 @@ class ScreenForm {
 
         // separate formName and screenLocation
         int lastDotIndex = formLocationTemp.lastIndexOf(".")
-        if (lastDotIndex < 0) { ec.message.addError("Form location invalid, cannot process saved find"); return null; }
         String screenLocation = formLocationTemp.substring(0, lastDotIndex)
         int lastDollarIndex = formLocationTemp.lastIndexOf('$')
-        if (lastDollarIndex < 0) { ec.message.addError("Form location invalid, cannot process saved find"); return null; }
         String formName = formLocationTemp.substring(lastDollarIndex + 1)
 
         ScreenDefinition screenDef = ec.screenFacade.getScreenDefinition(screenLocation)
-        if (screenDef == null) { ec.message.addError("Screen not found at ${screenLocation}, cannot process saved find"); return null; }
 
         // MakeDefault needs the screenLocation, do here just after validated
         if (cs.containsKey("MakeDefault")) {
-            if (flf == null) { ec.messageFacade.addError("Saved find with ID ${formListFindId} not found, not making default"); return null }
             // FUTURE: consider some sort of check to make sure associated with user or a group user is in? is it a big deal?
 
             EntityValue curUserDefault = ec.entityFacade.find("moqui.screen.form.FormListFindUserDefault")
@@ -2453,7 +2440,6 @@ class ScreenForm {
         }
 
         ScreenForm screenForm = screenDef.getForm(formName)
-        if (screenForm == null) { ec.message.addError("Form ${formName} not found in screen at ${screenLocation}, cannot process saved find"); return null; }
         FormInstance formInstance = screenForm.getFormInstance()
 
         String formConfigId = formInstance.getUserActiveFormConfigId(ec)
@@ -2468,7 +2454,6 @@ class ScreenForm {
         if (flf != null) {
             // make sure the FormListFind.formLocation matches the current formLocation
             if (!formLocation.equals(flf.getNoCheckSimple("formLocation"))) {
-                ec.message.addError("Specified form location did not match form on Saved Find ${formListFindId}, not updating")
                 return null
             }
 
@@ -2480,7 +2465,6 @@ class ScreenForm {
                         .condition("userGroupId", EntityCondition.IN, ec.user.userGroupIdSet)
                         .condition("formListFindId", formListFindId).useCache(false).count()
                 if (groupCount == 0L) {
-                    ec.message.addError("You are not associated with Saved Find ${formListFindId}, cannot update")
                     return formListFindId
                 }
                 // is associated with a group but we want to only update for a user, so treat this as if it is not based on existing
@@ -2554,7 +2538,6 @@ class ScreenForm {
         String userId = ec.userFacade.userId
         ContextStack cs = ec.contextStack
         String formLocation = cs.get("formLocation")
-        if (!formLocation) { ec.messageFacade.addError("No form location specified, cannot save form configuration"); return; }
 
         // get formConfigId
         String formConfigId = cs.get("formConfigId")

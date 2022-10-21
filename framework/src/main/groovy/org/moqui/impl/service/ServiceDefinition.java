@@ -475,8 +475,6 @@ public class ServiceDefinition {
                     }
                 }
                 // if required and still empty (nothing from default), complain
-                if (parameterIsEmpty && validate && parameterInfo.required)
-                    eci.messageFacade.addValidationError(null, namePrefix + parameterName, serviceName, eci.getL10n().localize("Field cannot be empty"), null);
             }
             // NOTE: not else because parameterIsEmpty may be changed
             if (!parameterIsEmpty) {
@@ -524,7 +522,6 @@ public class ServiceDefinition {
                                 logger.error("Error in validation", t);
                                 Map<String, Object> map = new HashMap<>(3);
                                 map.put("parameterValue", parameterValue); map.put("valNode", valNode); map.put("t", t);
-                                eci.getMessage().addValidationError(null, parameterName, serviceName, eci.getResource().expand("Value entered failed ${valNode.name} validation: ${t.message}", "", map), null);
                             }
                         }
                     }
@@ -566,8 +563,6 @@ public class ServiceDefinition {
         } else if ("matches".equals(validateName)) {
             if (!(pv instanceof CharSequence)) {
                 Map<String, Object> map = new HashMap<>(1); map.put("pv", pv);
-                eci.getMessage().addValidationError(null, parameterName, serviceName,
-                        eci.getResource().expand("Value entered (${pv}) is not a string, cannot do matches validation.", "", map), null);
                 return false;
             }
 
@@ -577,7 +572,6 @@ public class ServiceDefinition {
                 // a message attribute should always be there, but just in case we'll have a default
                 final String message = valNode.attribute("message");
                 Map<String, Object> map = new HashMap<>(2); map.put("pv", pv); map.put("regexp", regexp);
-                eci.getMessage().addValidationError(null, parameterName, serviceName, eci.getResource().expand(message != null && !message.isEmpty() ? message : "Value entered (${pv}) did not match expression: ${regexp}", "", map), null);
                 return false;
             }
 
@@ -593,16 +587,12 @@ public class ServiceDefinition {
                     if (bdVal.compareTo(min) <= 0) {
                         Map<String, Object> map = new HashMap<>(2); map.put("pv", pv); map.put("min", min);
                         if (message == null || message.isEmpty()) message = "Value entered (${pv}) is less than or equal to ${min}, must be greater than.";
-                        eci.getMessage().addValidationError(null, parameterName, serviceName,
-                                eci.getResource().expand(message, "", map), null);
                         return false;
                     }
                 } else {
                     if (bdVal.compareTo(min) < 0) {
                         Map<String, Object> map = new HashMap<>(2); map.put("pv", pv); map.put("min", min);
                         if (message == null || message.isEmpty()) message = "Value entered (${pv}) is less than ${min} and must be greater than or equal to.";
-                        eci.getMessage().addValidationError(null, parameterName, serviceName,
-                                eci.getResource().expand(message, "", map), null);
                         return false;
                     }
                 }
@@ -615,8 +605,6 @@ public class ServiceDefinition {
                     if (bdVal.compareTo(max) > 0) {
                         Map<String, Object> map = new HashMap<>(2); map.put("pv", pv); map.put("max", max);
                         if (message == null || message.isEmpty()) message = "Value entered (${pv}) is greater than ${max} and must be less than or equal to.";
-                        eci.getMessage().addValidationError(null, parameterName, serviceName,
-                                eci.getResource().expand(message, "", map), null);
                         return false;
                     }
 
@@ -624,8 +612,6 @@ public class ServiceDefinition {
                     if (bdVal.compareTo(max) >= 0) {
                         Map<String, Object> map = new HashMap<>(2); map.put("pv", pv); map.put("max", max);
                         if (message == null || message.isEmpty()) message = "Value entered (${pv}) is greater than or equal to ${max} and must be less than.";
-                        eci.getMessage().addValidationError(null, parameterName, serviceName,
-                                eci.getResource().expand(message, "", map), null);
                         return false;
                     }
                 }
@@ -639,7 +625,6 @@ public class ServiceDefinition {
                 if (logger.isTraceEnabled())
                     logger.trace("Adding error message for NumberFormatException for BigInteger parse: " + e.toString());
                 Map<String, Object> map = new HashMap<>(1); map.put("pv", pv);
-                eci.getMessage().addValidationError(null, parameterName, serviceName, eci.getResource().expand("Value [${pv}] is not a whole (integer) number.", "", map), null);
                 return false;
             }
 
@@ -652,7 +637,6 @@ public class ServiceDefinition {
                     logger.trace("Adding error message for NumberFormatException for BigDecimal parse: " + e.toString());
                 Map<String, Object> map = new HashMap<>(1);
                 map.put("pv", pv);
-                eci.getMessage().addValidationError(null, parameterName, serviceName, eci.getResource().expand("Value [${pv}] is not a decimal number.", "", map), null);
                 return false;
             }
 
@@ -664,7 +648,6 @@ public class ServiceDefinition {
                 int min = Integer.parseInt(minStr);
                 if (str.length() < min) {
                     Map<String, Object> map = new HashMap<>(3); map.put("pv", pv); map.put("str", str); map.put("minStr", minStr);
-                    eci.getMessage().addValidationError(null, parameterName, serviceName, eci.getResource().expand("Value entered (${pv}), length ${str.length()}, is shorter than ${minStr} characters.", "", map), null);
                     return false;
                 }
 
@@ -675,7 +658,6 @@ public class ServiceDefinition {
                 int max = Integer.parseInt(maxStr);
                 if (str.length() > max) {
                     Map<String, Object> map = new HashMap<>(3); map.put("pv", pv); map.put("str", str); map.put("maxStr", maxStr);
-                    eci.getMessage().addValidationError(null, parameterName, serviceName, eci.getResource().expand("Value entered (${pv}), length ${str.length()}, is longer than ${maxStr} characters.", "", map), null);
                     return false;
                 }
             }
@@ -685,7 +667,6 @@ public class ServiceDefinition {
             String str = pv.toString();
             if (!emailValidator.isValid(str)) {
                 Map<String, Object> map = new HashMap<>(1); map.put("str", str);
-                eci.getMessage().addValidationError(null, parameterName, serviceName, eci.getResource().expand("Value entered (${str}) is not a valid email address.", "", map), null);
                 return false;
             }
 
@@ -694,7 +675,6 @@ public class ServiceDefinition {
             String str = pv.toString();
             if (!urlValidator.isValid(str)) {
                 Map<String, Object> map = new HashMap<>(1); map.put("str", str);
-                eci.getMessage().addValidationError(null, parameterName, serviceName, eci.getResource().expand("Value entered (${str}) is not a valid URL.", "", map), null);
                 return false;
             }
 
@@ -704,7 +684,6 @@ public class ServiceDefinition {
             for (char c : str.toCharArray()) {
                 if (!Character.isLetter(c)) {
                     Map<String, Object> map = new HashMap<>(1); map.put("str", str);
-                    eci.getMessage().addValidationError(null, parameterName, serviceName, eci.getResource().expand("Value entered (${str}) must have only letters.", "", map), null);
                     return false;
                 }
             }
@@ -715,7 +694,6 @@ public class ServiceDefinition {
             for (char c : str.toCharArray()) {
                 if (!Character.isDigit(c)) {
                     Map<String, Object> map = new HashMap<>(1); map.put("str", str);
-                    eci.getMessage().addValidationError(null, parameterName, serviceName, eci.getResource().expand("Value [${str}] must have only digits.", "", map), null);
                     return false;
                 }
             }
@@ -744,7 +722,6 @@ public class ServiceDefinition {
                 }
                 if (cal != null && cal.compareTo(compareCal) < 0) {
                     Map<String, Object> map = new HashMap<>(2); map.put("pv", pv); map.put("after", after);
-                    eci.getMessage().addValidationError(null, parameterName, serviceName, eci.getResource().expand("Value entered (${pv}) is before ${after}.", "", map), null);
                     return false;
                 }
             }
@@ -760,7 +737,6 @@ public class ServiceDefinition {
                 }
                 if (cal != null && cal.compareTo(compareCal) > 0) {
                     Map<String, Object> map = new HashMap<>(1); map.put("pv", pv);
-                    eci.getMessage().addValidationError(null, parameterName, serviceName, eci.getResource().expand("Value entered (${pv}) is after ${before}.", "", map), null);
                     return false;
                 }
             }
@@ -779,7 +755,6 @@ public class ServiceDefinition {
             String str = pv.toString();
             if (!ccv.isValid(str)) {
                 Map<String, Object> map = new HashMap<>(1); map.put("str", str);
-                eci.getMessage().addValidationError(null, parameterName, serviceName, eci.getResource().expand("Value entered is not a valid credit card number.", "", map), null);
                 return false;
             }
 

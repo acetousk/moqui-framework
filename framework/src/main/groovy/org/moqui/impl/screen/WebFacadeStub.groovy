@@ -14,11 +14,10 @@
 package org.moqui.impl.screen
 
 import groovy.transform.CompileStatic
-import org.moqui.impl.context.ContextJavaUtil
 import org.moqui.util.ContextStack
 import org.moqui.context.ValidationError
 import org.moqui.context.WebFacade
-import org.moqui.context.MessageFacade.MessageInfo
+
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
 import org.moqui.impl.context.WebFacadeImpl
@@ -127,8 +126,6 @@ class WebFacadeStub implements WebFacade {
     }
 
     @Override Map<String, Object> getErrorParameters() { return null }
-    @Override List<MessageInfo> getSavedMessages() { return null }
-    @Override List<MessageInfo> getSavedPublicMessages() { return null }
     @Override List<String> getSavedErrors() { return null }
     @Override List<ValidationError> getSavedValidationErrors() { return null }
     @Override List<ValidationError> getFieldValidationErrors(String fieldName) { return null }

@@ -90,12 +90,6 @@ public class ServiceJsonRpcDispatcher {
         if (errorMessage == null) {
             try {
                 result = eci.service.sync().name(sd.serviceName).parameters((Map) paramsObj).call()
-                if (eci.getMessage().hasError()) {
-                    logger.warn("Got errors in JSON-RPC call to service [${sd.serviceName}]: ${eci.message.errorsString}")
-                    errorMessage = eci.message.errorsString
-                    // could use whatever code here as long as it is not -32768 to -32000, this was chosen somewhat arbitrarily
-                    errorCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-                }
             } catch (Exception e) {
                 logger.error("Error calling service ${sd.serviceName} from JSON-RPC request: ${e.toString()}", e)
                 errorMessage = e.getMessage()

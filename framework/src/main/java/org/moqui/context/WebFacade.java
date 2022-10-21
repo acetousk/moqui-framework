@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -21,8 +21,6 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import org.moqui.context.MessageFacade.MessageInfo;
 
 /** Web Facade for access to HTTP Servlet objects and information. */
 @SuppressWarnings("unused")
@@ -63,8 +61,6 @@ public interface WebFacade {
     String getWebappRootUrl(boolean requireFullUrl, Boolean useEncryption);
 
     Map<String, Object> getErrorParameters();
-    List<MessageInfo> getSavedMessages();
-    List<MessageInfo> getSavedPublicMessages();
     List<String> getSavedErrors();
     List<ValidationError> getSavedValidationErrors();
     /** Get saved (in session) and current MessageFacade validation errors for the given field name, if null returns all errors; if no errors found returns null */

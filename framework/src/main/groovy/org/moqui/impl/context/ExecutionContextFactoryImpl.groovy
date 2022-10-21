@@ -42,7 +42,6 @@ import org.moqui.impl.context.ContextJavaUtil.ScheduledRunnableInfo
 import org.moqui.impl.entity.EntityFacadeImpl
 import org.moqui.impl.screen.ScreenFacadeImpl
 import org.moqui.impl.service.ServiceFacadeImpl
-import org.moqui.impl.webapp.NotificationWebSocketListener
 import org.moqui.screen.ScreenFacade
 import org.moqui.service.ServiceFacade
 import org.moqui.util.MNode
@@ -106,7 +105,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     protected final LinkedHashMap<String, ToolFactory> toolFactoryMap = new LinkedHashMap<>()
 
     protected final Map<String, WebappInfo> webappInfoMap = new HashMap<>()
-    protected final List<NotificationMessageListener> registeredNotificationMessageListeners = []
 
 
     protected String skipStatsCond
@@ -120,8 +118,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     protected ServerContainer internalServerContainer = null
 
     /** Notification Message Topic (for distributed notifications) */
-    private SimpleTopic<NotificationMessageImpl> notificationMessageTopic = null
-    private NotificationWebSocketListener notificationWebSocketListener = new NotificationWebSocketListener()
 
     protected ArrayList<LogEventSubscriber> logEventSubscribers = new ArrayList<>()
 
@@ -533,7 +529,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
 
 
         // register notificationWebSocketListener
-        registerNotificationMessageListener(notificationWebSocketListener)
 
         // Load ToolFactory implementations from tools.tool-factory elements, run preFacadeInit() methods
         ArrayList<Map<String, String>> toolFactoryAttrsList = new ArrayList<>()
@@ -580,14 +575,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         }
 
         // Notification Message Topic
-        String notificationTopicFactory = confXmlRoot.first("tools").attribute("notification-topic-factory")
-        if (notificationTopicFactory) {
-            try {
-                notificationMessageTopic = (SimpleTopic<NotificationMessageImpl>) getTool(notificationTopicFactory, SimpleTopic.class)
-            } catch (Throwable t) {
-                logger.error("Error initializing notification-topic-factory ${notificationTopicFactory}", t)
-            }
-        }
 
         // schedule DeferredHitInfoFlush (every 5 seconds, after 10 second init delay)
         DeferredHitInfoFlush dhif = new DeferredHitInfoFlush(this)
@@ -757,7 +744,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         } catch (Throwable t) { logger.error("Error in workerPool/scheduledExecutor shutdown", t) }
 
         // stop NotificationMessageListeners
-        for (NotificationMessageListener nml in registeredNotificationMessageListeners) nml.destroy()
 
         // Run destroy() in ToolFactory implementations from tools.tool-factory elements, in reverse order
         ArrayList<ToolFactory> toolFactoryList = new ArrayList<>(toolFactoryMap.values())
@@ -846,37 +832,12 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
 
     InetAddress getLocalhostAddress() { return localhostAddress }
 
-    @Override void registerNotificationMessageListener(@Nonnull NotificationMessageListener nml) {
-        nml.init(this)
-        registeredNotificationMessageListeners.add(nml)
-    }
     @Override void registerLogEventSubscriber(@Nonnull LogEventSubscriber subscriber) { logEventSubscribers.add(subscriber) }
     @Override List<LogEventSubscriber> getLogEventSubscribers() { return Collections.unmodifiableList(logEventSubscribers) }
 
     /** Called by NotificationMessageImpl.send(), send to topic (possibly distributed) */
-    void sendNotificationMessageToTopic(NotificationMessageImpl nmi) {
-        if (notificationMessageTopic != null) {
-            // send it to the topic, this will call notifyNotificationMessageListeners(nmi)
-            notificationMessageTopic.publish(nmi)
-            // logger.warn("Sent nmi to distributed topic, topic=${nmi.topic}")
-        } else {
-            // run it locally
-            notifyNotificationMessageListeners(nmi)
-        }
-    }
+
     /** This is called when message received from topic (possibly distributed) */
-    void notifyNotificationMessageListeners(NotificationMessageImpl nmi) {
-        // process notifications in the worker thread pool
-        ExecutionContextImpl.ThreadPoolRunnable runnable = new ExecutionContextImpl.ThreadPoolRunnable(this, {
-            int nmlSize = registeredNotificationMessageListeners.size()
-            for (int i = 0; i < nmlSize; i++) {
-                NotificationMessageListener nml = (NotificationMessageListener) registeredNotificationMessageListeners.get(i)
-                nml.onMessage(nmi)
-            }
-        })
-        workerPool.execute(runnable)
-    }
-    NotificationWebSocketListener getNotificationWebSocketListener() { return notificationWebSocketListener }
 
     org.apache.shiro.mgt.SecurityManager getSecurityManager() {
         if (internalSecurityManager != null) return internalSecurityManager

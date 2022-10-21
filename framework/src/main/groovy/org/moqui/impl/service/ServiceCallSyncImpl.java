@@ -104,7 +104,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                         Map<String, Object> singleResult = callSingle(currentParms, sd, eci);
                         if (singleResult != null) result.putAll(singleResult);
                         // ... and break if there are any errors
-                        if (eci.messageFacade.hasError()) break;
                     }
 
                     return result;
@@ -113,11 +112,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                     throw t;
                 } finally {
                     if (eci.transactionFacade.isTransactionInPlace()) {
-                        if (eci.messageFacade.hasError()) {
-                            eci.transactionFacade.rollback(beganTransaction, "Error message found running service " + serviceName + " in multi mode", null);
-                        } else {
-                            eci.transactionFacade.commit(beganTransaction);
-                        }
+                        eci.transactionFacade.commit(beganTransaction);
                     }
                 }
             } else {
@@ -128,22 +123,11 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
     }
 
     private Map<String, Object> callSingle(Map<String, Object> currentParameters, ServiceDefinition sd, final ExecutionContextImpl eci) {
-        if (ignorePreviousError) eci.messageFacade.pushErrors();
         // NOTE: checking this here because service won't generally run after input validation, etc anyway
-        if (eci.messageFacade.hasError()) {
-            logger.warn("Found error(s) before service " + serviceName + ", so not running service. Errors: " + eci.messageFacade.getErrorsString());
-            return null;
-        }
 
         TransactionFacadeImpl tf = eci.transactionFacade;
         int transactionStatus = tf.getStatus();
         if (!requireNewTransaction && transactionStatus == Status.STATUS_MARKED_ROLLBACK) {
-            logger.warn("Transaction marked for rollback, not running service " + serviceName + ". Errors: [" + eci.messageFacade.getErrorsString() + "] Artifact stack: ");
-            if (ignorePreviousError) {
-                eci.messageFacade.popErrors();
-            } else if (!eci.messageFacade.hasError()) {
-                eci.messageFacade.addError("Transaction marked for rollback, not running service " + serviceName);
-            }
             return null;
         }
 
@@ -170,25 +154,11 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         // in-parameter validation
         if (hasSecaRules) ServiceFacadeImpl.runSecaRules(serviceNameNoHash, currentParameters, null, "pre-validate", secaRules, eci);
         if (sd != null) {
-            if (softValidate) eci.messageFacade.pushErrors();
             currentParameters = sd.convertValidateCleanParameters(currentParameters, eci);
             if (softValidate) {
-                if (eci.messageFacade.hasError()) {
-                    eci.messageFacade.moveErrorsToDangerMessages();
-                    eci.messageFacade.popErrors();
-                    return null;
-                }
-                eci.messageFacade.popErrors();
             }
         }
         // if error(s) in parameters, return now with no results
-        if (eci.messageFacade.hasError()) {
-            StringBuilder errMsg = new StringBuilder("Found error(s) when validating input parameters for service " + serviceName + ", so not running service. Errors: " + eci.messageFacade.getErrorsString() + "; the artifact stack is:\n");
-
-            logger.warn(errMsg.toString());
-            if (ignorePreviousError) eci.messageFacade.popErrors();
-            return null;
-        }
 
         boolean userLoggedIn = false;
 
@@ -200,7 +170,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         }
 
         if (sd != null && "true".equals(sd.authenticate) && eci.userFacade.getUsername() == null && !eci.userFacade.getLoggedInAnonymous()) {
-            if (ignorePreviousError) eci.messageFacade.popErrors();
             throw new AuthenticationRequiredException("User must be logged in to call service " + serviceName);
         }
 
@@ -209,24 +178,20 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 try {
                     return runImplicitEntityAuto(currentParameters, secaRules, eci);
                 } finally {
-                    if (ignorePreviousError) eci.messageFacade.popErrors();
                 }
             } else {
                 logger.info("No service with name " + serviceName + ", isEntityAutoPattern=" + isEntityAutoPattern() +
                         ", path=" + path + ", verb=" + verb + ", noun=" + noun + ", noun is entity? " + eci.getEntityFacade().isEntityDefined(noun));
-                if (ignorePreviousError) eci.messageFacade.popErrors();
                 throw new ServiceException("Could not find service with name " + serviceName);
             }
         }
 
         if ("interface".equals(serviceType)) {
-            if (ignorePreviousError) eci.messageFacade.popErrors();
             throw new ServiceException("Service " + serviceName + " is an interface and cannot be run");
         }
 
         ServiceRunner serviceRunner = sd.serviceRunner;
         if (serviceRunner == null) {
-            if (ignorePreviousError) eci.messageFacade.popErrors();
             throw new ServiceException("Could not find service runner for type " + serviceType + " for service " + serviceName);
         }
 
@@ -239,12 +204,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         //     the service on the stack)
 
         // if error in auth or for other reasons, return now with no results
-        if (eci.messageFacade.hasError()) {
-            if (ignorePreviousError) eci.messageFacade.popErrors();
-            logger.warn("Found error(s) when checking authc for service " + serviceName + ", so not running service. Errors: " +
-                    eci.messageFacade.getErrorsString() + "; the artifact stack is:\n ");
-            return null;
-        }
 
         // must be done after the artifact execution push so that AEII object to set anonymous authorized is in place
         boolean loggedInAnonymous = false;
@@ -294,12 +253,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 if (traceEnabled) logger.trace("Calling service " + serviceName + " pre-call input: " + currentParameters);
 
                 // if error(s) in pre-service or anything else before actual run then return now with no results
-                if (eci.messageFacade.hasError()) {
-                    StringBuilder errMsg = new StringBuilder("Found error(s) before running service " + serviceName + " so not running. Errors: " + eci.messageFacade.getErrorsString() + "; the artifact stack is:\n");
-                    logger.warn(errMsg.toString());
-                    if (ignorePreviousError) eci.messageFacade.popErrors();
-                    return null;
-                }
 
                 try {
                     // run the service through the ServiceRunner
@@ -314,10 +267,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 // registered callbacks, no Throwable
                 sfi.callRegisteredCallbacks(serviceName, currentParameters, result);
                 // if we got any errors added to the message list in the service, rollback for that too
-                if (eci.messageFacade.hasError()) {
-                    tf.rollback(beganTransaction, "Error running service " + serviceName + " (message): " + eci.messageFacade.getErrorsString(), null);
-                    transactionStatus = tf.getStatus();
-                }
 
                 if (traceEnabled) logger.trace("Calling service " + serviceName + " result: " + result);
             } catch (Throwable t) {
@@ -329,10 +278,8 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 transactionStatus = tf.getStatus();
                 logger.warn("Error running service " + serviceName + " (Throwable) Artifact stack: ", t);
                 // add all exception messages to the error messages list
-                eci.messageFacade.addError(t.getMessage());
                 Throwable parent = t.getCause();
                 while (parent != null) {
-                    eci.messageFacade.addError(parent.getMessage());
                     parent = parent.getCause();
                 }
             } finally {
@@ -342,8 +289,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                         if (transactionStatus == Status.STATUS_ACTIVE) {
                             tf.commit();
                         } else if (transactionStatus == Status.STATUS_MARKED_ROLLBACK) {
-                            if (!eci.messageFacade.hasError())
-                                eci.messageFacade.addError("Cannot commit transaction for service " + serviceName + ", marked rollback-only");
                             // will rollback based on marked rollback only
                             tf.commit();
                         }
@@ -357,10 +302,8 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 } catch (Throwable t) {
                     logger.warn("Error committing transaction for service " + serviceName, t);
                     // add all exception messages to the error messages list
-                    eci.messageFacade.addError(t.getMessage());
                     Throwable parent = t.getCause();
                     while (parent != null) {
-                        eci.messageFacade.addError(parent.getMessage());
                         parent = parent.getCause();
                     }
 
@@ -390,11 +333,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
 
             // all done so pop the artifact info
             // restore error messages if needed
-            if (ignorePreviousError) eci.messageFacade.popErrors();
 
-            if (traceEnabled) logger.trace("Finished call to service " + serviceName +
-                    (eci.messageFacade.hasError() ? " with " + (eci.messageFacade.getErrors().size() +
-                            eci.messageFacade.getValidationErrors().size()) + " error messages" : ", was successful"));
         }
 
     }
@@ -560,12 +499,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 if (hasSecaRules) ServiceFacadeImpl.runSecaRules(serviceNameNoHash, currentParameters, null, "pre-service", secaRules, eci);
 
                 // if error(s) in pre-service or anything else before actual run then return now with no results
-                if (eci.messageFacade.hasError()) {
-                    StringBuilder errMsg = new StringBuilder("Found error(s) before running service " + serviceName + " so not running. Errors: " + eci.messageFacade.getErrorsString() + "; the artifact stack is:\n");
-                    logger.warn(errMsg.toString());
-                    if (ignorePreviousError) eci.messageFacade.popErrors();
-                    return null;
-                }
 
                 try {
                     EntityDefinition ed = eci.getEntityFacade().getEntityDefinition(noun);
@@ -589,10 +522,8 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 logger.error("Error running service " + serviceName, t);
                 tf.rollback(beganTransaction, "Error running service " + serviceName + " (Throwable)", t);
                 // add all exception messages to the error messages list
-                eci.messageFacade.addError(t.getMessage());
                 Throwable parent = t.getCause();
                 while (parent != null) {
-                    eci.messageFacade.addError(parent.getMessage());
                     parent = parent.getCause();
                 }
             } finally {
@@ -601,10 +532,8 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 } catch (Throwable t) {
                     logger.warn("Error committing transaction for entity-auto service " + serviceName, t);
                     // add all exception messages to the error messages list
-                    eci.messageFacade.addError(t.getMessage());
                     Throwable parent = t.getCause();
                     while (parent != null) {
-                        eci.messageFacade.addError(parent.getMessage());
                         parent = parent.getCause();
                     }
                 }

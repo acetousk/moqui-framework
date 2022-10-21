@@ -19,7 +19,6 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVRecord
 import org.moqui.BaseException
-import org.moqui.context.NotificationMessage
 import org.moqui.impl.context.TransactionFacadeImpl
 import org.moqui.resource.ResourceReference
 import org.moqui.context.TransactionFacade
@@ -162,7 +161,6 @@ class EntityDataLoaderImpl implements EntityDataLoader {
         List<String> messageList = civh.messageList
         if (messageList != null && messageList.size() > 0) {
             ExecutionContextImpl eci = this.efi.ecfi.getEci()
-            for (String message in messageList) eci.messageFacade.addMessage(message, NotificationMessage.info)
         }
 
         return civh.getDiffInfoList()
@@ -420,10 +418,6 @@ class EntityDataLoaderImpl implements EntityDataLoader {
             tf.commit(beganTransaction)
 
             ExecutionContextImpl ec = efi.ecfi.getEci()
-            if (ec.messageFacade.hasError()) {
-                logger.error("Error messages loading entity data: " + ec.messageFacade.getErrorsString())
-                ec.messageFacade.clearErrors()
-            }
         }
     }
 
@@ -575,11 +569,6 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                 // no need to call the store auto service, use storeEntity directly:
                 // Map results = sfi.sync().name('store', entityName).parameters(value).call()
                 if (logger.isTraceEnabled()) logger.trace("Called store service for entity [${entityName}] in data load, results: ${results}")
-                if (ec.getMessage().hasError()) {
-                    String errStr = ec.getMessage().getErrorsString()
-                    ec.getMessage().clearErrors()
-                    throw new BaseException("Error handling data load plain Map: ${errStr}")
-                }
             }
         }
         void handleService(ServiceCallSync scs, String location) {
@@ -593,11 +582,6 @@ class EntityDataLoaderImpl implements EntityDataLoader {
             String msg = "Called service ${scs.getServiceName()} in data load, results: ${results}"
             logger.info(msg)
             if (messageList != null) messageList.add(msg)
-            if (ec.getMessage().hasError()) {
-                String errStr = ec.getMessage().getErrorsString()
-                ec.getMessage().clearErrors()
-                throw new BaseException("Error handling data load service call: ${errStr}")
-            }
         }
     }
     static class ListValueHandler extends ValueHandler {

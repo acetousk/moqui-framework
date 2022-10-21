@@ -176,7 +176,6 @@ class UserFacadeImpl implements UserFacade {
             String authPassword = secureParameters.authPassword
             this.loginUser(authUsername, authPassword)
         }
-        if (eci.messageFacade.hasError()) request.setAttribute("moqui.login.error", "true")
 
         // NOTE: only tracking Visitor and Visit if there is a WebFacadeImpl in place
         if (eci.webImpl != null && !this.visitId && !eci.getSkipStats()) {
@@ -626,11 +625,9 @@ class UserFacadeImpl implements UserFacade {
 
     @Override boolean loginUser(String username, String password) {
         if (username == null || username.isEmpty()) {
-            eci.messageFacade.addError(eci.l10n.localize("No username specified"))
             return false
         }
         if (password == null || password.isEmpty()) {
-            eci.messageFacade.addError(eci.l10n.localize("No password specified"))
             return false
         }
 
@@ -645,7 +642,6 @@ class UserFacadeImpl implements UserFacade {
     boolean internalLoginUser(String username) { return internalLoginUser(username, true) }
     boolean internalLoginUser(String username, boolean saveHistory) {
         if (username == null || username.isEmpty()) {
-            eci.message.addError(eci.l10n.localize("No username specified"))
             return false
         }
 
@@ -686,20 +682,17 @@ class UserFacadeImpl implements UserFacade {
                 eci.web.sessionAttributes.put("moquiPreAuthcUsername", username)
                 eci.web.sessionAttributes.put("moquiPasswordChangeRequired", "true")
             }
-            eci.messageFacade.addError(ae.message)
             return false
         } catch (ExpiredCredentialsException ae) {
             if (eci.web != null) {
                 eci.web.sessionAttributes.put("moquiPreAuthcUsername", username)
                 eci.web.sessionAttributes.put("moquiExpiredCredentials", "true")
             }
-            eci.messageFacade.addError(ae.message)
             return false
         } catch (AuthenticationException ae) {
             // others to consider handling differently (these all inherit from AuthenticationException):
             //     UnknownAccountException, IncorrectCredentialsException, ExpiredCredentialsException,
             //     CredentialsException, LockedAccountException, DisabledAccountException, ExcessiveAttemptsException
-            eci.messageFacade.addError(ae.message)
             return false
         }
         return true
@@ -741,7 +734,6 @@ class UserFacadeImpl implements UserFacade {
 
     @Override boolean loginUserKey(String loginKey) {
         if (!loginKey) {
-            eci.message.addError(eci.l10n.localize("No login key specified"))
             return false
         }
 
@@ -752,7 +744,6 @@ class UserFacadeImpl implements UserFacade {
 
         // see if we found a record for the login key
         if (userLoginKey == null) {
-            eci.message.addError(eci.l10n.localize("Login key not valid"))
             return false
         }
 
@@ -760,7 +751,6 @@ class UserFacadeImpl implements UserFacade {
         Timestamp nowDate = getNowTimestamp()
         Timestamp thruDate = userLoginKey.getTimestamp("thruDate")
         if (thruDate != (Timestamp) null && nowDate > thruDate) {
-            eci.message.addError(eci.l10n.localize("Login key expired"))
             return false
         }
 

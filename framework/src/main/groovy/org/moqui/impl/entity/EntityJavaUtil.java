@@ -462,7 +462,6 @@ public class EntityJavaUtil {
                                 if (destIsEntityValueBase) destEvb.putKnownField(fi, converted);
                                 else dest.put(fieldName, converted);
                             } catch (BaseException be) {
-                                eci.messageFacade.addValidationError(null, fieldName, null, be.getMessage(), be);
                             }
                         } else {
                             if (destIsEntityValueBase) destEvb.putKnownField(fi, value);
@@ -522,7 +521,6 @@ public class EntityJavaUtil {
                                 Object converted = fi.convertFromString(value.toString(), eci.l10nFacade);
                                 dest.putKnownField(fi, converted);
                             } catch (BaseException be) {
-                                eci.messageFacade.addValidationError(null, fieldName, null, be.getMessage(), be);
                             }
                         } else {
                             dest.putKnownField(fi, value);

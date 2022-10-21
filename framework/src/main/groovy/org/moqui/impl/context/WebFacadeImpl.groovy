@@ -24,7 +24,7 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload
 import org.apache.commons.io.IOUtils
 import org.apache.commons.io.output.StringBuilderWriter
 import org.moqui.context.*
-import org.moqui.context.MessageFacade.MessageInfo
+
 import org.moqui.entity.EntityNotFoundException
 import org.moqui.entity.EntityValue
 import org.moqui.entity.EntityValueNotFoundException
@@ -78,8 +78,6 @@ class WebFacadeImpl implements WebFacade {
 
     protected Map<String, Object> errorParameters = (Map<String, Object>) null
 
-    protected List<MessageInfo> savedMessages = (List<MessageInfo>) null
-    protected List<MessageInfo> savedPublicMessages = (List<MessageInfo>) null
     protected List<String> savedErrors = (List<String>) null
     protected List<ValidationError> savedValidationErrors = (List<ValidationError>) null
 
@@ -105,11 +103,9 @@ class WebFacadeImpl implements WebFacade {
 
         // get any messages saved to the session, and clear them from the session
         if (session.getAttribute("moqui.message.messageInfos") != null) {
-            savedMessages = (List<MessageInfo>) session.getAttribute("moqui.message.messageInfos")
             session.removeAttribute("moqui.message.messageInfos")
         }
         if (session.getAttribute("moqui.message.publicMessageInfos") != null) {
-            savedPublicMessages = (List<MessageInfo>) session.getAttribute("moqui.message.publicMessageInfos")
             session.removeAttribute("moqui.message.publicMessageInfos")
         }
         if (session.getAttribute("moqui.message.errors") != null) {
@@ -650,21 +646,12 @@ class WebFacadeImpl implements WebFacade {
     }
 
     @Override Map<String, Object> getErrorParameters() { return errorParameters }
-    @Override List<MessageInfo> getSavedMessages() { return savedMessages }
-    @Override List<MessageInfo> getSavedPublicMessages() { return savedPublicMessages }
     @Override List<String> getSavedErrors() { return savedErrors }
     @Override List<ValidationError> getSavedValidationErrors() { return savedValidationErrors }
     @Override List<ValidationError> getFieldValidationErrors(String fieldName) {
         List<ValidationError> errorList = null
         if (savedValidationErrors != null && savedValidationErrors.size() > 0) {
             for (ValidationError ve in savedValidationErrors) if (fieldName == null || fieldName.equals(ve.field)) {
-                if (errorList == null) errorList = new ArrayList<ValidationError>(5)
-                errorList.add(ve)
-            }
-        }
-        List<ValidationError> mfErrorList = eci.messageFacade.getValidationErrors()
-        if (mfErrorList != null && mfErrorList.size() > 0) {
-            for (ValidationError ve in mfErrorList) if (fieldName == null || fieldName.equals(ve.field)) {
                 if (errorList == null) errorList = new ArrayList<ValidationError>(5)
                 errorList.add(ve)
             }
@@ -683,30 +670,7 @@ class WebFacadeImpl implements WebFacade {
         } else {
             Map responseMap = responseObj instanceof Map ? (Map) responseObj : null
 
-            if (eci.message.messages) {
-                if (responseObj == null) {
-                    responseObj = [messages:eci.message.getMessagesString()] as Map<String, Object>
-                } else if (responseMap != null && !responseMap.containsKey("messages")) {
-                    responseMap = new HashMap(responseMap)
-                    responseMap.put("messages", eci.message.getMessagesString())
-                    responseObj = responseMap
-                }
-            }
-
-            if (eci.getMessage().hasError()) {
-                // if the responseObj is a Map add all of it's data
-                // only add an errors if it is not a jsonrpc response (JSON RPC has it's own error handling)
-                if (responseMap != null && !responseMap.containsKey("errors") && !responseMap.containsKey("jsonrpc")) {
-                    responseMap = new HashMap(responseMap)
-                    responseMap.put("errors", eci.message.errorsString)
-                    responseObj = responseMap
-                } else if (responseObj != null && !(responseObj instanceof Map)) {
-                    logger.error("Error found when sending JSON string, JSON object is not a Map so not adding errors to return: ${eci.message.errorsString}")
-                }
-                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
-            } else {
-                response.setStatus(HttpServletResponse.SC_OK)
-            }
+            response.setStatus(HttpServletResponse.SC_OK)
         }
 
         // logger.warn("========== Sending JSON for object: ${responseObj}")
@@ -767,13 +731,8 @@ class WebFacadeImpl implements WebFacade {
                                          Map<String, Object> requestAttributes) {
         if (!contentType) contentType = "text/plain"
         String responseText
-        if (eci.getMessage().hasError()) {
-            responseText = eci.message.errorsString
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
-        } else {
-            responseText = text
-            response.setStatus(HttpServletResponse.SC_OK)
-        }
+        responseText = text
+        response.setStatus(HttpServletResponse.SC_OK)
 
         response.setContentType(contentType)
         // NOTE: String.length not correct for byte length
@@ -943,9 +902,6 @@ class WebFacadeImpl implements WebFacade {
         // make sure a user is logged in, screen/etc that calls will generally be configured to not require auth
         if (!eci.getUser().getUsername()) {
             // if there was a login error there will be a MessageFacade error message
-            String errorMessage = eci.message.errorsString
-            if (!errorMessage) errorMessage = "Authentication required for entity REST operations"
-            sendJsonError(HttpServletResponse.SC_UNAUTHORIZED, errorMessage, null)
             return
         }
 
@@ -1004,11 +960,6 @@ class WebFacadeImpl implements WebFacade {
             sendJsonError(HttpServletResponse.SC_NOT_FOUND, null, e)
         } catch (Throwable t) {
             String errorMessage = t.toString()
-            if (eci.message.hasError()) {
-                String errorsString = eci.message.errorsString
-                logger.error(errorsString, t)
-                errorMessage = errorMessage + ' ' + errorsString
-            }
             logger.warn((String) "General error in entity REST: " + t.toString(), t)
             sendJsonError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, errorMessage, null)
         }
@@ -1021,17 +972,6 @@ class WebFacadeImpl implements WebFacade {
         logger.info("Service REST for ${request.getMethod()} to ${request.getPathInfo()} headers ${request.headerNames.collect()} parameters ${getRequestParameters().keySet()}")
 
         // check for login, etc error messages
-        if (eci.message.hasError()) {
-            String errorsString = eci.message.errorsString
-            if ("true".equals(request.getAttribute("moqui.login.error"))) {
-                logger.warn((String) "Login error in Service REST API: " + errorsString)
-                sendJsonError(HttpServletResponse.SC_UNAUTHORIZED, errorsString, null)
-            } else {
-                logger.warn((String) "General error in Service REST API: " + errorsString)
-                sendJsonError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, errorsString, null)
-            }
-            return
-        }
 
         // check for parsing error, send a 400 response
         if (parmStack._requestBodyJsonParseError) {
@@ -1066,15 +1006,9 @@ class WebFacadeImpl implements WebFacade {
                 }
                 response.addIntHeader('X-Run-Time-ms', (System.currentTimeMillis() - startTime) as int)
 
-                if (eci.message.hasError()) {
-                    // if error return that
-                    String errorsString = eci.message.errorsString
-                    logger.warn((String) "General error in Service REST API: " + errorsString)
-                    sendJsonError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, errorsString, null)
-                } else {
-                    // otherwise send response
-                    sendJsonResponse(responseList)
-                }
+                // if error return that
+                // otherwise send response
+                sendJsonResponse(responseList)
             } else {
                 eci.contextStack.push(parmStack)
                 RestApi.RestResult restResult = eci.serviceFacade.restApi.run(extraPathNameList, eci)
@@ -1082,16 +1016,9 @@ class WebFacadeImpl implements WebFacade {
                 response.addIntHeader('X-Run-Time-ms', (System.currentTimeMillis() - startTime) as int)
                 restResult.setHeaders(response)
 
-                if (eci.message.hasError()) {
-                    // if error return that
-                    String errorsString = eci.message.errorsString
-                    logger.warn((String) "Error message from Service REST API (400): " + errorsString)
-                    sendJsonError(HttpServletResponse.SC_BAD_REQUEST, errorsString, null)
-                } else {
-                    // NOTE: This will always respond with 200 OK, consider using 201 Created (for successful POST, create PUT)
-                    //     and 204 No Content (for DELETE and other when no content is returned)
-                    sendJsonResponse(restResult.responseObj)
-                }
+                // NOTE: This will always respond with 200 OK, consider using 201 Created (for successful POST, create PUT)
+                //     and 204 No Content (for DELETE and other when no content is returned)
+                sendJsonResponse(restResult.responseObj)
             }
         } catch (AuthenticationRequiredException e) {
             logger.warn("REST Unauthorized (401 no authc): " + e.message)
@@ -1109,11 +1036,6 @@ class WebFacadeImpl implements WebFacade {
             sendJsonError(HttpServletResponse.SC_NOT_FOUND, null, e)
         } catch (Throwable t) {
             String errorMessage = t.toString()
-            if (eci.message.hasError()) {
-                String errorsString = eci.message.errorsString
-                logger.error(errorsString, t)
-                errorMessage = errorMessage + ' ' + errorsString
-            }
             logger.warn((String) "Error thrown in Service REST API (500): " + t.toString(), t)
             sendJsonError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, errorMessage, null)
         }
@@ -1202,11 +1124,6 @@ class WebFacadeImpl implements WebFacade {
                     .parameter("systemMessageTypeId", systemMessageTypeId).parameter("systemMessageRemoteId", systemMessageRemoteId)
                     .parameter("remoteMessageId", remoteMessageId).parameter("messageText", messageText).disableAuthz().call()
 
-            if (eci.messageFacade.hasError()) {
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, eci.messageFacade.getErrorsString())
-                return
-             }
-
             // technically SC_ACCEPTED (202) is more accurate, OK (200) more common
             response.setStatus(HttpServletResponse.SC_OK)
 
@@ -1237,23 +1154,6 @@ class WebFacadeImpl implements WebFacade {
     void removeScreenLastParameters(boolean moveToSaved) {
         if (moveToSaved) session.setAttribute("moqui.saved.parameters", session.getAttribute("moqui.screen.last.parameters"))
         session.removeAttribute("moqui.screen.last.parameters")
-    }
-
-    void saveMessagesToSession() {
-        List<MessageInfo> messageInfos = eci.messageFacade.getMessageInfos()
-        WebUtilities.testSerialization("moqui.message.messageInfos", messageInfos)
-        if (messageInfos != null && messageInfos.size() > 0) session.setAttribute("moqui.message.messageInfos", messageInfos)
-        List<MessageInfo> publicMessageInfos = eci.messageFacade.getPublicMessageInfos()
-        WebUtilities.testSerialization("moqui.message.publicMessageInfos", publicMessageInfos)
-        if (publicMessageInfos != null && publicMessageInfos.size() > 0)
-            session.setAttribute("moqui.message.publicMessageInfos", publicMessageInfos)
-
-        List<String> errors = eci.messageFacade.getErrors()
-        if (errors != null && errors.size() > 0) session.setAttribute("moqui.message.errors", errors)
-        List<ValidationError> validationErrors = eci.messageFacade.validationErrors
-        WebUtilities.testSerialization("moqui.message.validationErrors", validationErrors)
-        if (validationErrors != null && validationErrors.size() > 0)
-            session.setAttribute("moqui.message.validationErrors", validationErrors)
     }
 
     /** Save passed parameters Map to a Map in the moqui.saved.parameters session attribute */

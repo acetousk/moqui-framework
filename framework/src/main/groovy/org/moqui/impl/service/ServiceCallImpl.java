@@ -113,7 +113,6 @@ public class ServiceCallImpl implements ServiceCall {
             // validation
             parameters = sd.convertValidateCleanParameters(parameters, eci);
             // if error(s) in parameters, return now with no results
-            if (eci.getMessage().hasError()) return;
         }
 
 
