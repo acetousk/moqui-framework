@@ -607,18 +607,6 @@ class RestApi {
             }
         }
 
-        RestResult runByMethod(List<String> pathList, ExecutionContext ec) {
-            HttpServletRequest request = ec.web.getRequest()
-            String method = request.getMethod().toLowerCase()
-            if ("post".equals(method)) {
-                String ovdMethod = request.getHeader("X-HTTP-Method-Override")
-                if (ovdMethod != null && !ovdMethod.isEmpty()) method = ovdMethod.toLowerCase()
-            }
-            MethodHandler mh = methodMap.get(method)
-            if (mh == null) throw new MethodNotSupportedException("Method ${method} not supported at ${pathList}")
-            return mh.run(pathList, ec)
-        }
-
         RestResult visitChildOrRun(List<String> pathList, int pathIndex, ExecutionContextImpl ec) {
             // more in path? visit the next, otherwise run by request method
             int nextPathIndex = pathIndex + 1
@@ -649,7 +637,6 @@ class RestApi {
                         throw new ResourceNotFoundException("Resource ${nextPath} not valid, index ${pathIndex} in path ${pathList}; resources available are ${resourceMap.keySet()}")
                     }
                 } else {
-                    return runByMethod(pathList, ec)
                 }
             } finally {
             }

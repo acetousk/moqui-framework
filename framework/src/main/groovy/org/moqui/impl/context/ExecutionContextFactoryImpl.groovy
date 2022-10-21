@@ -1022,12 +1022,9 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         long diskTotalSpace = runtimeFile.getTotalSpace()
         BigDecimal diskPercent = (((diskTotalSpace - diskFreeSpace) / diskTotalSpace) * 100.0).setScale(2, RoundingMode.HALF_UP)
 
-        HttpServletRequest request = getEci().getWeb()?.getRequest()
         Map<String, Object> statusMap = [
             // because security: MoquiFramework:moquiVersion,
             Utilization: [LoadPercent:loadPercent, HeapPercent:heapPercent, DiskPercent:diskPercent],
-            Web: [ LocalAddr:request?.getLocalAddr(), LocalPort:request?.getLocalPort(), LocalName:request?.getLocalName(),
-                    ServerName:request?.getServerName(), ServerPort:request?.getServerPort() ],
             Heap: [ Used:(heapUsed/(1024*1024)).setScale(3, RoundingMode.HALF_UP),
                     Committed:(heapMemoryUsage.getCommitted()/(1024*1024)).setScale(3, RoundingMode.HALF_UP),
                     Max:(heapMax/(1024*1024)).setScale(3, RoundingMode.HALF_UP) ],

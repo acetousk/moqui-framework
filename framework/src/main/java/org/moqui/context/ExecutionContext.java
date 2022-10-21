@@ -53,7 +53,6 @@ public interface ExecutionContext {
     /** If running through a web (HTTP servlet) request offers access to the various web objects/information.
      * If not running in a web context will return null.
      */
-    @Nullable WebFacade getWeb();
 
     /** For information about the user and user preferences (including locale, time zone, currency, etc). */
 

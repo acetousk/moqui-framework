@@ -74,23 +74,12 @@ class MoquiFopServlet extends HttpServlet {
         String xslFoText = null
         try {
             ec.initWebFacade(moquiWebappName, request, response)
-            ec.web.requestAttributes.put("moquiRequestStartTime", startTime)
-
-            ArrayList<String> pathInfoList = ec.web.getPathInfoList()
 
             // logger.warn("======== XSL-FO content:\n${xslFoText}")
             if (logger.traceEnabled) logger.trace("XSL-FO content:\n${xslFoText}")
 
-            String contentType = (String) ec.web.requestParameters."contentType" ?: "application/pdf"
-            response.setContentType(contentType)
 
-            String filename = (ec.web.parameters.get("filename") as String) ?: (ec.web.parameters.get("saveFilename") as String)
-            if (filename) {
-                String utfFilename = StringUtilities.encodeAsciiFilename(filename)
-                response.setHeader("Content-Disposition", "attachment; filename=\"${filename}\"; filename*=utf-8''${utfFilename}")
-            } else {
-                response.setHeader("Content-Disposition", "inline")
-            }
+            response.setHeader("Content-Disposition", "inline")
 
             // special case disable authz for resource access
             try {
@@ -99,12 +88,9 @@ class MoquiFopServlet extends HttpServlet {
                         org.apache.commons.io.output.NullOutputStream.NULL_OUTPUT_STREAM, contentType)
                 logger.info("Rendered ${pathInfo} as ${contentType} has ${pageCount} pages")
                 */
-                ec.resource.xslFoTransform(new StreamSource(new StringReader(xslFoText)), null,
-                        response.getOutputStream(), contentType)
             } finally {
             }
 
-            if (logger.infoEnabled) logger.info("Finished XSL-FO request to ${pathInfoList}, content type ${response.getContentType()} in ${System.currentTimeMillis()-startTime}ms; session ${request.session.id} thread ${Thread.currentThread().id}:${Thread.currentThread().name}")
         } catch (Throwable t) {
             logger.error("Error transforming XSL-FO content:\n${xslFoText}", t)
             throw t

@@ -18,7 +18,6 @@ import org.moqui.context.AuthenticationRequiredException
 import org.moqui.context.WebMediaTypeException
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
-import org.moqui.impl.context.WebFacadeImpl
 import org.moqui.util.MNode
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -107,7 +106,6 @@ class MoquiServlet extends HttpServlet {
 
         try {
             ec.initWebFacade(webappName, request, response)
-            ec.web.requestAttributes.put("moquiRequestStartTime", startTime)
 
         } catch (AuthenticationRequiredException e) {
             logger.warn("Web Unauthorized (no authc): " + e.message)
@@ -185,7 +183,6 @@ class MoquiServlet extends HttpServlet {
                         logger.warn("Returning 401, Origin ${originHeader} not allowed for configuration ${allowOriginSet} or server name ${serverName} or request host ${hostName}")
                         // Origin not allowed, send 401 response
                         // response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Origin not allowed")
-                        WebFacadeImpl.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Origin not allowed", null, request, response)
                         return true
                     }
                 }
@@ -243,7 +240,6 @@ class MoquiServlet extends HttpServlet {
                 response.sendError(errorCode, message)
             }
         } else {
-            WebFacadeImpl.sendError(errorCode, message, origThrowable, request, response)
         }
     }
 

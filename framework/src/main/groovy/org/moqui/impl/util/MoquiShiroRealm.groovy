@@ -155,28 +155,6 @@ class MoquiShiroRealm implements Realm, Authorizer {
         }
 
         // check ipAllowed if on UserAccount or any UserGroup a member of
-
-        ArrayList<String> ipAllowedList = new ArrayList<>()
-        String uaIpAllowed = newUserAccount.getNoCheckSimple("ipAllowed")
-        if (uaIpAllowed != null && !uaIpAllowed.isEmpty()) ipAllowedList.add(uaIpAllowed)
-        EntityList ugmList = eci.entityFacade.find("moqui.security.UserGroupMember")
-                .condition("userId", newUserAccount.getNoCheckSimple("userId"))
-                .disableAuthz().useCache(true).list()
-        ArrayList<String> userGroupIdList = new ArrayList<>()
-        for (EntityValue ugm in ugmList) userGroupIdList.add((String) ugm.get("userGroupId"))
-        userGroupIdList.add("ALL_USERS")
-        EntityList ugList = eci.entityFacade.find("moqui.security.UserGroup")
-                .condition("ipAllowed", EntityCondition.IS_NOT_NULL, null)
-                .condition("userGroupId", EntityCondition.IN, userGroupIdList).disableAuthz().useCache(false).list()
-        for (EntityValue ug in ugList) ipAllowedList.add((String) ug.getNoCheckSimple("ipAllowed"))
-        int ipAllowedListSize = ipAllowedList.size()
-        if (ipAllowedListSize > 0) {
-            boolean anyMatches = false
-            for (int i = 0; i < ipAllowedListSize; i++) {
-                String pattern = (String) ipAllowedList.get(i)
-            }
-            if (!anyMatches) throw new AccountException(
-                    eci.resource.expand('Authenticate failed for user ${newUserAccount.username} because client IP ${clientIp} is not in allowed list for user or group.', '', [newUserAccount:newUserAccount, clientIp:"clientIp"]))
         }
 
         // no more auth failures? record the various account state updates, hasLoggedOut=N
