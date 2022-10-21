@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -15,13 +15,10 @@ package org.moqui.impl.entity
 
 import groovy.transform.CompileStatic
 import org.moqui.BaseException
-import org.moqui.context.ArtifactAuthorizationException
-import org.moqui.context.ArtifactExecutionInfo
+
 import org.moqui.entity.*
 import org.moqui.etl.SimpleEtl
 import org.moqui.etl.SimpleEtl.StopException
-import org.moqui.impl.context.ArtifactExecutionFacadeImpl
-import org.moqui.impl.context.ArtifactExecutionInfoImpl
 import org.moqui.impl.context.ContextJavaUtil
 import org.moqui.impl.context.ExecutionContextImpl
 import org.moqui.impl.context.TransactionCache
@@ -695,8 +692,6 @@ abstract class EntityFindBase implements EntityFind {
 
         EntityDefinition ed = getEntityDef()
 
-        ArrayList<ArtifactExecutionInfo> stackArray = efi.ecfi.getEci().artifactExecutionFacade.getStackArray()
-        tfi.registerRecordLock(new ContextJavaUtil.EntityRecordLock(ed.getFullEntityName(), ed.getPrimaryKeysString(fieldValues), stackArray))
     }
 
     // ======================== Find and Abstract Methods ========================
@@ -706,37 +701,25 @@ abstract class EntityFindBase implements EntityFind {
     @Override
     EntityValue one() throws EntityException {
         ExecutionContextImpl ec = efi.ecfi.getEci()
-        ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade
-        boolean enableAuthz = disableAuthz ? !aefi.disableAuthz() : false
         try {
             EntityDefinition ed = getEntityDef()
 
-            ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(ed.getFullEntityName(),
-                    ArtifactExecutionInfo.AT_ENTITY, ArtifactExecutionInfo.AUTHZA_VIEW, "one")
             // really worth the overhead? if so change to handle singleCondField: .setParameters(simpleAndMap)
-            aefi.pushInternal(aei, !ed.entityInfo.authorizeSkipView, false)
 
             try {
                 return oneInternal(ec, ed)
             } finally {
                 // pop the ArtifactExecutionInfo
-                aefi.pop(aei)
             }
         } finally {
-            if (enableAuthz) aefi.enableAuthz()
         }
     }
     @Override
     Map<String, Object> oneMaster(String name) {
         ExecutionContextImpl ec = efi.ecfi.getEci()
-        ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade
-        boolean enableAuthz = disableAuthz ? !aefi.disableAuthz() : false
         try {
             EntityDefinition ed = getEntityDef()
 
-            ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(ed.getFullEntityName(),
-                    ArtifactExecutionInfo.AT_ENTITY, ArtifactExecutionInfo.AUTHZA_VIEW, "one")
-            aefi.pushInternal(aei, !ed.entityInfo.authorizeSkipView, false)
 
             try {
                 EntityValue ev = oneInternal(ec, ed)
@@ -744,10 +727,8 @@ abstract class EntityFindBase implements EntityFind {
                 return ev.getMasterValueMap(name)
             } finally {
                 // pop the ArtifactExecutionInfo
-                aefi.pop(aei)
             }
         } finally {
-            if (enableAuthz) aefi.enableAuthz()
         }
     }
 
@@ -801,8 +782,6 @@ abstract class EntityFindBase implements EntityFind {
         // NOTE: artifactExecutionFacade.filterFindForUser() no longer called here, called in EntityFindBuilder after trimming if needed for view-entity
         if (doCache) {
             // don't cache if there are any applicable filter conditions
-            ArrayList findFilterList = ec.artifactExecutionFacade.getFindFiltersForUser(ed, null)
-            if (findFilterList != null && findFilterList.size() > 0) doCache = false
         }
 
         EntityConditionImplBase whereCondition = getWhereEntityConditionInternal(ed)
@@ -987,43 +966,29 @@ abstract class EntityFindBase implements EntityFind {
     @Override
     EntityList list() throws EntityException {
         ExecutionContextImpl ec = efi.ecfi.getEci()
-        ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade
-        boolean enableAuthz = disableAuthz ? !aefi.disableAuthz() : false
         try {
             EntityDefinition ed = getEntityDef()
 
-            ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(ed.getFullEntityName(),
-                    ArtifactExecutionInfo.AT_ENTITY, ArtifactExecutionInfo.AUTHZA_VIEW, "list")
-            aefi.pushInternal(aei, !ed.entityInfo.authorizeSkipView, false)
             try {
                 return listInternal(ec, ed)
             } finally {
-                aefi.pop(aei)
             }
         } finally {
-            if (enableAuthz) aefi.enableAuthz()
         }
     }
     @Override
     List<Map<String, Object>> listMaster(String name) {
         ExecutionContextImpl ec = efi.ecfi.getEci()
-        ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade
-        boolean enableAuthz = disableAuthz ? !aefi.disableAuthz() : false
         try {
             EntityDefinition ed = getEntityDef()
 
-            ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(ed.getFullEntityName(),
-                    ArtifactExecutionInfo.AT_ENTITY, ArtifactExecutionInfo.AUTHZA_VIEW, "list")
-            aefi.pushInternal(aei, !ed.entityInfo.authorizeSkipView, false)
             try {
                 EntityList el = listInternal(ec, ed)
                 return el.getMasterValueList(name)
             } finally {
                 // pop the ArtifactExecutionInfo
-                aefi.pop(aei)
             }
         } finally {
-            if (enableAuthz) aefi.enableAuthz()
         }
     }
 
@@ -1064,8 +1029,6 @@ abstract class EntityFindBase implements EntityFind {
         // NOTE: artifactExecutionFacade.filterFindForUser() no longer called here, called in EntityFindBuilder after trimming if needed for view-entity
         if (doEntityCache) {
             // don't cache if there are any applicable filter conditions
-            ArrayList findFilterList = ec.artifactExecutionFacade.getFindFiltersForUser(ed, null)
-            if (findFilterList != null && findFilterList.size() > 0) doEntityCache = false
         }
 
         EntityConditionImplBase whereCondition = getWhereEntityConditionInternal(ed)
@@ -1148,7 +1111,6 @@ abstract class EntityFindBase implements EntityFind {
             EntityListIterator eli
             try { eli = iteratorExtended(queryWhereCondition, havingCondition, orderByExpanded, fieldInfoArray, fieldOptionsArray) }
             catch (SQLException e) { throw new EntitySqlException(makeErrorMsg("Error finding list of", LIST_ERROR, queryWhereCondition, ed, ec), e) }
-            catch (ArtifactAuthorizationException e) { throw e }
             catch (Exception e) { throw new EntityException(makeErrorMsg("Error finding list of", LIST_ERROR, queryWhereCondition, ed, ec), e) }
 
             MNode databaseNode = this.efi.getDatabaseNode(ed.getEntityGroupName())
@@ -1184,21 +1146,14 @@ abstract class EntityFindBase implements EntityFind {
     @Override
     EntityListIterator iterator() throws EntityException {
         ExecutionContextImpl ec = efi.ecfi.getEci()
-        ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade
-        boolean enableAuthz = disableAuthz ? !ec.artifactExecutionFacade.disableAuthz() : false
         try {
             EntityDefinition ed = getEntityDef()
 
-            ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(ed.getFullEntityName(),
-                    ArtifactExecutionInfo.AT_ENTITY, ArtifactExecutionInfo.AUTHZA_VIEW, "iterator")
-            aefi.pushInternal(aei, !ed.entityInfo.authorizeSkipView, false)
             try {
                 return iteratorInternal(ec, ed)
             } finally {
-                aefi.pop(aei)
             }
         } finally {
-            if (enableAuthz) ec.artifactExecutionFacade.enableAuthz()
         }
     }
     protected EntityListIterator iteratorInternal(ExecutionContextImpl ec, EntityDefinition ed) throws EntityException, SQLException {
@@ -1286,7 +1241,6 @@ abstract class EntityFindBase implements EntityFind {
         EntityListIterator eli
         try { eli = iteratorExtended(whereCondition, havingCondition, orderByExpanded, fieldInfoArray, fieldOptionsArray) }
         catch (SQLException e) { throw new EntitySqlException(makeErrorMsg("Error finding list of", LIST_ERROR, whereCondition, ed, ec), e) }
-        catch (ArtifactAuthorizationException e) { throw e }
         catch (Exception e) { throw new EntityException(makeErrorMsg("Error finding list of", LIST_ERROR, whereCondition, ed, ec), e) }
 
         // NOTE: if we are doing offset/limit with a cursor no good way to limit results, but we'll at least jump to the offset
@@ -1310,21 +1264,14 @@ abstract class EntityFindBase implements EntityFind {
     @Override
     long count() throws EntityException {
         ExecutionContextImpl ec = efi.ecfi.getEci()
-        ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade
-        boolean enableAuthz = disableAuthz ? !ec.artifactExecutionFacade.disableAuthz() : false
         try {
             EntityDefinition ed = getEntityDef()
 
-            ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(ed.getFullEntityName(),
-                    ArtifactExecutionInfo.AT_ENTITY, ArtifactExecutionInfo.AUTHZA_VIEW, "count")
-            aefi.pushInternal(aei, !ed.entityInfo.authorizeSkipView, false)
             try {
                 return countInternal(ec, ed)
             } finally {
-                aefi.pop(aei)
             }
         } finally {
-            if (enableAuthz) ec.artifactExecutionFacade.enableAuthz()
         }
     }
     protected long countInternal(ExecutionContextImpl ec, EntityDefinition ed) throws EntityException, SQLException {
@@ -1341,8 +1288,6 @@ abstract class EntityFindBase implements EntityFind {
         // NOTE: artifactExecutionFacade.filterFindForUser() no longer called here, called in EntityFindBuilder after trimming if needed for view-entity
         if (doCache) {
             // don't cache if there are any applicable filter conditions
-            ArrayList findFilterList = ec.artifactExecutionFacade.getFindFiltersForUser(ed, null)
-            if (findFilterList != null && findFilterList.size() > 0) doCache = false
         }
 
         EntityConditionImplBase whereCondition = getWhereEntityConditionInternal(ed)
@@ -1426,11 +1371,9 @@ abstract class EntityFindBase implements EntityFind {
 
     @Override
     long updateAll(Map<String, Object> fieldsToSet) {
-        boolean enableAuthz = disableAuthz ? !efi.ecfi.getEci().artifactExecutionFacade.disableAuthz() : false
         try {
             return updateAllInternal(fieldsToSet)
         } finally {
-            if (enableAuthz) efi.ecfi.getEci().artifactExecutionFacade.enableAuthz()
         }
     }
     protected long updateAllInternal(Map<String, Object> fieldsToSet) {
@@ -1462,11 +1405,9 @@ abstract class EntityFindBase implements EntityFind {
 
     @Override
     long deleteAll() {
-        boolean enableAuthz = disableAuthz ? !efi.ecfi.getEci().artifactExecutionFacade.disableAuthz() : false
         try {
             return deleteAllInternal()
         } finally {
-            if (enableAuthz) efi.ecfi.getEci().artifactExecutionFacade.enableAuthz()
         }
     }
     protected long deleteAllInternal() {

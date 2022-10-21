@@ -52,7 +52,6 @@ public class ExecutionContextImpl implements ExecutionContext {
 
     public final UserFacadeImpl userFacade;
     public final MessageFacadeImpl messageFacade;
-    public final ArtifactExecutionFacadeImpl artifactExecutionFacade;
     public final L10nFacadeImpl l10nFacade;
 
     // local references to ECFI fields
@@ -83,7 +82,6 @@ public class ExecutionContextImpl implements ExecutionContext {
         activeEntityFacade = ecfi.entityFacade;
         userFacade = new UserFacadeImpl(this);
         messageFacade = new MessageFacadeImpl();
-        artifactExecutionFacade = new ArtifactExecutionFacadeImpl(this);
         l10nFacade = new L10nFacadeImpl(this);
 
         cacheFacade = ecfi.cacheFacade;
@@ -129,7 +127,6 @@ public class ExecutionContextImpl implements ExecutionContext {
 
     @Override public @Nonnull UserFacade getUser() { return userFacade; }
     @Override public @Nonnull MessageFacade getMessage() { return messageFacade; }
-    @Override public @Nonnull ArtifactExecutionFacade getArtifactExecution() { return artifactExecutionFacade; }
     @Override public @Nonnull L10nFacade getL10n() { return l10nFacade; }
     @Override public @Nonnull ResourceFacade getResource() { return resourceFacade; }
     @Override public @Nonnull LoggerFacade getLogger() { return loggerFacade; }
@@ -151,7 +148,6 @@ public class ExecutionContextImpl implements ExecutionContext {
         if (userId == null || userId.isEmpty()) return new ArrayList<>();
 
         List<NotificationMessage> nmList = new ArrayList<>();
-        boolean alreadyDisabled = artifactExecutionFacade.disableAuthz();
         try {
             EntityFind nmbuFind = activeEntityFacade.find("moqui.security.user.NotificationMessageByUser").condition("userId", userId);
             if (topic != null && !topic.isEmpty()) nmbuFind.condition("topic", topic);
@@ -162,7 +158,6 @@ public class ExecutionContextImpl implements ExecutionContext {
                 nmList.add(nmi);
             }
         } finally {
-            if (!alreadyDisabled) artifactExecutionFacade.enableAuthz();
         }
 
         return nmList;
@@ -263,8 +258,6 @@ public class ExecutionContextImpl implements ExecutionContext {
                 String threadUsername = threadEci.userFacade.getUsername();
                 if (threadUsername != null && !threadUsername.isEmpty())
                     eci.userFacade.internalLoginUser(threadUsername, false);
-                if (threadEci.artifactExecutionFacade.authzDisabled)
-                    eci.artifactExecutionFacade.disableAuthz();
             }
             try {
                 closure.call();

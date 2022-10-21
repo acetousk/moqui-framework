@@ -3,23 +3,22 @@ package org.moqui.impl.service
 import groovy.transform.CompileStatic
 
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 
-import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
-import org.moqui.context.ArtifactAuthorizationException
+
 import org.moqui.impl.context.ExecutionContextImpl
 
 import org.slf4j.Logger
@@ -97,11 +96,6 @@ public class ServiceJsonRpcDispatcher {
                     // could use whatever code here as long as it is not -32768 to -32000, this was chosen somewhat arbitrarily
                     errorCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
                 }
-            } catch (ArtifactAuthorizationException e) {
-                logger.error("Authz error calling service ${sd.serviceName} from JSON-RPC request: ${e.toString()}", e)
-                errorMessage = e.getMessage()
-                // could use whatever code here as long as it is not -32768 to -32000, this was chosen somewhat arbitrarily
-                errorCode = HttpServletResponse.SC_FORBIDDEN
             } catch (Exception e) {
                 logger.error("Error calling service ${sd.serviceName} from JSON-RPC request: ${e.toString()}", e)
                 errorMessage = e.getMessage()

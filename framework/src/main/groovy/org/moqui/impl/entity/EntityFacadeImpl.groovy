@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -17,9 +17,8 @@ import groovy.transform.CompileStatic
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 import org.moqui.BaseArtifactException
 import org.moqui.BaseException
-import org.moqui.context.ArtifactExecutionInfo
+
 import org.moqui.etl.SimpleEtl
-import org.moqui.impl.context.ArtifactExecutionInfoImpl
 import org.moqui.impl.context.ExecutionContextImpl
 import org.moqui.impl.entity.condition.EntityConditionImplBase
 import org.moqui.impl.entity.condition.FieldValueCondition
@@ -27,7 +26,6 @@ import org.moqui.impl.entity.condition.ListCondition
 import org.moqui.impl.service.runner.EntityAutoServiceRunner
 import org.moqui.resource.ResourceReference
 import org.moqui.entity.*
-import org.moqui.impl.context.ArtifactExecutionFacadeImpl
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.TransactionFacadeImpl
 import org.moqui.impl.entity.EntityJavaUtil.RelationshipInfo
@@ -1000,7 +998,7 @@ class EntityFacadeImpl implements EntityFacade {
         if (lst != null && lst.size() > 0) {
             // if Entity ECA rules disabled in ArtifactExecutionFacade, just return immediately
             // do this only if there are EECA rules to run, small cost in getEci, etc
-            if (ecfi.getEci().artifactExecutionFacade.entityEcaDisabled()) return
+            return
 
             for (int i = 0; i < lst.size(); i++) {
                 EntityEcaRule eer = (EntityEcaRule) lst.get(i)
@@ -1462,8 +1460,6 @@ class EntityFacadeImpl implements EntityFacade {
     @Override
     EntityValue fastFindOne(String entityName, Boolean useCache, boolean disableAuthz, Object... values) {
         ExecutionContextImpl ec = ecfi.getEci()
-        ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade
-        boolean enableAuthz = disableAuthz ? !aefi.disableAuthz() : false
         try {
             EntityDefinition ed = getEntityDefinition(entityName)
             if (ed == null) throw new EntityException("Entity not found with name ${entityName}")
@@ -1483,10 +1479,7 @@ class EntityFacadeImpl implements EntityFacade {
                 return ef.one()
             }
 
-            ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(ed.getFullEntityName(),
-                    ArtifactExecutionInfo.AT_ENTITY, ArtifactExecutionInfo.AUTHZA_VIEW, "one")
             // really worth the overhead? if so change to handle singleCondField: .setParameters(simpleAndMap)
-            aefi.pushInternal(aei, !ed.entityInfo.authorizeSkipView, false)
 
             try {
                 boolean doCache = useCache != null ? (useCache.booleanValue() ? !entityInfo.neverCache : false) : "true".equals(entityInfo.useCache)
@@ -1538,10 +1531,8 @@ class EntityFacadeImpl implements EntityFacade {
                 return newEntityValue
             } finally {
                 // pop the ArtifactExecutionInfo
-                aefi.pop(aei)
             }
         } finally {
-            if (enableAuthz) aefi.enableAuthz()
         }
     }
     public EntityValueBase fastFindOneExtended(EntityDefinition ed, Object... values) throws EntityException {
@@ -1946,8 +1937,6 @@ class EntityFacadeImpl implements EntityFacade {
                 }
 
                 ecfi.transactionFacade.runRequireNew(null, "Error getting primary sequenced ID", true, true, {
-                    ArtifactExecutionFacadeImpl aefi = ecfi.getEci().artifactExecutionFacade
-                    boolean enableAuthz = !aefi.disableAuthz()
                     try {
                         EntityValue svi = find("moqui.entity.SequenceValueItem").condition("seqName", seqName)
                                 .useCache(false).forUpdate(true).one()
@@ -1967,7 +1956,6 @@ class EntityFacadeImpl implements EntityFacade {
                             svi.update()
                         }
                     } finally {
-                        if (enableAuthz) aefi.enableAuthz()
                     }
                 })
             }

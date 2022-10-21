@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -14,7 +14,7 @@
 package org.moqui.impl.webapp
 
 import groovy.transform.CompileStatic
-import org.moqui.context.ArtifactTarpitException
+
 import org.moqui.impl.context.ExecutionContextImpl
 import org.moqui.util.StringUtilities
 
@@ -25,7 +25,7 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 import org.moqui.screen.ScreenRender
-import org.moqui.context.ArtifactAuthorizationException
+
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 
 import javax.xml.transform.stream.StreamSource
@@ -103,7 +103,6 @@ class MoquiFopServlet extends HttpServlet {
             }
 
             // special case disable authz for resource access
-            boolean enableAuthz = !ecfi.getExecutionContext().getArtifactExecution().disableAuthz()
             try {
                 /* FUTURE: pre-render to get page count, then pass in final rendered streamed to client
                 Integer pageCount = ec.resource.xslFoTransform(new StreamSource(new StringReader(xslFoText)), null,
@@ -113,20 +112,9 @@ class MoquiFopServlet extends HttpServlet {
                 ec.resource.xslFoTransform(new StreamSource(new StringReader(xslFoText)), null,
                         response.getOutputStream(), contentType)
             } finally {
-                if (enableAuthz) ecfi.getExecutionContext().getArtifactExecution().enableAuthz()
             }
 
             if (logger.infoEnabled) logger.info("Finished XSL-FO request to ${pathInfoList}, content type ${response.getContentType()} in ${System.currentTimeMillis()-startTime}ms; session ${request.session.id} thread ${Thread.currentThread().id}:${Thread.currentThread().name}")
-        } catch (ArtifactAuthorizationException e) {
-            // SC_UNAUTHORIZED 401 used when authc/login fails, use SC_FORBIDDEN 403 for authz failures
-            // See ScreenRenderImpl.checkWebappSettings for authc and SC_UNAUTHORIZED handling
-            logger.warn((String) "Web Access Forbidden (no authz): " + e.message)
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, e.message)
-        } catch (ArtifactTarpitException e) {
-            logger.warn((String) "Web Too Many Requests (tarpit): " + e.message)
-            if (e.getRetryAfterSeconds()) response.addIntHeader("Retry-After", e.getRetryAfterSeconds())
-            // NOTE: there is no constant on HttpServletResponse for 429; see RFC 6585 for details
-            response.sendError(429, e.message)
         } catch (ScreenResourceNotFoundException e) {
             logger.warn((String) "Web Resource Not Found: " + e.message)
             response.sendError(HttpServletResponse.SC_NOT_FOUND, e.message)

@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -15,13 +15,12 @@ package org.moqui.impl.service
 
 import groovy.transform.CompileStatic
 import org.moqui.BaseException
-import org.moqui.context.ArtifactExecutionInfo
+
 import org.moqui.context.AuthenticationRequiredException
 import org.moqui.context.ExecutionContext
 import org.moqui.entity.EntityValue
 import org.moqui.resource.ResourceReference
 import org.moqui.entity.EntityFind
-import org.moqui.impl.context.ArtifactExecutionInfoImpl
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
 import org.moqui.impl.context.UserFacadeImpl
@@ -237,10 +236,8 @@ class RestApi {
 
             boolean loggedInAnonymous = false
             if ("anonymous-all".equals(requireAuthentication)) {
-                ec.artifactExecution.setAnonymousAuthorizedAll()
                 loggedInAnonymous = ec.getUser().loginAnonymousIfNoUser()
             } else if ("anonymous-view".equals(requireAuthentication)) {
-                ec.artifactExecution.setAnonymousAuthorizedView()
                 loggedInAnonymous = ec.getUser().loginAnonymousIfNoUser()
             }
 
@@ -356,10 +353,8 @@ class RestApi {
 
             boolean loggedInAnonymous = false
             if ("anonymous-all".equals(requireAuthentication)) {
-                ec.artifactExecution.setAnonymousAuthorizedAll()
                 loggedInAnonymous = ec.getUser().loginAnonymousIfNoUser()
             } else if ("anonymous-view".equals(requireAuthentication)) {
-                ec.artifactExecution.setAnonymousAuthorizedView()
                 loggedInAnonymous = ec.getUser().loginAnonymousIfNoUser()
             }
 
@@ -640,19 +635,13 @@ class RestApi {
 
             // push onto artifact stack, check authz
             String curPath = getFullPathName([])
-            ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(curPath, ArtifactExecutionInfo.AT_REST_PATH, getActionFromMethod(ec), null)
             // for now don't track/count artifact hits for REST path
-            aei.setTrackArtifactHit(false)
             // NOTE: consider setting parameters on aei, but don't like setting entire context, currently used for entity/service calls
-            ec.artifactExecutionFacade.pushInternal(aei, !moreInPath ?
-                    (requireAuthentication == null || requireAuthentication.length() == 0 || "true".equals(requireAuthentication)) : false, true)
 
             boolean loggedInAnonymous = false
             if ("anonymous-all".equals(requireAuthentication)) {
-                ec.artifactExecutionFacade.setAnonymousAuthorizedAll()
                 loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             } else if ("anonymous-view".equals(requireAuthentication)) {
-                ec.artifactExecutionFacade.setAnonymousAuthorizedView()
                 loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             }
 
@@ -674,7 +663,6 @@ class RestApi {
                     return runByMethod(pathList, ec)
                 }
             } finally {
-                ec.artifactExecutionFacade.pop(aei)
                 if (loggedInAnonymous) ec.userFacade.logoutAnonymousOnly()
             }
         }
@@ -706,14 +694,6 @@ class RestApi {
                 curPath.append('/').append(pathItem)
             }
             return curPath.toString()
-        }
-        static final Map<String, ArtifactExecutionInfo.AuthzAction> actionByMethodMap = [get:ArtifactExecutionInfo.AUTHZA_VIEW,
-                patch:ArtifactExecutionInfo.AUTHZA_UPDATE, put:ArtifactExecutionInfo.AUTHZA_UPDATE,
-                post:ArtifactExecutionInfo.AUTHZA_CREATE, delete:ArtifactExecutionInfo.AUTHZA_DELETE,
-                options:ArtifactExecutionInfo.AUTHZA_VIEW, head:ArtifactExecutionInfo.AUTHZA_VIEW]
-        static ArtifactExecutionInfo.AuthzAction getActionFromMethod(ExecutionContext ec) {
-            String method = ec.web.getRequest().getMethod().toLowerCase()
-            return actionByMethodMap.get(method)
         }
 
         Map getRamlChildrenMap(Map<String, Object> typesMap) {

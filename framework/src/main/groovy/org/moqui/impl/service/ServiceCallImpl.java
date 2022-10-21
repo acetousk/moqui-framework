@@ -13,8 +13,6 @@
  */
 package org.moqui.impl.service;
 
-import org.moqui.context.ArtifactExecutionInfo;
-import org.moqui.impl.context.ArtifactExecutionInfoImpl;
 import org.moqui.impl.context.ExecutionContextImpl;
 import org.moqui.service.ServiceCall;
 import org.moqui.service.ServiceException;
@@ -120,11 +118,7 @@ public class ServiceCallImpl implements ServiceCall {
 
 
         // always do an authz before scheduling the job
-        ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(getServiceName(), ArtifactExecutionInfo.AT_SERVICE, ServiceDefinition.getVerbAuthzActionEnum(verb), null);
-        aei.setTrackArtifactHit(false);
-        eci.artifactExecutionFacade.pushInternal(aei, (sd != null && "true".equals(sd.authenticate)), true);
         // pop immediately, just did the push to to an authz
-        eci.artifactExecutionFacade.pop(aei);
 
         parameters.put("authUsername", eci.userFacade.getUsername());
 

@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -339,14 +339,12 @@ class EntityDataFeed {
         EntityValue dataDocument = null
         EntityList dataDocumentFieldList = null
         EntityList dataDocumentConditionList = null
-        boolean alreadyDisabled = efi.ecfi.getExecutionContext().getArtifactExecution().disableAuthz()
         try {
             dataDocument = efi.fastFindOne("moqui.entity.document.DataDocument", true, false, dataDocumentId)
             if (dataDocument == null) throw new EntityException("No DataDocument found with ID [${dataDocumentId}]")
             dataDocumentFieldList = dataDocument.findRelated("moqui.entity.document.DataDocumentField", null, null, true, false)
             dataDocumentConditionList = dataDocument.findRelated("moqui.entity.document.DataDocumentCondition", null, null, true, false)
         } finally {
-            if (!alreadyDisabled) efi.ecfi.getExecutionContext().getArtifactExecution().enableAuthz()
         }
 
         String primaryEntityName = dataDocument.primaryEntityName
@@ -565,14 +563,12 @@ class EntityDataFeed {
 
                 EntityValue dataDocument = null
                 EntityList dataDocumentFieldList = null
-                boolean alreadyDisabled = threadEci.artifactExecutionFacade.disableAuthz()
                 try {
                     // for each DataDocument go through feedValues and get the primary entity's PK field(s) for each
                     dataDocument = efi.fastFindOne("moqui.entity.document.DataDocument", true, false, dataDocumentId)
                     dataDocumentFieldList =
                             dataDocument.findRelated("moqui.entity.document.DataDocumentField", null, null, true, false)
                 } finally {
-                    if (!alreadyDisabled) threadEci.artifactExecutionFacade.enableAuthz()
                 }
 
                 String primaryEntityName = dataDocument.primaryEntityName
@@ -652,7 +648,6 @@ class EntityDataFeed {
 
                                     String backwardRelName = backwardRelInfo.relationshipName
                                     List<EntityValueBase> currentRelValueList = []
-                                    alreadyDisabled = threadEci.artifactExecutionFacade.disableAuthz()
                                     try {
                                         for (EntityValueBase prevRelValue in prevRelValueList) {
                                             EntityList backwardRelValueList = prevRelValue.findRelated(backwardRelName, null, null, false, false)
@@ -660,7 +655,6 @@ class EntityDataFeed {
                                                 currentRelValueList.add((EntityValueBase) backwardRelValue)
                                         }
                                     } finally {
-                                        if (!alreadyDisabled) threadEci.artifactExecutionFacade.enableAuthz()
                                     }
 
                                     prevRelName = currentRelName
@@ -745,7 +739,6 @@ class EntityDataFeed {
                         condition = efi.getConditionFactory().makeCondition(condList, EntityCondition.OR)
                     }
 
-                    alreadyDisabled = threadEci.artifactExecutionFacade.disableAuthz()
                     try {
                         // generate the document with the extra condition and send it to all DataFeeds
                         //     associated with the DataDocument
@@ -780,7 +773,6 @@ class EntityDataFeed {
                             if (logger.isTraceEnabled()) logger.trace("In DataFeed no documents found for dataDocumentId [${dataDocumentId}]")
                         }
                     } finally {
-                        if (!alreadyDisabled) threadEci.artifactExecutionFacade.enableAuthz()
                     }
 
                     outer += curSize
@@ -814,7 +806,6 @@ class EntityDataFeed {
                 if (!entityName.equals(documentEntityInfo.primaryEntityName)) continue
 
                 String dataDocumentId = documentEntityInfo.dataDocumentId
-                boolean alreadyDisabled = threadEci.artifactExecutionFacade.disableAuthz()
                 try {
                     EntityList dataFeedAndDocumentList = ecfi.entityFacade.find("moqui.entity.feed.DataFeedAndDocument")
                             .condition("dataFeedTypeEnumId", "DTFDTP_RT_PUSH")
@@ -844,8 +835,7 @@ class EntityDataFeed {
                 } catch (Throwable t) {
                     logger.error("Error processing DataFeed delete for entity ${entityName} PK ${deleteEv.getPrimaryKeys()}", t)
                 } finally {
-                    if (!alreadyDisabled) threadEci.artifactExecutionFacade.enableAuthz()
-                }
+               }
             }
         }
     }

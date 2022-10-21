@@ -18,7 +18,6 @@ import org.apache.commons.validator.routines.EmailValidator;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
-import org.moqui.context.ArtifactExecutionInfo;
 import org.moqui.entity.EntityList;
 import org.moqui.entity.EntityValue;
 import org.moqui.impl.actions.XmlAction;
@@ -62,7 +61,6 @@ public class ServiceDefinition {
     public final XmlAction xmlAction;
 
     public final String authenticate;
-    public final ArtifactExecutionInfo.AuthzAction authzAction;
     public final String serviceType;
     public final ServiceRunner serviceRunner;
     public final boolean txIgnore;
@@ -90,12 +88,7 @@ public class ServiceDefinition {
         location = serviceNode.attribute("location");
         method = serviceNode.attribute("method");
 
-        ArtifactExecutionInfo.AuthzAction tempAction = null;
         String authzActionAttr = serviceNode.attribute("authz-action");
-        if (authzActionAttr != null && !authzActionAttr.isEmpty()) tempAction = ArtifactExecutionInfo.authzActionByName.get(authzActionAttr);
-        if (tempAction == null) tempAction = verbAuthzActionEnumMap.get(verb);
-        if (tempAction == null) tempAction = ArtifactExecutionInfo.AUTHZA_ALL;
-        authzAction = tempAction;
 
         MNode inParameters = new MNode("in-parameters", null);
         MNode outParameters = new MNode("out-parameters", null);
@@ -347,13 +340,6 @@ public class ServiceDefinition {
         int hashIndex = serviceName.lastIndexOf('#');
         if (hashIndex < 0) return null;
         return serviceName.substring(hashIndex + 1);
-    }
-
-    public static ArtifactExecutionInfo.AuthzAction getVerbAuthzActionEnum(String theVerb) {
-        // default to require the "All" authz action, and for special verbs default to something more appropriate
-        ArtifactExecutionInfo.AuthzAction authzAction = verbAuthzActionEnumMap.get(theVerb);
-        if (authzAction == null) authzAction = ArtifactExecutionInfo.AUTHZA_ALL;
-        return authzAction;
     }
 
     public MNode getInParameter(String name) {
@@ -816,19 +802,6 @@ public class ServiceDefinition {
     private static final long allCreditCards = CreditCardValidator.VISA + CreditCardValidator.MASTERCARD +
             CreditCardValidator.AMEX + CreditCardValidator.DISCOVER + CreditCardValidator.DINERS;
 
-    public static final HashMap<String, ArtifactExecutionInfo.AuthzAction> verbAuthzActionEnumMap;
-    static {
-        HashMap<String, ArtifactExecutionInfo.AuthzAction> map = new HashMap<>(6);
-        map.put("create", ArtifactExecutionInfo.AUTHZA_CREATE);
-        map.put("update", ArtifactExecutionInfo.AUTHZA_UPDATE);
-        map.put("store", ArtifactExecutionInfo.AUTHZA_UPDATE);
-        map.put("delete", ArtifactExecutionInfo.AUTHZA_DELETE);
-        map.put("view", ArtifactExecutionInfo.AUTHZA_VIEW);
-        map.put("find", ArtifactExecutionInfo.AUTHZA_VIEW);
-        map.put("get", ArtifactExecutionInfo.AUTHZA_VIEW);
-        map.put("search", ArtifactExecutionInfo.AUTHZA_VIEW);
-        verbAuthzActionEnumMap = map;
-    }
 
     @SuppressWarnings("unchecked")
     public static void nestedRemoveNullsFromResultMap(Map<String, Object> result) {

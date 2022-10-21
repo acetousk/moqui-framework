@@ -29,7 +29,6 @@ import org.moqui.context.SecondFactorRequiredException
 import org.moqui.entity.EntityCondition
 import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
-import org.moqui.impl.context.ArtifactExecutionFacadeImpl
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
 import org.moqui.impl.context.UserFacadeImpl
@@ -337,7 +336,6 @@ class MoquiShiroRealm implements Realm, Authorizer {
     boolean isPermitted(PrincipalCollection principalCollection, String resourceAccess) {
         // String username = (String) principalCollection.primaryPrincipal
         // TODO: if we want to support other users than the current need to look them up here
-        return ArtifactExecutionFacadeImpl.isPermitted(resourceAccess, ecfi.getEci())
     }
 
     boolean[] isPermitted(PrincipalCollection principalCollection, String... resourceAccesses) {

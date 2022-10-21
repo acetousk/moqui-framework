@@ -33,14 +33,13 @@ import org.apache.shiro.web.subject.WebSubjectContext
 import org.apache.shiro.web.subject.support.DefaultWebSubjectContext
 import org.apache.shiro.web.session.HttpServletSession
 
-import org.moqui.context.ArtifactExecutionInfo
+
 import org.moqui.context.AuthenticationRequiredException
 import org.moqui.context.SecondFactorRequiredException
 import org.moqui.context.UserFacade
 import org.moqui.entity.EntityCondition
 import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
-import org.moqui.impl.context.ArtifactExecutionInfoImpl.ArtifactAuthzCheck
 import org.moqui.impl.entity.EntityValueBase
 import org.moqui.impl.screen.ScreenUrlInfo
 import org.moqui.impl.util.MoquiShiroRealm
@@ -330,12 +329,11 @@ class UserFacadeImpl implements UserFacade {
     @Override void setLocale(Locale locale) {
         if (currentInfo.userAccount != null) {
             eci.transaction.runUseOrBegin(null, "Error saving locale", {
-                boolean alreadyDisabled = eci.getArtifactExecution().disableAuthz()
                 try {
                     EntityValue userAccountClone = currentInfo.userAccount.cloneValue()
                     userAccountClone.set("locale", locale.toString())
                     userAccountClone.update()
-                } finally { if (!alreadyDisabled) eci.getArtifactExecution().enableAuthz() }
+                } finally {  }
             })
         }
         currentInfo.localeCache = locale
@@ -350,12 +348,11 @@ class UserFacadeImpl implements UserFacade {
     @Override void setTimeZone(TimeZone tz) {
         if (currentInfo.userAccount != null) {
             eci.transaction.runUseOrBegin(null, "Error saving timeZone", {
-                boolean alreadyDisabled = eci.getArtifactExecution().disableAuthz()
                 try {
                     EntityValue userAccountClone = currentInfo.userAccount.cloneValue()
                     userAccountClone.set("timeZone", tz.getID())
                     userAccountClone.update()
-                } finally { if (!alreadyDisabled) eci.getArtifactExecution().enableAuthz() }
+                } finally {  }
             })
         }
         currentInfo.tzCache = tz
@@ -365,12 +362,11 @@ class UserFacadeImpl implements UserFacade {
     @Override void setCurrencyUomId(String uomId) {
         if (currentInfo.userAccount != null) {
             eci.transaction.runUseOrBegin(null, "Error saving currencyUomId", {
-                boolean alreadyDisabled = eci.getArtifactExecution().disableAuthz()
                 try {
                     EntityValue userAccountClone = currentInfo.userAccount.cloneValue()
                     userAccountClone.set("currencyUomId", uomId)
                     userAccountClone.update()
-                } finally { if (!alreadyDisabled) eci.getArtifactExecution().enableAuthz() }
+                } finally {  }
             })
         }
         currentInfo.currencyUomId = uomId
@@ -443,7 +439,6 @@ class UserFacadeImpl implements UserFacade {
     @Override void setPreference(String preferenceKey, String preferenceValue) {
         String userId = getUserId()
         if (!userId) throw new IllegalStateException("Cannot set preference with key ${preferenceKey}, no user logged in.")
-        boolean alreadyDisabled = eci.getArtifactExecution().disableAuthz()
         boolean beganTransaction = eci.transaction.begin(null)
         try {
             eci.getEntity().makeValue("moqui.security.UserPreference").set("userId", getUserId())
@@ -452,7 +447,6 @@ class UserFacadeImpl implements UserFacade {
             eci.transaction.rollback(beganTransaction, "Error saving UserPreference", t)
         } finally {
             if (eci.transaction.isTransactionInPlace()) eci.transaction.commit(beganTransaction)
-            if (!alreadyDisabled) eci.getArtifactExecution().enableAuthz()
         }
     }
 
@@ -862,39 +856,6 @@ class UserFacadeImpl implements UserFacade {
         return groupIdSet
     }
 
-    ArrayList<Map<String, Object>> getArtifactTarpitCheckList(ArtifactExecutionInfo.ArtifactType artifactTypeEnum) {
-        ArrayList<Map<String, Object>> checkList = (ArrayList<Map<String, Object>>) currentInfo.internalArtifactTarpitCheckListMap.get(artifactTypeEnum)
-        if (checkList == null) {
-            // get the list for each group separately to increase cache hits/efficiency
-            checkList = new ArrayList<>()
-            for (String userGroupId in getUserGroupIdSet()) {
-                EntityList atcvList = eci.getEntity().find("moqui.security.ArtifactTarpitCheckView")
-                        .condition("userGroupId", userGroupId).condition("artifactTypeEnumId", artifactTypeEnum.name())
-                        .useCache(true).disableAuthz().list()
-                int atcvListSize = atcvList.size()
-                for (int i = 0; i < atcvListSize; i++) checkList.add(((EntityValueBase) atcvList.get(i)).getValueMap())
-            }
-            currentInfo.internalArtifactTarpitCheckListMap.put(artifactTypeEnum, checkList)
-        }
-        return checkList
-    }
-
-    ArrayList<ArtifactAuthzCheck> getArtifactAuthzCheckList() {
-        // NOTE: even if there is no user, still consider part of the ALL_USERS group and such: if (usernameStack.size() == 0) return EntityListImpl.EMPTY
-        if (currentInfo.internalArtifactAuthzCheckList == null) {
-            // get the list for each group separately to increase cache hits/efficiency
-            ArrayList<ArtifactAuthzCheck> newList = new ArrayList<>()
-            for (String userGroupId in getUserGroupIdSet()) {
-                EntityList aacvList = eci.getEntity().find("moqui.security.ArtifactAuthzCheckView")
-                        .condition("userGroupId", userGroupId).useCache(true).disableAuthz().list()
-                int aacvListSize = aacvList.size()
-                for (int i = 0; i < aacvListSize; i++) newList.add(new ArtifactAuthzCheck((EntityValueBase) aacvList.get(i)))
-            }
-            currentInfo.internalArtifactAuthzCheckList = newList
-        }
-        return currentInfo.internalArtifactAuthzCheckList
-    }
-
     @Override String getUserId() { return currentInfo.userId }
     @Override String getUsername() { return currentInfo.username }
     @Override EntityValue getUserAccount() { return currentInfo.getUserAccount() }
@@ -1021,9 +982,6 @@ class UserFacadeImpl implements UserFacade {
         protected String userId = (String) null
         Set<String> internalUserGroupIdSet = (Set<String>) null
         // these two are used by ArtifactExecutionFacadeImpl but are maintained here to be cleared when user changes, are based on current user's groups
-        final EnumMap<ArtifactExecutionInfo.ArtifactType, ArrayList<Map<String, Object>>> internalArtifactTarpitCheckListMap =
-                new EnumMap<ArtifactExecutionInfo.ArtifactType, ArrayList<Map<String, Object>>>(ArtifactExecutionInfo.ArtifactType.class)
-        ArrayList<ArtifactAuthzCheck> internalArtifactAuthzCheckList = (ArrayList<ArtifactAuthzCheck>) null
 
         Locale localeCache = (Locale) null
         TimeZone tzCache = (TimeZone) null
@@ -1079,8 +1037,6 @@ class UserFacadeImpl implements UserFacade {
             }
 
             internalUserGroupIdSet = (Set<String>) null
-            internalArtifactTarpitCheckListMap.clear()
-            internalArtifactAuthzCheckList = (ArrayList<ArtifactAuthzCheck>) null
         }
 
         String getUsername() { return username }

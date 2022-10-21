@@ -74,7 +74,6 @@ class GroovyShellEndpoint extends MoquiAbstractEndpoint implements ActionListene
         groovyshThread = Thread.start("GroovyShellWeb-" + threadExt.getAndIncrement(), {
             registerEci()
             // do this for convenience, since anything can be run here no point in authz security
-            eci.artifactExecutionFacade.disableAuthz()
             inactivityTimer.start()
             groovysh.run(null)
         })

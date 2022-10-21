@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -28,7 +28,7 @@ import org.codehaus.groovy.tools.GroovyClass
 import org.moqui.BaseException
 import org.moqui.Moqui
 import org.moqui.context.*
-import org.moqui.context.ArtifactExecutionInfo.ArtifactType
+
 import org.moqui.entity.EntityDataLoader
 import org.moqui.entity.EntityFacade
 import org.moqui.entity.EntityList
@@ -37,9 +37,6 @@ import org.moqui.util.CollectionUtilities
 import org.moqui.util.MClassLoader
 import org.moqui.impl.actions.XmlAction
 import org.moqui.resource.UrlResourceReference
-import org.moqui.impl.context.ContextJavaUtil.ArtifactBinInfo
-import org.moqui.impl.context.ContextJavaUtil.ArtifactStatsInfo
-import org.moqui.impl.context.ContextJavaUtil.ArtifactHitInfo
 import org.moqui.impl.context.ContextJavaUtil.CustomScheduledExecutor
 import org.moqui.impl.context.ContextJavaUtil.ScheduledRunnableInfo
 import org.moqui.impl.entity.EntityFacadeImpl
@@ -69,7 +66,6 @@ import java.util.concurrent.BlockingQueue
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -81,7 +77,7 @@ import java.util.zip.ZipInputStream
 class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     protected final static Logger logger = LoggerFactory.getLogger(ExecutionContextFactoryImpl.class)
     protected final static boolean isTraceEnabled = logger.isTraceEnabled()
-    
+
     private AtomicBoolean destroyed = new AtomicBoolean(false)
 
     public final long initStartTime
@@ -112,15 +108,9 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     protected final Map<String, WebappInfo> webappInfoMap = new HashMap<>()
     protected final List<NotificationMessageListener> registeredNotificationMessageListeners = []
 
-    protected final Map<String, ArtifactStatsInfo> artifactStatsInfoByType = new HashMap<>()
-    public final Map<ArtifactType, Boolean> artifactTypeAuthzEnabled = new EnumMap<ArtifactType, Boolean>(ArtifactType.class)
-    public final Map<ArtifactType, Boolean> artifactTypeTarpitEnabled = new EnumMap<ArtifactType, Boolean>(ArtifactType.class)
 
     protected String skipStatsCond
     protected long hitBinLengthMillis = 900000 // 15 minute default
-    private final EnumMap<ArtifactType, Boolean> artifactPersistHitByTypeEnum = new EnumMap<ArtifactType, Boolean>(ArtifactType.class)
-    private final EnumMap<ArtifactType, Boolean> artifactPersistBinByTypeEnum = new EnumMap<ArtifactType, Boolean>(ArtifactType.class)
-    final ConcurrentLinkedQueue<ArtifactHitInfo> deferredHitInfoQueue = new ConcurrentLinkedQueue<ArtifactHitInfo>()
 
     /** The SecurityManager for Apache Shiro */
     protected org.apache.shiro.mgt.SecurityManager internalSecurityManager
@@ -540,24 +530,7 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         String binLengthAttr = serverStatsNode.attribute("bin-length-seconds")
         if (binLengthAttr != null && !binLengthAttr.isEmpty()) hitBinLengthMillis = (binLengthAttr as long)*1000
         // populate ArtifactType configurations
-        for (ArtifactType at in ArtifactType.values()) {
-            MNode artifactStats = getArtifactStatsNode(at.name(), null)
-            if (artifactStats == null) {
-                artifactPersistHitByTypeEnum.put(at, Boolean.FALSE)
-                artifactPersistBinByTypeEnum.put(at, Boolean.FALSE)
-            } else {
-                artifactPersistHitByTypeEnum.put(at, "true".equals(artifactStats.attribute("persist-hit")))
-                artifactPersistBinByTypeEnum.put(at, "true".equals(artifactStats.attribute("persist-bin")))
-            }
-            MNode aeNode = getArtifactExecutionNode(at.name())
-            if (aeNode == null) {
-                artifactTypeAuthzEnabled.put(at, true)
-                artifactTypeTarpitEnabled.put(at, true)
-            } else {
-                artifactTypeAuthzEnabled.put(at, !"false".equals(aeNode.attribute("authz-enabled")))
-                artifactTypeTarpitEnabled.put(at, !"false".equals(aeNode.attribute("tarpit-enabled")))
-            }
-        }
+
 
         // register notificationWebSocketListener
         registerNotificationMessageListener(notificationWebSocketListener)
@@ -712,9 +685,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
 
             ExecutionContext ec = getExecutionContext()
             try {
-                ec.getArtifactExecution().disableAuthz()
-                ec.getArtifactExecution().push("loadData", ArtifactExecutionInfo.AT_OTHER, ArtifactExecutionInfo.AUTHZA_ALL, false)
-                ec.getArtifactExecution().setAnonymousAuthorizedAll()
                 ec.getUser().loginAnonymousIfNoUser()
 
                 EntityDataLoader edl = ec.getEntity().makeDataLoader()
@@ -740,9 +710,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
                 logger.warn("Loading 'test' type data (instance_purpose=test)")
                 ExecutionContext ec = getExecutionContext()
                 try {
-                    ec.getArtifactExecution().disableAuthz()
-                    ec.getArtifactExecution().push("loadData", ArtifactExecutionInfo.AT_OTHER, ArtifactExecutionInfo.AUTHZA_ALL, false)
-                    ec.getArtifactExecution().setAnonymousAuthorizedAll()
                     ec.getUser().loginAnonymousIfNoUser()
 
                     EntityDataLoader edl = ec.getEntity().makeDataLoader()
@@ -773,17 +740,8 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
 
         // persist any remaining bins in artifactHitBinByType
         Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis())
-        List<ArtifactStatsInfo> asiList = new ArrayList<>(artifactStatsInfoByType.values())
-        artifactStatsInfoByType.clear()
-        ArtifactExecutionFacadeImpl aefi = getEci().artifactExecutionFacade
-        boolean enableAuthz = !aefi.disableAuthz()
         try {
-            for (ArtifactStatsInfo asi in asiList) {
-                if (asi.curHitBin == null) continue
-                EntityValue ahb = asi.curHitBin.makeAhbValue(this, currentTimestamp)
-                ahb.setSequencedIdPrimary().create()
-            }
-        } finally { if (enableAuthz) aefi.enableAuthz() }
+        } finally {  }
         logger.info("ArtifactHitBins stored")
 
         // shutdown scheduled executor and worker pools
@@ -1419,52 +1377,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
             'moqui.entity.view.DbViewEntity', 'moqui.entity.view.DbViewEntityMember',
             'moqui.entity.view.DbViewEntityKeyMap', 'moqui.entity.view.DbViewEntityAlias'])
 
-    void countArtifactHit(ArtifactType artifactTypeEnum, String artifactSubType, String artifactName,
-              Map<String, Object> parameters, long startTime, double runningTimeMillis, Long outputSize) {
-        boolean isEntity = ArtifactExecutionInfo.AT_ENTITY.is(artifactTypeEnum) || (artifactSubType != null && artifactSubType.startsWith('entity'))
-        // don't count the ones this calls
-        if (isEntity && entitiesToSkipHitCount.contains(artifactName)) return
-        // for screen, transition, screen-content check skip stats expression
-        if (!isEntity && (ArtifactExecutionInfo.AT_XML_SCREEN.is(artifactTypeEnum) ||
-                ArtifactExecutionInfo.AT_XML_SCREEN_CONTENT.is(artifactTypeEnum) ||
-                ArtifactExecutionInfo.AT_XML_SCREEN_TRANS.is(artifactTypeEnum)) && eci.getSkipStats()) return
-
-        boolean isSlowHit = false
-        if (Boolean.TRUE.is((Boolean) artifactPersistBinByTypeEnum.get(artifactTypeEnum))) {
-            // NOTE: not adding artifactTypeEnum.name() to key, artifact names should be unique
-            String binKey = artifactName
-            // TODO: may be more cases where we don't need to append artifactTypeEnum, ie based on artifactName
-            if (artifactSubType != null && !ArtifactExecutionInfo.AT_SERVICE.is(artifactTypeEnum)) binKey = binKey.concat(artifactSubType)
-            ArtifactStatsInfo statsInfo = (ArtifactStatsInfo) artifactStatsInfoByType.get(binKey)
-            if (statsInfo == null) {
-                // consider seeding this from the DB using ArtifactHitReport to get all past data, or maybe not to better handle different servers/etc over time, etc
-                statsInfo = new ArtifactStatsInfo(artifactTypeEnum, artifactSubType, artifactName)
-                artifactStatsInfoByType.put(binKey, statsInfo)
-            }
-
-            // has the current bin expired since the last hit record?
-            if (statsInfo.curHitBin != null) {
-                long binStartTime = statsInfo.curHitBin.startTime
-                if (startTime > (binStartTime + hitBinLengthMillis)) {
-                    if (isTraceEnabled) logger.trace("Advancing ArtifactHitBin [${artifactTypeEnum.name()}.${artifactSubType}:${artifactName}] current hit start [${new Timestamp(startTime)}], bin start [${new Timestamp(binStartTime)}] bin length ${hitBinLengthMillis/1000} seconds")
-                    advanceArtifactHitBin(getEci(), statsInfo, startTime, hitBinLengthMillis)
-                }
-            }
-
-            // handle stats since start
-            isSlowHit = statsInfo.countHit(startTime, runningTimeMillis)
-        }
-        // NOTE: never save individual hits for entity artifact hits, way too heavy and also avoids self-reference
-        //     (could also be done by checking for ArtifactHit/etc of course)
-        // Always save slow hits above userImpactMinMillis regardless of settings
-        if (!isEntity && ((isSlowHit && runningTimeMillis > ContextJavaUtil.userImpactMinMillis) ||
-                Boolean.TRUE.is((Boolean) artifactPersistHitByTypeEnum.get(artifactTypeEnum)))) {
-            ExecutionContextImpl eci = getEci()
-            ArtifactHitInfo ahi = new ArtifactHitInfo(eci, isSlowHit, artifactTypeEnum, artifactSubType, artifactName,
-                    startTime, runningTimeMillis, parameters, outputSize)
-            deferredHitInfoQueue.add(ahi)
-        }
-    }
 
     static class DeferredHitInfoFlush implements Runnable {
         // max creates per chunk, one transaction per chunk (unless error)
@@ -1473,17 +1385,10 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         DeferredHitInfoFlush(ExecutionContextFactoryImpl ecfi) { this.ecfi = ecfi }
         @Override synchronized void run() {
             ExecutionContextImpl eci = ecfi.getEci()
-            eci.artifactExecutionFacade.disableAuthz()
             try {
                 try {
-                    ConcurrentLinkedQueue<ArtifactHitInfo> queue = ecfi.deferredHitInfoQueue
                     // split into maxCreates chunks, repeat based on initial size (may be added to while running)
-                    int remainingCreates = queue.size()
                     // if (remainingCreates > maxCreates) logger.warn("Deferred ArtifactHit create queue size ${remainingCreates} is greater than max creates per chunk ${maxCreates}")
-                    while (remainingCreates > 0) {
-                        flushQueue(queue)
-                        remainingCreates -= maxCreates
-                    }
                 } catch (Throwable t) {
                     logger.error("Error saving ArtifactHits", t)
                 }
@@ -1493,67 +1398,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
             }
         }
 
-        void flushQueue(ConcurrentLinkedQueue<ArtifactHitInfo> queue) {
-            ExecutionContextFactoryImpl localEcfi = ecfi
-            ArrayList<ArtifactHitInfo> createList = new ArrayList<>(maxCreates)
-            int createCount = 0
-            while (createCount < maxCreates) {
-                ArtifactHitInfo ahi = queue.poll()
-                if (ahi == null) break
-                createCount++
-                createList.add(ahi)
-            }
-            int retryCount = 5
-            while (retryCount > 0) {
-                try {
-                    int createListSize = createList.size()
-                    if (createListSize == 0) break
-                    long startTime = System.currentTimeMillis()
-                    ecfi.transactionFacade.runUseOrBegin(60, "Error saving ArtifactHits", {
-                        for (int i = 0; i < createListSize; i++) {
-                            ArtifactHitInfo ahi = (ArtifactHitInfo) createList.get(i)
-                            try {
-                                EntityValue ahValue = ahi.makeAhiValue(localEcfi)
-                                ahValue.setSequencedIdPrimary()
-                                ahValue.create()
-                            } catch (Throwable t) {
-                                createList.remove(i)
-                                throw t
-                            }
-                        }
-                    })
-                    if (isTraceEnabled) logger.trace("Created ${createListSize} ArtifactHit records in ${System.currentTimeMillis() - startTime}ms")
-                    break
-                } catch (Throwable t) {
-                    logger.error("Error saving ArtifactHits, retrying (${retryCount})", t)
-                    retryCount--
-                }
-            }
-        }
-    }
-
-    protected synchronized void advanceArtifactHitBin(ExecutionContextImpl eci, ArtifactStatsInfo statsInfo,
-            long startTime, long hitBinLengthMillis) {
-        ArtifactBinInfo abi = statsInfo.curHitBin
-        if (abi == null) {
-            statsInfo.curHitBin = new ArtifactBinInfo(statsInfo, startTime)
-            return
-        }
-
-        // check the time again and return just in case something got in while waiting with the same type
-        long binStartTime = abi.startTime
-        if (startTime < (binStartTime + hitBinLengthMillis)) return
-
-        // otherwise, persist the old and create a new one
-        EntityValue ahb = abi.makeAhbValue(this, new Timestamp(binStartTime + hitBinLengthMillis))
-        eci.runInWorkerThread({
-            ArtifactExecutionFacadeImpl aefi = getEci().artifactExecutionFacade
-            boolean enableAuthz = !aefi.disableAuthz()
-            try { ahb.setSequencedIdPrimary().create() }
-            finally { if (enableAuthz) aefi.enableAuthz() }
-        })
-
-        statsInfo.curHitBin = new ArtifactBinInfo(statsInfo, startTime)
     }
 
     // ========================================================

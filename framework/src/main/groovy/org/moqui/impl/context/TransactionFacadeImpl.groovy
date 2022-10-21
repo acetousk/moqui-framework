@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -628,7 +628,6 @@ class TransactionFacadeImpl implements TransactionFacade {
             if (isTraceEnabled) {
                 StringBuilder infoString = new StringBuilder()
                 infoString.append("Initializing TX cache at:")
-                for (infoAei in ecfi.getEci().artifactExecutionFacade.getStack()) infoString.append(infoAei.getName())
                 logger.trace(infoString.toString())
             // } else if (logger.isInfoEnabled()) {
             //     logger.info("Initializing TX cache in ${ecfi.getEci().getArtifactExecutionImpl().peek()?.getName()}")
@@ -640,7 +639,7 @@ class TransactionFacadeImpl implements TransactionFacade {
             txStackInfo.txCache = txCache
             registerSynchronization(txCache)
         } else if (txStackInfo.txCache.isReadOnly()) {
-            if (isTraceEnabled) logger.trace("Making TX cache write through in ${ecfi.getEci().artifactExecutionFacade.peek()?.getName()}")
+            if (isTraceEnabled) logger.trace("Making TX cache write through in ...")
             txStackInfo.txCache.makeWriteThrough()
             // doing on read only init: registerSynchronization(txStackInfo.txCache)
         }

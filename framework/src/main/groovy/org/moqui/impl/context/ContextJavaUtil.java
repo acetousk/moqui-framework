@@ -23,17 +23,13 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import groovy.lang.GString;
-import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.jetbrains.annotations.NotNull;
-import org.moqui.context.ArtifactExecutionInfo;
 import org.moqui.entity.EntityFind;
 import org.moqui.entity.EntityList;
 import org.moqui.entity.EntityValue;
-import org.moqui.impl.entity.EntityValueBase;
 import org.moqui.impl.screen.ScreenRenderImpl;
 import org.moqui.util.ContextStack;
 import org.moqui.util.LiteStringMap;
-import org.moqui.util.ObjectUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,8 +37,6 @@ import javax.transaction.Synchronization;
 import javax.transaction.Transaction;
 import javax.transaction.xa.XAResource;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.sql.*;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -105,194 +99,6 @@ public class ContextJavaUtil {
         } else {
             logger.info("In screen actions skipping value from actions block that is not supported; key=" + key + ", type=" + value.getClass().getName() + ", value=" + value);
             return null;
-        }
-    }
-
-    public static class ArtifactStatsInfo {
-        private ArtifactExecutionInfo.ArtifactType artifactTypeEnum;
-        private String artifactSubType;
-        private String artifactName;
-        public ArtifactBinInfo curHitBin = null;
-        private long hitCount = 0L; // slowHitCount = 0L;
-        private double totalTimeMillis = 0, totalSquaredTime = 0;
-
-        ArtifactStatsInfo(ArtifactExecutionInfo.ArtifactType artifactTypeEnum, String artifactSubType, String artifactName) {
-            this.artifactTypeEnum = artifactTypeEnum;
-            this.artifactSubType = artifactSubType;
-            this.artifactName = artifactName;
-        }
-        double getAverage() { return hitCount > 0 ? totalTimeMillis / hitCount : 0; }
-        double getStdDev() {
-            if (hitCount < 2) return 0;
-            return Math.sqrt(Math.abs(totalSquaredTime - ((totalTimeMillis*totalTimeMillis) / hitCount)) / (hitCount - 1L));
-        }
-        public boolean countHit(long startTime, double runningTime) {
-            hitCount++;
-            boolean isSlow = isHitSlow(runningTime);
-            // if (isSlow) slowHitCount++;
-            // do something funny with these so we get a better avg and std dev, leave out the first result (count 2nd
-            //     twice) if first hit is more than 2x the second because the first hit is almost always MUCH slower
-            if (hitCount == 2L && totalTimeMillis > (runningTime * 3)) {
-                totalTimeMillis = runningTime * 2;
-                totalSquaredTime = runningTime * runningTime * 2;
-            } else {
-                totalTimeMillis += runningTime;
-                totalSquaredTime += runningTime * runningTime;
-            }
-
-            if (curHitBin == null) curHitBin = new ArtifactBinInfo(this, startTime);
-            curHitBin.countHit(runningTime, isSlow);
-
-            return isSlow;
-        }
-        boolean isHitSlow(double runningTime) {
-            if (hitCount < checkSlowThreshold) return false;
-            // calc new average and standard deviation
-            double average = hitCount > 0 ? totalTimeMillis / hitCount : 0;
-            double stdDev = Math.sqrt(Math.abs(totalSquaredTime - ((totalTimeMillis*totalTimeMillis) / hitCount)) / (hitCount - 1L));
-
-            // if runningTime is more than 2.6 std devs from the avg, count it and possibly log it
-            // using 2.6 standard deviations because 2 would give us around 5% of hits (normal distro), shooting for more like 1%
-            double slowTime = average + (stdDev * 2.6);
-            if (slowTime != 0 && runningTime > slowTime) {
-                if (runningTime > userImpactMinMillis) logger.warn("Slow hit to " + artifactTypeEnum + ":" + artifactSubType +
-                        ":" + artifactName + " running time " + runningTime + " is greater than average " + average +
-                        " plus 2.6 standard deviations " + stdDev);
-                return true;
-            } else {
-                return false;
-            }
-        }
-    }
-
-    public static class ArtifactBinInfo {
-        private final ArtifactStatsInfo statsInfo;
-        public final long startTime;
-
-        private long hitCount = 0L, slowHitCount = 0L;
-        private double totalTimeMillis = 0, totalSquaredTime = 0, minTimeMillis = Long.MAX_VALUE, maxTimeMillis = 0;
-
-        ArtifactBinInfo(ArtifactStatsInfo statsInfo, long startTime) {
-            this.statsInfo = statsInfo;
-            this.startTime = startTime;
-        }
-
-        void countHit(double runningTime, boolean isSlow) {
-            hitCount++;
-            if (isSlow) slowHitCount++;
-
-            if (hitCount == 2L && totalTimeMillis > (runningTime * 3)) {
-                totalTimeMillis = runningTime * 2;
-                totalSquaredTime = runningTime * runningTime * 2;
-            } else {
-                totalTimeMillis += runningTime;
-                totalSquaredTime += runningTime * runningTime;
-            }
-
-            if (runningTime < minTimeMillis) minTimeMillis = runningTime;
-            if (runningTime > maxTimeMillis) maxTimeMillis = runningTime;
-        }
-
-        EntityValue makeAhbValue(ExecutionContextFactoryImpl ecfi, Timestamp binEndDateTime) {
-            EntityValueBase ahb = (EntityValueBase) ecfi.entityFacade.makeValue("moqui.server.ArtifactHitBin");
-            ahb.put("artifactType", statsInfo.artifactTypeEnum.name());
-            ahb.put("artifactSubType", statsInfo.artifactSubType);
-            ahb.put("artifactName", statsInfo.artifactName);
-            ahb.put("binStartDateTime", new Timestamp(startTime));
-            ahb.put("binEndDateTime", binEndDateTime);
-            ahb.put("hitCount", hitCount);
-            // NOTE: use 6 digit precision for nanos in millisecond unit
-            ahb.put("totalTimeMillis", new BigDecimal(totalTimeMillis).setScale(6, RoundingMode.HALF_UP));
-            ahb.put("totalSquaredTime", new BigDecimal(totalSquaredTime).setScale(6, RoundingMode.HALF_UP));
-            ahb.put("minTimeMillis", new BigDecimal(minTimeMillis).setScale(6, RoundingMode.HALF_UP));
-            ahb.put("maxTimeMillis", new BigDecimal(maxTimeMillis).setScale(6, RoundingMode.HALF_UP));
-            ahb.put("slowHitCount", slowHitCount);
-            ahb.put("serverIpAddress", ecfi.localhostAddress != null ? ecfi.localhostAddress.getHostAddress() : "127.0.0.1");
-            ahb.put("serverHostName", ecfi.localhostAddress != null ? ecfi.localhostAddress.getHostName() : "localhost");
-            return ahb;
-
-        }
-    }
-
-    public static class ArtifactHitInfo {
-        String visitId, userId;
-        boolean isSlowHit;
-        ArtifactExecutionInfo.ArtifactType artifactTypeEnum;
-        String artifactSubType, artifactName;
-        long startTime;
-        double runningTimeMillis;
-        Map<String, Object> parameters;
-        Long outputSize;
-        String errorMessage = null;
-        String requestUrl = null, referrerUrl = null;
-
-        ArtifactHitInfo(ExecutionContextImpl eci, boolean isSlowHit, ArtifactExecutionInfo.ArtifactType artifactTypeEnum,
-                        String artifactSubType, String artifactName, long startTime, double runningTimeMillis,
-                        Map<String, Object> parameters, Long outputSize) {
-            visitId = eci.userFacade.getVisitId();
-            userId = eci.userFacade.getUserId();
-            this.isSlowHit = isSlowHit;
-            this.artifactTypeEnum = artifactTypeEnum;
-            this.artifactSubType = artifactSubType;
-            this.artifactName = artifactName;
-            this.startTime = startTime;
-            this.runningTimeMillis = runningTimeMillis;
-            this.parameters = parameters;
-            this.outputSize = outputSize;
-            if (eci.getMessage().hasError()) {
-                StringBuilder errorMessage = new StringBuilder();
-                for (String curErr: eci.getMessage().getErrors()) errorMessage.append(curErr).append(";");
-                if (errorMessage.length() > 255) errorMessage.delete(255, errorMessage.length());
-                this.errorMessage = errorMessage.toString();
-            }
-            WebFacadeImpl wfi = eci.getWebImpl();
-            if (wfi != null) {
-                String fullUrl = wfi.getRequestUrl();
-                requestUrl = (fullUrl.length() > 255) ? fullUrl.substring(0, 255) : fullUrl;
-                referrerUrl = wfi.getRequest().getHeader("Referer");
-            }
-        }
-        EntityValue makeAhiValue(ExecutionContextFactoryImpl ecfi) {
-            EntityValueBase ahp = (EntityValueBase) ecfi.entityFacade.makeValue("moqui.server.ArtifactHit");
-            ahp.put("visitId", visitId);
-            ahp.put("userId", userId);
-            ahp.put("isSlowHit", isSlowHit ? 'Y' : 'N');
-            ahp.put("artifactType", artifactTypeEnum.name());
-            ahp.put("artifactSubType", artifactSubType);
-            ahp.put("artifactName", artifactName);
-            ahp.put("startDateTime", new Timestamp(startTime));
-            ahp.put("runningTimeMillis", new BigDecimal(runningTimeMillis).setScale(6, RoundingMode.HALF_UP));
-
-            if (parameters != null && parameters.size() > 0) {
-                StringBuilder ps = new StringBuilder();
-                for (Map.Entry<String, Object> pme: parameters.entrySet()) {
-                    Object value = pme.getValue();
-                    if (value == null || ObjectUtilities.isEmpty(value) || value instanceof Map || value instanceof Collection) continue;
-                    String key = pme.getKey();
-                    if (key != null && key.contains("password")) continue;
-                    if (ps.length() > 0) ps.append(", ");
-                    String valString = value.toString();
-                    if (valString.length() > 80) valString = valString.substring(0, 80);
-                    ps.append(key).append("=").append(valString);
-                }
-                // is text-long, could be up to 4000, probably don't want that much for data size
-                if (ps.length() > 1000) ps.delete(1000, ps.length());
-                ahp.put("parameterString", ps.toString());
-            }
-            if (outputSize != null) ahp.put("outputSize", outputSize);
-            if (errorMessage != null) {
-                ahp.put("wasError", "Y");
-                ahp.put("errorMessage", errorMessage);
-            } else {
-                ahp.put("wasError", "N");
-            }
-            if (requestUrl != null && requestUrl.length() > 0) ahp.put("requestUrl", requestUrl);
-            if (referrerUrl != null && referrerUrl.length() > 0) ahp.put("referrerUrl", referrerUrl);
-
-            ahp.put("serverIpAddress", ecfi.localhostAddress != null ? ecfi.localhostAddress.getHostAddress() : "127.0.0.1");
-            ahp.put("serverHostName", ecfi.localhostAddress != null ? ecfi.localhostAddress.getHostName() : "localhost");
-
-            return ahp;
         }
     }
 
@@ -370,15 +176,13 @@ public class ContextJavaUtil {
         // TODO enum for operation? create, update, delete, find-for-update
         String entityName, pkString, entityPlusPk, threadName;
         String mutateEntityName, mutatePkString;
-        ArrayList<ArtifactExecutionInfo> artifactStack;
         long lockTime = -1, txBeginTime = -1, moquiTxId = -1;
-        public EntityRecordLock(String entityName, String pkString, ArrayList<ArtifactExecutionInfo> artifactStack) {
+        public EntityRecordLock(String entityName, String pkString) {
             this.entityName = entityName;
             this.pkString = pkString;
             // NOTE: used primary as a key, for efficiency don't use separator between entityName and pkString
             entityPlusPk = entityName.concat(pkString);
             threadName = Thread.currentThread().getName();
-            this.artifactStack = artifactStack;
             lockTime = System.currentTimeMillis();
         }
 
@@ -414,18 +218,10 @@ public class ContextJavaUtil {
                             .append(" TX ").append(moquiTxId).append(" began ").append(new Timestamp(txBeginTime));
                     if (mutateEntityName != null) msgBuilder.append(" from mutate of entity ").append(mutateEntityName).append(" pk ").append(mutatePkString);
                     msgBuilder.append(" at: ");
-                    if (artifactStack != null) for (int mi = 0; mi < artifactStack.size(); mi++) {
-                        msgBuilder.append("\n").append(StringGroovyMethods.padLeft((CharSequence) Integer.toString(mi), 2, "0"))
-                                .append(": ").append(artifactStack.get(mi).toBasicString());
-                    }
                     for (int i = 0; i < curErlList.size(); i++) {
                         EntityRecordLock otherErl = curErlList.get(i);
                         msgBuilder.append("\n== OTHER LOCK ").append(i).append(" thread ").append(otherErl.threadName)
                                 .append(" TX ").append(otherErl.moquiTxId).append(" began ").append(new Timestamp(otherErl.txBeginTime)).append(" at: ");
-                        if (otherErl.artifactStack != null) for (int mi = 0; mi < otherErl.artifactStack.size(); mi++) {
-                            msgBuilder.append("\n").append(StringGroovyMethods.padLeft((CharSequence) Integer.toString(mi), 2, "0"))
-                                    .append(": ").append(otherErl.artifactStack.get(mi).toBasicString());
-                        }
                     }
                     logger.warn(msgBuilder.toString());
                 }

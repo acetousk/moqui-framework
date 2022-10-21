@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -18,7 +18,7 @@ import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.core.LogEvent
 import org.apache.logging.log4j.util.ReadOnlyStringMap
 import org.moqui.BaseArtifactException
-import org.moqui.context.ArtifactExecutionInfo
+
 import org.moqui.impl.context.ElasticFacadeImpl
 import org.moqui.context.LogEventSubscriber
 import org.moqui.impl.context.ExecutionContextFactoryImpl
@@ -26,7 +26,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** */
@@ -126,8 +125,6 @@ class ElasticSearchLogger {
                     localizedMessage:thrown.localizedMessage, stackTrace:stList] as Map<String, Object>
             if (thrown instanceof BaseArtifactException) {
                 BaseArtifactException bae = (BaseArtifactException) thrown
-                Deque<ArtifactExecutionInfo> aeiList = bae.getArtifactStack()
-                if (aeiList != null && aeiList.size() > 0) thrownMap.put("artifactStack", aeiList.collect({ it.toBasicString() }))
             }
             Throwable cause = thrown.cause
             if (cause != null) thrownMap.put("cause", makeThrowableMap(cause))

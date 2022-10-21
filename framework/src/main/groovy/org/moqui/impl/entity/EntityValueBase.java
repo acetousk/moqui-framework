@@ -16,14 +16,12 @@ package org.moqui.impl.entity;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import org.moqui.Moqui;
-import org.moqui.context.ArtifactExecutionInfo;
 import org.moqui.context.ExecutionContext;
 import org.moqui.entity.EntityException;
 import org.moqui.entity.EntityFind;
 import org.moqui.entity.EntityList;
 import org.moqui.entity.EntityValue;
 import org.moqui.impl.context.*;
-import org.moqui.impl.context.ContextJavaUtil.EntityRecordLock;
 import org.moqui.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -653,7 +651,6 @@ public abstract class EntityValueBase implements EntityValue {
     public EntityValue store() { return createOrUpdate(); }
 
     private void handleAuditLog(boolean isUpdate, LiteStringMap<Object> oldValues, EntityDefinition ed, ExecutionContextImpl ec) {
-        if ((isUpdate && oldValues == null) || !ed.entityInfo.needsAuditLog || ec.artifactExecutionFacade.entityAuditLogDisabled()) return;
 
         Timestamp nowTimestamp = ec.userFacade.getNowTimestamp();
 
@@ -702,8 +699,6 @@ public abstract class EntityValueBase implements EntityValue {
                     if (changeReason.isEmpty()) changeReason = null;
                 }
 
-                String stackNameString = ec.artifactExecutionFacade.getStackNameString();
-                if (stackNameString.length() > 4000) stackNameString = stackNameString.substring(0, 4000);
                 LinkedHashMap<String, Object> parms = new LinkedHashMap<>();
                 parms.put("changedEntityName", getEntityName());
                 parms.put("changedFieldName", fieldName);
@@ -711,7 +706,6 @@ public abstract class EntityValueBase implements EntityValue {
                 parms.put("changedDate", nowTimestamp);
                 parms.put("changedByUserId", ec.getUser().getUserId());
                 parms.put("changedInVisitId", ec.getUser().getVisitId());
-                parms.put("artifactStack", stackNameString);
 
                 // prep values, encrypt if needed
                 if (value != null) {
@@ -1390,7 +1384,6 @@ public abstract class EntityValueBase implements EntityValue {
     public abstract EntityValue cloneDbValue(boolean getOld);
 
     private boolean doDataFeed(ExecutionContextImpl ec) {
-        if (ec.artifactExecutionFacade.entityDataFeedDisabled()) return false;
         // skip ArtifactHitBin, causes funny recursion
         return !"moqui.server.ArtifactHitBin".equals(entityName);
     }
@@ -1447,12 +1440,8 @@ public abstract class EntityValueBase implements EntityValue {
         if (!tfi.getUseLockTrack()) return;
 
         final EntityDefinition ed = getEntityDefinition();
-        final ArtifactExecutionFacadeImpl aefi = efi.ecfi.getEci().artifactExecutionFacade;
-
-        ArrayList<ArtifactExecutionInfo> stackArray = aefi.getStackArray();
 
         // add EntityRecordLock for this record
-        tfi.registerRecordLock(new EntityRecordLock(ed.getFullEntityName(), this.getPrimaryKeysString(), stackArray));
 
         // add EntityRecordLock for each type one (with FK) relationship where FK fields not null
         ArrayList<EntityJavaUtil.RelationshipInfo> relInfoList = ed.getRelationshipsInfo(false);
@@ -1487,7 +1476,6 @@ public abstract class EntityValueBase implements EntityValue {
             }
 
             if (pkString != null) {
-                tfi.registerRecordLock(new EntityRecordLock(relInfo.relatedEd.getFullEntityName(), pkString, stackArray));
             }
         }
     }
@@ -1499,7 +1487,6 @@ public abstract class EntityValueBase implements EntityValue {
         final EntityFacadeImpl efi = getEntityFacadeImpl();
         final ExecutionContextFactoryImpl ecfi = efi.ecfi;
         final ExecutionContextImpl ec = ecfi.getEci();
-        final ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade;
 
         // check/set defaults
         if (entityInfo.hasFieldDefaults) checkSetFieldDefaults(ed, ec, null);
@@ -1512,8 +1499,6 @@ public abstract class EntityValueBase implements EntityValue {
             valueMapInternal.putByIString(lastUpdatedStampInfo.name, new Timestamp(lastUpdatedLong), lastUpdatedStampInfo.index);
 
         // do the artifact push/authz
-        ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(entityName, ArtifactExecutionInfo.AT_ENTITY, ArtifactExecutionInfo.AUTHZA_CREATE, "create").setParameters(valueMapInternal);
-        aefi.pushInternal(aei, !entityInfo.authorizeSkipCreate, false);
 
         try {
             // run EECA before rules
@@ -1543,7 +1528,6 @@ public abstract class EntityValueBase implements EntityValue {
             throw new EntityException(makeErrorMsg("Error creating", CREATE_ERROR, ed, ec), e);
         } finally {
             // pop the ArtifactExecutionInfo to clean it up, also counts artifact hit
-            aefi.pop(aei);
         }
 
         return this;
@@ -1582,7 +1566,6 @@ public abstract class EntityValueBase implements EntityValue {
         final EntityFacadeImpl efi = getEntityFacadeImpl();
         final ExecutionContextFactoryImpl ecfi = efi.ecfi;
         final ExecutionContextImpl ec = ecfi.getEci();
-        final ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade;
         final TransactionCache curTxCache = getTxCache(ecfi);
         final boolean optimisticLock = entityInfo.optimisticLock;
         final boolean hasFieldDefaults = entityInfo.hasFieldDefaults;
@@ -1613,8 +1596,6 @@ public abstract class EntityValueBase implements EntityValue {
         LiteStringMap<Object> originalValues = dbValueMap != null && !dbValueMap.isEmpty() ? new LiteStringMap<>(dbValueMap).useManualIndex() : null;
 
         // do the artifact push/authz
-        ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(entityName, ArtifactExecutionInfo.AT_ENTITY, ArtifactExecutionInfo.AUTHZA_UPDATE, "update").setParameters(valueMapInternal);
-        aefi.pushInternal(aei, !entityInfo.authorizeSkipTrue, false);
 
         try {
             // run EECA before rules
@@ -1698,7 +1679,6 @@ public abstract class EntityValueBase implements EntityValue {
             throw new EntityException(makeErrorMsg("Error updating", UPDATE_ERROR, ed, ec), e);
         } finally {
             // pop the ArtifactExecutionInfo to clean it up, also counts artifact hit
-            aefi.pop(aei);
         }
 
         return this;
@@ -1745,14 +1725,11 @@ public abstract class EntityValueBase implements EntityValue {
         final EntityFacadeImpl efi = getEntityFacadeImpl();
         final ExecutionContextFactoryImpl ecfi = efi.ecfi;
         final ExecutionContextImpl ec = ecfi.getEci();
-        final ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade;
 
         // NOTE: this is create-only on the entity, ignores setting on fields (only considered in update)
         if (entityInfo.createOnly) throw new EntityException("Entity [" + getEntityName() + "] is create-only (immutable), cannot be deleted.");
 
         // do the artifact push/authz
-        ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(entityName, ArtifactExecutionInfo.AT_ENTITY, ArtifactExecutionInfo.AUTHZA_DELETE, "delete").setParameters(valueMapInternal);
-        aefi.pushInternal(aei, !entityInfo.authorizeSkipTrue, false);
 
         try {
             // run EECA before rules
@@ -1780,7 +1757,6 @@ public abstract class EntityValueBase implements EntityValue {
             throw new EntityException(makeErrorMsg("Error deleting", DELETE_ERROR, ed, ec), e);
         } finally {
             // pop the ArtifactExecutionInfo to clean it up, also counts artifact hit
-            aefi.pop(aei);
         }
 
         return this;
@@ -1795,7 +1771,6 @@ public abstract class EntityValueBase implements EntityValue {
         final EntityFacadeImpl efi = getEntityFacadeImpl();
         final ExecutionContextFactoryImpl ecfi = efi.ecfi;
         final ExecutionContextImpl ec = ecfi.getEci();
-        final ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade;
 
         List<String> pkFieldList = ed.getPkFieldNames();
         if (pkFieldList.size() == 0) {
@@ -1808,8 +1783,6 @@ public abstract class EntityValueBase implements EntityValue {
         if (entityInfo.hasFieldDefaults) checkSetFieldDefaults(ed, ec, null);
 
         // do the artifact push/authz
-        ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(entityName, ArtifactExecutionInfo.AT_ENTITY, ArtifactExecutionInfo.AUTHZA_VIEW, "refresh").setParameters(valueMapInternal);
-        aefi.pushInternal(aei, !ed.entityInfo.authorizeSkipView, false);
 
         boolean retVal = false;
         try {
@@ -1831,7 +1804,6 @@ public abstract class EntityValueBase implements EntityValue {
             throw new EntityException(makeErrorMsg("Error finding", REFRESH_ERROR, ed, ec), e);
         } finally {
             // pop the ArtifactExecutionInfo to clean it up, also counts artifact hit
-            aefi.pop(aei);
         }
 
         return retVal;

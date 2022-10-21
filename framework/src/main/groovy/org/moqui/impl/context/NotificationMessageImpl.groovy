@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -411,7 +411,6 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
         if (!userId) throw new BaseArtifactException("Must specify userId to mark notification message sent")
 
         ExecutionContextImpl eci = ecfi.getEci()
-        boolean alreadyDisabled = eci.getArtifactExecution().disableAuthz()
         try {
             ecfi.entityFacade.makeValue("moqui.security.user.NotificationMessageUser")
                     .set("userId", userId).set("notificationMessageId", notificationMessageId)
@@ -419,7 +418,6 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
         } catch (Throwable t) {
             logger.error("Error marking notification message ${notificationMessageId} sent", t)
         } finally {
-            if (!alreadyDisabled) eci.getArtifactExecution().enableAuthz()
         }
 
         return this
@@ -433,7 +431,6 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
         return this
     }
     static Timestamp markViewed(String notificationMessageId, String userId, ExecutionContext ec) {
-        boolean alreadyDisabled = ec.getArtifactExecution().disableAuthz()
         try {
             Timestamp recStamp = new Timestamp(System.currentTimeMillis())
             ec.factory.entity.makeValue("moqui.security.user.NotificationMessageUser")
@@ -444,7 +441,6 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
             logger.error("Error marking notification message ${notificationMessageId} sent", t)
             return null
         } finally {
-            if (!alreadyDisabled) ec.getArtifactExecution().enableAuthz()
         }
     }
 

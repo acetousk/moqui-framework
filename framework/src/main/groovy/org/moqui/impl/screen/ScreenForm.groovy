@@ -70,13 +70,11 @@ class ScreenForm {
         isFormList = "form-list".equals(baseFormNode.name)
 
         // does this form have DbForm extensions?
-        boolean alreadyDisabled = ecfi.getExecutionContext().getArtifactExecution().disableAuthz()
         try {
             EntityList dbFormLookupList = ecfi.entityFacade.find("DbFormLookup")
                     .condition("modifyXmlScreenForm", fullFormName).useCache(true).list()
             if (dbFormLookupList) hasDbExtensions = true
         } finally {
-            if (!alreadyDisabled) ecfi.getExecutionContext().getArtifactExecution().enableAuthz()
         }
 
         if (isDynamic) {
@@ -334,7 +332,6 @@ class ScreenForm {
     List<MNode> getDbFormNodeList() {
         if (!hasDbExtensions) return null
 
-        boolean alreadyDisabled = ecfi.getExecutionContext().getArtifactExecution().disableAuthz()
         try {
             // find DbForm records and merge them in as well
             String formName = sd.getLocation() + "#" + internalFormNode.attribute("name")
@@ -351,7 +348,6 @@ class ScreenForm {
 
             return formNodeList
         } finally {
-            if (!alreadyDisabled) ecfi.getExecutionContext().getArtifactExecution().enableAuthz()
         }
     }
 
@@ -360,7 +356,6 @@ class ScreenForm {
 
         if (dbFormNode == null) {
 
-            boolean alreadyDisabled = ecfi.getEci().artifactExecutionFacade.disableAuthz()
             try {
                 EntityValue dbForm = ecfi.entityFacade.fastFindOne("moqui.screen.form.DbForm", true, false, formId)
                 if (dbForm == null) throw new BaseArtifactException("Could not find DbForm record with ID [${formId}]")
@@ -444,7 +439,6 @@ class ScreenForm {
 
                 ecfi.screenFacade.dbFormNodeByIdCache.put(formId, dbFormNode)
             } finally {
-                if (!alreadyDisabled) ecfi.getEci().artifactExecutionFacade.enableAuthz()
             }
         }
 
@@ -2341,11 +2335,9 @@ class ScreenForm {
 
     static String processFormSavedFind(ExecutionContextImpl ec) {
         // disable authz to allow saved finds for users with view only authz
-        ec.artifactExecutionFacade.disableAuthz()
         try {
             return processFormSavedFindInternal(ec)
         } finally {
-            ec.artifactExecutionFacade.enableAuthz()
         }
     }
     static String processFormSavedFindInternal(ExecutionContextImpl ec) {

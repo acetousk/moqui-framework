@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -207,13 +207,9 @@ class EntityDataLoaderImpl implements EntityDataLoader {
         ExecutionContextImpl eci = efi.ecfi.getEci()
 
         boolean reenableEeca = false
-        if (this.disableEeca) reenableEeca = !eci.artifactExecutionFacade.disableEntityEca()
         boolean reenableAuditLog = false
-        if (this.disableAuditLog) reenableAuditLog = !eci.artifactExecutionFacade.disableEntityAuditLog()
         boolean reenableFkCreate = false
-        if (this.disableFkCreate) reenableFkCreate = !eci.artifactExecutionFacade.disableEntityFkCreate()
         boolean reenableDataFeed = false
-        if (this.disableDataFeed) reenableDataFeed = !eci.artifactExecutionFacade.disableEntityDataFeed()
 
         // if no xmlText or locations, so find all of the component and entity-facade files
         if (!this.xmlText && !this.csvText && !this.jsonText && !this.locationList) {
@@ -320,11 +316,6 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                 }
             }
         })
-
-        if (reenableEeca) eci.artifactExecutionFacade.enableEntityEca()
-        if (reenableAuditLog) eci.artifactExecutionFacade.enableEntityAuditLog()
-        if (reenableFkCreate) eci.artifactExecutionFacade.enableEntityFkCreate()
-        if (reenableDataFeed) eci.artifactExecutionFacade.enableEntityDataFeed()
 
         // logger.warn("========== Done loading, waiting for a long time so process is still running for profiler")
         // Thread.sleep(60*1000*100)

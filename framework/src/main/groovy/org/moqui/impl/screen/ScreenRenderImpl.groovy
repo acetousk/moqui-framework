@@ -29,7 +29,6 @@ import org.moqui.entity.EntityValue
 import org.moqui.impl.entity.EntityFacadeImpl
 import org.moqui.screen.ScreenTest
 import org.moqui.util.WebUtilities
-import org.moqui.impl.context.ArtifactExecutionInfoImpl
 import org.moqui.impl.context.ContextJavaUtil
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
@@ -471,10 +470,6 @@ class ScreenRenderImpl implements ScreenRender {
 
                 if (!"false".equals(screenUrlInfo.targetScreen.screenNode.attribute("track-artifact-hit"))) {
                     String riType = ri != null ? ri.type : null
-                    sfi.ecfi.countArtifactHit(ArtifactExecutionInfo.AT_XML_SCREEN_TRANS, riType != null ? riType : "",
-                            targetTransition.parentScreen.getLocation() + "#" + targetTransition.name,
-                            (web != null ? web.requestParameters : null), renderStartTime,
-                            (System.nanoTime() - startTimeNanos)/1000000.0D, null)
                 }
             }
 
@@ -642,9 +637,6 @@ class ScreenRenderImpl implements ScreenRender {
                         int totalLen = ObjectUtilities.copyStream(is, os)
 
                         if (screenUrlInfo.targetScreen.screenNode.attribute("track-artifact-hit") != "false") {
-                            sfi.ecfi.countArtifactHit(ArtifactExecutionInfo.AT_XML_SCREEN_CONTENT, fileContentType,
-                                    fileResourceRef.location, (web != null ? web.requestParameters : null),
-                                    resourceStartTime, (System.nanoTime() - startTimeNanos)/1000000.0D, (long) totalLen)
                         }
                         if (isTraceEnabled) logger.trace("Sent binary response of length ${totalLen} from file ${fileResourceRef.location} for request to ${screenUrlInstance.url}")
                     } finally {
@@ -694,9 +686,6 @@ class ScreenRenderImpl implements ScreenRender {
 
                         writer.write(text)
                         if (!"false".equals(screenUrlInfo.targetScreen.screenNode.attribute("track-artifact-hit"))) {
-                            sfi.ecfi.countArtifactHit(ArtifactExecutionInfo.AT_XML_SCREEN_CONTENT, fileContentType,
-                                    fileResourceRef.location, (web != null ? web.requestParameters : null),
-                                    resourceStartTime, (System.nanoTime() - startTimeNanos)/1000000.0D, (long) text.length())
                         }
                     } else {
                         logger.warn("Not sending text response from file [${fileResourceRef.location}] for request to [${screenUrlInstance.url}] because no text was found in the file.")
@@ -719,9 +708,6 @@ class ScreenRenderImpl implements ScreenRender {
         ScreenDefinition sd = getActiveScreenDef()
         // for these authz is not required, as long as something authorizes on the way to the transition, or
         // the transition itself, it's fine
-        ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(sd.location,
-                ArtifactExecutionInfo.AT_XML_SCREEN, ArtifactExecutionInfo.AUTHZA_VIEW, null)
-        ec.artifactExecutionFacade.pushInternal(aei, false, false)
 
         boolean loggedInAnonymous = false
         ResponseItem ri = (ResponseItem) null
@@ -730,10 +716,8 @@ class ScreenRenderImpl implements ScreenRender {
             MNode screenNode = sd.getScreenNode()
             String requireAuthentication = screenNode.attribute("require-authentication")
             if ("anonymous-all".equals(requireAuthentication)) {
-                ec.artifactExecutionFacade.setAnonymousAuthorizedAll()
                 loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             } else if ("anonymous-view".equals(requireAuthentication)) {
-                ec.artifactExecutionFacade.setAnonymousAuthorizedView()
                 loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             }
 
@@ -749,7 +733,6 @@ class ScreenRenderImpl implements ScreenRender {
                 ri = screenUrlInstance.targetTransition.run(this)
             }
         } finally {
-            ec.artifactExecutionFacade.pop(aei)
             if (loggedInAnonymous) ec.userFacade.logoutAnonymousOnly()
         }
 
@@ -762,17 +745,12 @@ class ScreenRenderImpl implements ScreenRender {
         // NOTE: don't require authz if the screen doesn't require auth
         MNode screenNode = sd.getScreenNode()
         String requireAuthentication = screenNode.attribute("require-authentication")
-        ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(sd.location,
-                ArtifactExecutionInfo.AT_XML_SCREEN, ArtifactExecutionInfo.AUTHZA_VIEW, outputContentType).setTrackArtifactHit(false)
-        ec.artifactExecutionFacade.pushInternal(aei, !activeScreenHasNext ? (!requireAuthentication || requireAuthentication == "true") : false, false)
 
         boolean loggedInAnonymous = false
         try {
             if (requireAuthentication == "anonymous-all") {
-                ec.artifactExecutionFacade.setAnonymousAuthorizedAll()
                 loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             } else if (requireAuthentication == "anonymous-view") {
-                ec.artifactExecutionFacade.setAnonymousAuthorizedView()
                 loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             }
 
@@ -786,7 +764,6 @@ class ScreenRenderImpl implements ScreenRender {
             }
         } finally {
             // all done so pop the artifact info; don't bother making sure this is done on errors/etc like in a finally clause because if there is an error this will help us know how we got there
-            ec.artifactExecutionFacade.pop(aei)
             if (loggedInAnonymous) ec.userFacade.logoutAnonymousOnly()
         }
     }
@@ -853,9 +830,7 @@ class ScreenRenderImpl implements ScreenRender {
 
             // for inherited permissions to work, walk the screen list before the screens to render and artifact push
             // them, then pop after
-            ArrayList<ArtifactExecutionInfo> aeiList = null
             if (screenUrlInfo.renderPathDifference > 0) {
-                aeiList = new ArrayList<ArtifactExecutionInfo>(screenUrlInfo.renderPathDifference)
                 for (int i = 0; i < screenUrlInfo.renderPathDifference; i++) {
                     ScreenDefinition permSd = screenPathDefList.get(i)
 
@@ -867,15 +842,8 @@ class ScreenRenderImpl implements ScreenRender {
                         if (ssi == null) {
                             logger.warn("Couldn't find SubscreenItem: parent ${parentScreen.getScreenName()}, curPathName ${curPathName}, current ${permSd.getScreenName()}\npath list: ${screenUrlInfo.fullPathNameList}\nscreen list: ${screenUrlInfo.screenPathDefList}")
                         } else {
-                            if (!ssi.isValidInCurrentContext())
-                                throw new ArtifactAuthorizationException("The screen ${permSd.getScreenName()} is not available")
                         }
                     }
-
-                    ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(permSd.location,
-                            ArtifactExecutionInfo.AT_XML_SCREEN, ArtifactExecutionInfo.AUTHZA_VIEW, outputContentType)
-                    ec.artifactExecutionFacade.pushInternal(aei, false, false)
-                    aeiList.add(aei)
                 }
             }
 
@@ -934,7 +902,6 @@ class ScreenRenderImpl implements ScreenRender {
                 }
             } finally {
                 // pop all screens, then good to go
-                if (aeiList) for (int i = (aeiList.size() - 1); i >= 0; i--) ec.artifactExecution.pop(aeiList.get(i))
             }
 
             // save the screen history
@@ -942,10 +909,6 @@ class ScreenRenderImpl implements ScreenRender {
                 WebFacade webFacade = ec.getWeb()
                 if (webFacade != null && webFacade instanceof WebFacadeImpl) ((WebFacadeImpl) webFacade).saveScreenHistory(screenUrlInstance)
             }
-        } catch (ArtifactAuthorizationException e) {
-            throw e
-        } catch (ArtifactTarpitException e) {
-            throw e
         } catch (Throwable t) {
             String errMsg = "Error rendering screen [${getActiveScreenDef().location}]"
             sfi.ecfi.transactionFacade.rollback(beganTransaction, errMsg, t)
@@ -1127,8 +1090,6 @@ class ScreenRenderImpl implements ScreenRender {
             if (ssi == null) {
                 logger.warn("Couldn't find SubscreenItem (render): parent ${parentScreen.getScreenName()}, curPathName ${curPathName}, current ${screenDef.getScreenName()}\npath list: ${screenUrlInfo.fullPathNameList}\nscreen list: ${screenUrlInfo.screenPathDefList}")
             } else {
-                if (!ssi.isValidInCurrentContext())
-                    throw new ArtifactAuthorizationException("The screen ${screenDef.getScreenName()} is not available")
             }
         }
 
@@ -2268,7 +2229,6 @@ class ScreenRenderImpl implements ScreenRender {
         ScreenDefinition curScreen = rootScreenDef
 
         // to support menu titles with values set in pre-actions: run pre-actions for all screens in path except first 2 (generally webroot, apps)
-        ec.artifactExecutionFacade.setAnonymousAuthorizedView()
         ec.userFacade.loginAnonymousIfNoUser()
         ArrayList<ScreenDefinition> preActionSds = new ArrayList<>(fullUrlInfo.screenPathDefList.subList(2, fullUrlInfo.screenPathDefList.size()))
         int preActionSdSize = preActionSds.size()

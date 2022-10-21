@@ -14,7 +14,6 @@
 package org.moqui.impl.entity;
 
 import org.moqui.BaseArtifactException;
-import org.moqui.context.ArtifactExecutionInfo;
 import org.moqui.entity.*;
 import org.moqui.impl.context.TransactionCache;
 import org.moqui.impl.entity.EntityJavaUtil.FindAugmentInfo;
@@ -28,7 +27,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Map;
 
 public class EntityListIteratorImpl implements EntityListIterator {
     protected static final Logger logger = LoggerFactory.getLogger(EntityListIteratorImpl.class);
@@ -48,7 +46,6 @@ public class EntityListIteratorImpl implements EntityListIterator {
     private boolean haveMadeValue = false;
     protected boolean closed = false;
     private StackTraceElement[] constructStack = null;
-    private final ArrayList<ArtifactExecutionInfo> artifactStack;
 
     public EntityListIteratorImpl(Connection con, ResultSet rs, EntityDefinition entityDefinition, FieldInfo[] fieldInfoArray,
                                   EntityFacadeImpl efi, TransactionCache txCache, EntityCondition queryCondition, ArrayList<String> obf) {
@@ -78,7 +75,6 @@ public class EntityListIteratorImpl implements EntityListIterator {
         }
 
         // capture the current artifact stack for finalize not closed debugging, has minimal performance impact (still ~0.0038ms per call compared to numbers below)
-        artifactStack = efi.ecfi.getEci().artifactExecutionFacade.getStackArray();
 
         /* uncomment only if needed temporarily: huge performance impact, ~0.036ms per call with, ~0.0037ms without (~10x difference!)
         StackTraceElement[] tempStack = Thread.currentThread().getStackTrace();
@@ -384,8 +380,6 @@ public class EntityListIteratorImpl implements EntityListIterator {
                         .append("], caught in finalize()");
                 if (constructStack != null) for (int i = 0; i < constructStack.length; i++)
                     errorSb.append("\n").append(constructStack[i].toString());
-                if (artifactStack != null) for (int i = 0; i < artifactStack.size(); i++)
-                    errorSb.append("\n").append(artifactStack.get(i).toBasicString());
                 logger.error(errorSb.toString());
 
                 this.close();

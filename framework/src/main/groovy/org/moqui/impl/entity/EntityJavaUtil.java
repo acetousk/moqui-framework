@@ -14,7 +14,6 @@
 package org.moqui.impl.entity;
 
 import org.moqui.BaseException;
-import org.moqui.context.ArtifactExecutionInfo;
 import org.moqui.entity.EntityCondition;
 import org.moqui.entity.EntityDatasourceFactory;
 import org.moqui.entity.EntityException;
@@ -35,7 +34,6 @@ import javax.crypto.spec.PBEParameterSpec;
 import javax.xml.bind.DatatypeConverter;
 
 import java.math.BigDecimal;
-import java.security.SecureRandom;
 import java.util.*;
 
 public class EntityJavaUtil {
@@ -739,13 +737,6 @@ public class EntityJavaUtil {
             totalTimeNanos += runTimeNanos;
             totalSquaredTime += runTimeNanos * runTimeNanos;
             // this gets much more expensive, consider commenting in the future
-            ArtifactExecutionInfo aei = efi.ecfi.getEci().artifactExecutionFacade.peek();
-            if (aei != null) aei = aei.getParent();
-            if (aei != null) {
-                String artifactName = aei.getName();
-                Integer artifactCount = artifactCounts.get(artifactName);
-                artifactCounts.put(artifactName, artifactCount != null ? artifactCount + 1 : 1);
-            }
         }
         public String getEntityName() { return entityName; }
         public String getSql() { return sql; }

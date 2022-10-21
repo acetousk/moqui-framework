@@ -60,7 +60,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         ExecutionContextFactoryImpl ecfi = sfi.ecfi;
         ExecutionContextImpl eci = ecfi.getEci();
 
-        boolean enableAuthz = disableAuthz && !eci.artifactExecutionFacade.disableAuthz();
         try {
             if (multi) {
                 ArrayList<String> inParameterNames = null;
@@ -125,7 +124,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 return callSingle(parameters, sd, eci);
             }
         } finally {
-            if (enableAuthz) eci.artifactExecutionFacade.enableAuthz();
         }
     }
 
@@ -140,7 +138,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         TransactionFacadeImpl tf = eci.transactionFacade;
         int transactionStatus = tf.getStatus();
         if (!requireNewTransaction && transactionStatus == Status.STATUS_MARKED_ROLLBACK) {
-            logger.warn("Transaction marked for rollback, not running service " + serviceName + ". Errors: [" + eci.messageFacade.getErrorsString() + "] Artifact stack: " + eci.artifactExecutionFacade.getStackNameString());
+            logger.warn("Transaction marked for rollback, not running service " + serviceName + ". Errors: [" + eci.messageFacade.getErrorsString() + "] Artifact stack: ");
             if (ignorePreviousError) {
                 eci.messageFacade.popErrors();
             } else if (!eci.messageFacade.hasError()) {
@@ -186,9 +184,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         // if error(s) in parameters, return now with no results
         if (eci.messageFacade.hasError()) {
             StringBuilder errMsg = new StringBuilder("Found error(s) when validating input parameters for service " + serviceName + ", so not running service. Errors: " + eci.messageFacade.getErrorsString() + "; the artifact stack is:\n");
-            for (ArtifactExecutionInfo stackItem : eci.artifactExecutionFacade.getStack()) {
-                errMsg.append(stackItem.toString()).append("\n");
-            }
 
             logger.warn(errMsg.toString());
             if (ignorePreviousError) eci.messageFacade.popErrors();
@@ -242,28 +237,20 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         // NOTE: don't require authz if the service def doesn't authenticate
         // NOTE: if no sd then requiresAuthz is false, ie let the authz get handled at the entity level (but still put
         //     the service on the stack)
-        ArtifactExecutionInfo.AuthzAction authzAction = sd != null ? sd.authzAction : ServiceDefinition.verbAuthzActionEnumMap.get(verb);
-        if (authzAction == null) authzAction = ArtifactExecutionInfo.AUTHZA_ALL;
-        ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(serviceName, ArtifactExecutionInfo.AT_SERVICE, authzAction, serviceType);
-        if (rememberParameters && !sd.noRememberParameters) aei.setParameters(currentParameters);
-        eci.artifactExecutionFacade.pushInternal(aei, (sd != null && "true".equals(sd.authenticate)), true);
 
         // if error in auth or for other reasons, return now with no results
         if (eci.messageFacade.hasError()) {
-            eci.artifactExecutionFacade.pop(aei);
             if (ignorePreviousError) eci.messageFacade.popErrors();
             logger.warn("Found error(s) when checking authc for service " + serviceName + ", so not running service. Errors: " +
-                    eci.messageFacade.getErrorsString() + "; the artifact stack is:\n " + eci.getArtifactExecution().getStack());
+                    eci.messageFacade.getErrorsString() + "; the artifact stack is:\n ");
             return null;
         }
 
         // must be done after the artifact execution push so that AEII object to set anonymous authorized is in place
         boolean loggedInAnonymous = false;
         if (sd != null && "anonymous-all".equals(sd.authenticate)) {
-            eci.artifactExecutionFacade.setAnonymousAuthorizedAll();
             loggedInAnonymous = eci.userFacade.loginAnonymousIfNoUser();
         } else if (sd != null && "anonymous-view".equals(sd.authenticate)) {
-            eci.artifactExecutionFacade.setAnonymousAuthorizedView();
             loggedInAnonymous = eci.userFacade.loginAnonymousIfNoUser();
         }
 
@@ -272,7 +259,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
             try {
                 checkAddSemaphore(eci, currentParameters, true);
             } catch (Throwable t) {
-                eci.artifactExecutionFacade.pop(aei);
                 throw t;
             }
         }
@@ -310,8 +296,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 // if error(s) in pre-service or anything else before actual run then return now with no results
                 if (eci.messageFacade.hasError()) {
                     StringBuilder errMsg = new StringBuilder("Found error(s) before running service " + serviceName + " so not running. Errors: " + eci.messageFacade.getErrorsString() + "; the artifact stack is:\n");
-                    for (ArtifactExecutionInfo stackItem : eci.artifactExecutionFacade.getStack())
-                        errMsg.append(stackItem.toString()).append("\n");
                     logger.warn(errMsg.toString());
                     if (ignorePreviousError) eci.messageFacade.popErrors();
                     return null;
@@ -336,9 +320,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 }
 
                 if (traceEnabled) logger.trace("Calling service " + serviceName + " result: " + result);
-            } catch (ArtifactAuthorizationException e) {
-                // this is a local call, pass certain exceptions through
-                throw e;
             } catch (Throwable t) {
                 BaseException.filterStackTrace(t);
                 // registered callbacks with Throwable
@@ -346,7 +327,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 // rollback the transaction
                 tf.rollback(beganTransaction, "Error running service " + serviceName + " (Throwable)", t);
                 transactionStatus = tf.getStatus();
-                logger.warn("Error running service " + serviceName + " (Throwable) Artifact stack: " + eci.artifactExecutionFacade.getStackNameString(), t);
+                logger.warn("Error running service " + serviceName + " (Throwable) Artifact stack: ", t);
                 // add all exception messages to the error messages list
                 eci.messageFacade.addError(t.getMessage());
                 Throwable parent = t.getCause();
@@ -408,7 +389,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
             if (loggedInAnonymous) eci.userFacade.logoutAnonymousOnly();
 
             // all done so pop the artifact info
-            eci.artifactExecutionFacade.pop(aei);
             // restore error messages if needed
             if (ignorePreviousError) eci.messageFacade.popErrors();
 
@@ -433,13 +413,11 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
 
         eci.transactionFacade.runRequireNew(null, "Error in clear service semaphore", new Closure<EntityValue>(this, this) {
             EntityValue doCall(Object it) {
-                boolean authzDisabled = eci.artifactExecutionFacade.disableAuthz();
                 try {
                     return eci.getEntity().makeValue("moqui.service.semaphore.ServiceParameterSemaphore")
                             .set("serviceName", semaphoreName).set("parameterValue", parameterValue)
                             .set("lockThread", null).set("lockTime", null).update();
                 } finally {
-                    if (!authzDisabled) eci.artifactExecutionFacade.enableAuthz();
                 }
             }
             public EntityValue doCall() { return doCall(null); }
@@ -477,7 +455,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
 
         eci.transactionFacade.runRequireNew(txTimeout, "Error in check/add service semaphore", new Closure<EntityValue>(this, this) {
             EntityValue doCall(Object it) {
-                boolean authzDisabled = eci.artifactExecutionFacade.disableAuthz();
                 try {
                     final long startTime = System.currentTimeMillis();
 
@@ -544,7 +521,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                         }
                     }
                 } finally {
-                    if (!authzDisabled) eci.artifactExecutionFacade.enableAuthz();
                 }
             }
             public EntityValue doCall() { return doCall(null); }
@@ -586,8 +562,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 // if error(s) in pre-service or anything else before actual run then return now with no results
                 if (eci.messageFacade.hasError()) {
                     StringBuilder errMsg = new StringBuilder("Found error(s) before running service " + serviceName + " so not running. Errors: " + eci.messageFacade.getErrorsString() + "; the artifact stack is:\n");
-                    for (ArtifactExecutionInfo stackItem : eci.artifactExecutionFacade.getStack())
-                        errMsg.append(stackItem.toString()).append("\n");
                     logger.warn(errMsg.toString());
                     if (ignorePreviousError) eci.messageFacade.popErrors();
                     return null;
@@ -611,10 +585,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 }
 
                 if (hasSecaRules) ServiceFacadeImpl.runSecaRules(serviceNameNoHash, currentParameters, result, "post-service", secaRules, eci);
-            } catch (ArtifactAuthorizationException e) {
-                tf.rollback(beganTransaction, "Authorization error running service " + serviceName, e);
-                // this is a local call, pass certain exceptions through
-                throw e;
             } catch (Throwable t) {
                 logger.error("Error running service " + serviceName, t);
                 tf.rollback(beganTransaction, "Error running service " + serviceName + " (Throwable)", t);

@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -16,14 +16,11 @@ package org.moqui.impl.screen
 import groovy.transform.CompileStatic
 import org.moqui.BaseArtifactException
 import org.moqui.BaseException
-import org.moqui.context.ArtifactExecutionInfo
-import org.moqui.context.ArtifactExecutionInfo.AuthzAction
+
 import org.moqui.context.ExecutionContext
 import org.moqui.resource.ResourceReference
 import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
-import org.moqui.impl.context.ArtifactExecutionInfoImpl
-import org.moqui.impl.context.ArtifactExecutionFacadeImpl
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
 import org.moqui.impl.context.WebFacadeImpl
@@ -247,91 +244,6 @@ class ScreenUrlInfo {
         } else {
             return null
         }
-    }
-
-    boolean isPermitted(ExecutionContext ec, TransitionItem transitionItem) {
-        return isPermitted(ec, transitionItem, ArtifactExecutionInfo.AUTHZA_VIEW)
-    }
-    boolean isPermitted(ExecutionContext ec, TransitionItem transitionItem, AuthzAction actionEnum) {
-        ArtifactExecutionFacadeImpl aefi = (ArtifactExecutionFacadeImpl) ec.getArtifactExecution()
-        String userId = ec.getUser().getUserId()
-
-        // if a user is permitted to view a certain location once in a render/ec they can safely be always allowed to, so cache it
-        // add the username to the key just in case user changes during an EC instance
-        String permittedCacheKey = (String) null
-        if (fullPathNameList != null) {
-            String keyUserId = userId != null ? userId : '_anonymous'
-            permittedCacheKey = keyUserId.concat(fullPathNameList.toString())
-            Boolean cachedPermitted = (Boolean) aefi.screenPermittedCache.get(permittedCacheKey)
-            if (cachedPermitted != null) return cachedPermitted.booleanValue()
-        } else {
-            // logger.warn("======== Not caching isPermitted, username=${username}, fullPathNameList=${fullPathNameList}")
-        }
-
-        ArrayDeque<ArtifactExecutionInfoImpl> artifactExecutionInfoStack = new ArrayDeque<ArtifactExecutionInfoImpl>()
-
-        int screenPathDefListSize = screenPathDefList.size()
-        for (int i = 0; i < screenPathDefListSize; i++) {
-            AuthzAction curActionEnum = (i == (screenPathDefListSize - 1)) ? actionEnum : ArtifactExecutionInfo.AUTHZA_VIEW
-            ScreenDefinition screenDef = (ScreenDefinition) screenPathDefList.get(i)
-            ArtifactExecutionInfoImpl aeii = new ArtifactExecutionInfoImpl(screenDef.getLocation(),
-                    ArtifactExecutionInfo.AT_XML_SCREEN, curActionEnum, null)
-
-            ArtifactExecutionInfoImpl lastAeii = (ArtifactExecutionInfoImpl) artifactExecutionInfoStack.peekFirst()
-
-            // logger.warn("TOREMOVE checking screen for user ${username} - ${aeii}")
-
-            boolean isLast = ((i + 1) == screenPathDefListSize)
-            MNode screenNode = screenDef.getScreenNode()
-
-            String requireAuthentication = screenNode.attribute('require-authentication')
-            if (!aefi.isPermitted(aeii, lastAeii,
-                    isLast ? (!requireAuthentication || "true".equals(requireAuthentication)) : false, false, false, artifactExecutionInfoStack)) {
-                // logger.warn("TOREMOVE user ${username} is NOT allowed to view screen at path ${this.fullPathNameList} because of screen at ${screenDef.location}")
-                if (permittedCacheKey != null) aefi.screenPermittedCache.put(permittedCacheKey, false)
-                return false
-            }
-
-            artifactExecutionInfoStack.addFirst(aeii)
-        }
-
-        // see if the transition is permitted
-        if (transitionItem != null) {
-            ScreenDefinition lastScreenDef = (ScreenDefinition) screenPathDefList.get(screenPathDefList.size() - 1)
-            ArtifactExecutionInfoImpl aeii = new ArtifactExecutionInfoImpl("${lastScreenDef.location}/${transitionItem.name}",
-                    ArtifactExecutionInfo.AT_XML_SCREEN_TRANS, ArtifactExecutionInfo.AUTHZA_VIEW, null)
-            ArtifactExecutionInfoImpl lastAeii = (ArtifactExecutionInfoImpl) artifactExecutionInfoStack.peekFirst()
-            if (!aefi.isPermitted(aeii, lastAeii, true, false, false, artifactExecutionInfoStack)) {
-                // logger.warn("TOREMOVE user ${username} is NOT allowed to view screen at path ${this.fullPathNameList} because of screen at ${screenDef.location}")
-                if (permittedCacheKey != null) aefi.screenPermittedCache.put(permittedCacheKey, false)
-                return false
-            }
-        }
-
-        // if there is a transition with a single service go a little further and see if we have permission to call it
-        String serviceName = transitionItem?.singleServiceName
-        if (transitionItem != null && !transitionItem.isReadOnly() && serviceName != null && !serviceName.isEmpty()) {
-            ServiceDefinition sd = sfi.ecfi.serviceFacade.getServiceDefinition(serviceName)
-            ArtifactExecutionInfo.AuthzAction authzAction
-            if (sd != null) authzAction = sd.authzAction
-            if (authzAction == null) authzAction = ServiceDefinition.verbAuthzActionEnumMap.get(ServiceDefinition.getVerbFromName(serviceName))
-            if (authzAction == null) authzAction = ArtifactExecutionInfo.AUTHZA_ALL
-
-            ArtifactExecutionInfoImpl aeii = new ArtifactExecutionInfoImpl(serviceName, ArtifactExecutionInfo.AT_SERVICE, authzAction, null)
-
-            ArtifactExecutionInfoImpl lastAeii = (ArtifactExecutionInfoImpl) artifactExecutionInfoStack.peekFirst()
-            if (!aefi.isPermitted(aeii, lastAeii, true, false, false, null)) {
-                // logger.warn("TOREMOVE user ${username} is NOT allowed to run transition at path ${this.fullPathNameList} because of screen at ${screenDef.location}")
-                if (permittedCacheKey != null) aefi.screenPermittedCache.put(permittedCacheKey, false)
-                return false
-            }
-
-            artifactExecutionInfoStack.addFirst(aeii)
-        }
-
-        // logger.warn("TOREMOVE user ${username} IS allowed to view screen at path ${this.fullPathNameList}")
-        if (permittedCacheKey != null) aefi.screenPermittedCache.put(permittedCacheKey, true)
-        return true
     }
 
     String getBaseUrl(ScreenRenderImpl sri) {
@@ -969,7 +881,7 @@ class ScreenUrlInfo {
         boolean getHasActions() { getTargetTransition() != null && (getTargetTransition().actions != null || getTargetTransition().serviceActions != null) }
         boolean isReadOnly() { getTargetTransition() == null || getTargetTransition().isReadOnly() }
         boolean getDisableLink() { return !sui.targetExists || (getTargetTransition() != null && !getTargetTransition().checkCondition(ec)) || !isPermitted() }
-        boolean isPermitted() { return sui.isPermitted(ec, getTargetTransition()) }
+        boolean isPermitted() { return false }
         boolean getInCurrentScreenPath() {
             List<String> currentPathNameList = new ArrayList<String>(sri.screenUrlInfo.fullPathNameList)
             return sui.getInCurrentScreenPath(currentPathNameList)

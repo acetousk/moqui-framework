@@ -18,7 +18,7 @@ import groovy.transform.CompileStatic
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.moqui.BaseArtifactException
 import org.moqui.BaseException
-import org.moqui.context.ArtifactExecutionInfo
+
 import org.moqui.context.ExecutionContext
 import org.moqui.context.ResourceFacade
 import org.moqui.impl.context.ContextJavaUtil
@@ -30,7 +30,6 @@ import org.moqui.entity.EntityFind
 import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
 import org.moqui.impl.actions.XmlAction
-import org.moqui.impl.context.ArtifactExecutionInfoImpl
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
 import org.moqui.util.ContextStack
@@ -664,18 +663,11 @@ class ScreenDefinition {
     void render(ScreenRenderImpl sri, boolean isTargetScreen) {
         // NOTE: don't require authz if the screen doesn't require auth
         String requireAuthentication = screenNode.attribute("require-authentication")
-        ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl(location,
-                ArtifactExecutionInfo.AT_XML_SCREEN, ArtifactExecutionInfo.AUTHZA_VIEW, sri.outputContentType)
-        if ("false".equals(screenNode.attribute("track-artifact-hit"))) aei.setTrackArtifactHit(false)
-        sri.ec.artifactExecutionFacade.pushInternal(aei, isTargetScreen ?
-                (requireAuthentication == null || requireAuthentication.length() == 0 || "true".equals(requireAuthentication)) : false, true)
 
         boolean loggedInAnonymous = false
         if ("anonymous-all".equals(requireAuthentication)) {
-            sri.ec.artifactExecutionFacade.setAnonymousAuthorizedAll()
             loggedInAnonymous = sri.ec.userFacade.loginAnonymousIfNoUser()
         } else if ("anonymous-view".equals(requireAuthentication)) {
-            sri.ec.artifactExecutionFacade.setAnonymousAuthorizedView()
             loggedInAnonymous = sri.ec.userFacade.loginAnonymousIfNoUser()
         }
 
@@ -684,7 +676,6 @@ class ScreenDefinition {
         try {
             rootSection.render(sri)
         } finally {
-            sri.ec.artifactExecutionFacade.pop(aei)
             if (loggedInAnonymous) sri.ec.userFacade.logoutAnonymousOnly()
         }
     }
@@ -925,16 +916,11 @@ class ScreenDefinition {
             // NOTE: use the View authz action to leave it open, ie require minimal authz; restrictions are often more
             //    in the services/etc if/when needed, or specific transitions can have authz settings
             String requireAuthentication = (String) parentScreen.screenNode.attribute('require-authentication')
-            ArtifactExecutionInfoImpl aei = new ArtifactExecutionInfoImpl("${parentScreen.location}/${name}",
-                    ArtifactExecutionInfo.AT_XML_SCREEN_TRANS, ArtifactExecutionInfo.AUTHZA_VIEW, sri.outputContentType)
-            ec.artifactExecutionFacade.pushInternal(aei, (!requireAuthentication || "true".equals(requireAuthentication)), true)
 
             boolean loggedInAnonymous = false
             if (requireAuthentication == "anonymous-all") {
-                ec.artifactExecutionFacade.setAnonymousAuthorizedAll()
                 loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             } else if (requireAuthentication == "anonymous-view") {
-                ec.artifactExecutionFacade.setAnonymousAuthorizedView()
                 loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             }
 
@@ -1005,7 +991,6 @@ class ScreenDefinition {
 
                 // all done so pop the artifact info; don't bother making sure this is done on errors/etc like in a finally
                 // clause because if there is an error this will help us know how we got there
-                ec.artifactExecutionFacade.pop(aei)
                 if (loggedInAnonymous) ec.userFacade.logoutAnonymousOnly()
             }
         }

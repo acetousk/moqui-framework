@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -14,9 +14,9 @@
 package org.moqui.impl.webapp
 
 import groovy.transform.CompileStatic
-import org.moqui.context.ArtifactTarpitException
+
 import org.moqui.context.AuthenticationRequiredException
-import org.moqui.context.ArtifactAuthorizationException
+
 import org.moqui.context.NotificationMessage
 import org.moqui.context.WebMediaTypeException
 import org.moqui.impl.context.ExecutionContextFactoryImpl
@@ -119,19 +119,9 @@ class MoquiServlet extends HttpServlet {
         } catch (AuthenticationRequiredException e) {
             logger.warn("Web Unauthorized (no authc): " + e.message)
             sendErrorResponse(request, response, HttpServletResponse.SC_UNAUTHORIZED, "unauthorized", null, e, ecfi, webappName, sri)
-        } catch (ArtifactAuthorizationException e) {
-            // SC_UNAUTHORIZED 401 used when authc/login fails, use SC_FORBIDDEN 403 for authz failures
-            // See ScreenRenderImpl.checkWebappSettings for authc and SC_UNAUTHORIZED handling
-            logger.warn("Web Access Forbidden (no authz): " + e.message)
-            sendErrorResponse(request, response, HttpServletResponse.SC_FORBIDDEN, "forbidden", null, e, ecfi, webappName, sri)
         } catch (ScreenResourceNotFoundException e) {
             logger.warn("Web Resource Not Found: " + e.message)
             sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND, "not-found", null, e, ecfi, webappName, sri)
-        } catch (ArtifactTarpitException e) {
-            logger.warn("Web Too Many Requests (tarpit): " + e.message)
-            if (e.getRetryAfterSeconds()) response.addIntHeader("Retry-After", e.getRetryAfterSeconds())
-            // NOTE: there is no constant on HttpServletResponse for 429; see RFC 6585 for details
-            sendErrorResponse(request, response, 429, "too-many", null, e, ecfi, webappName, sri)
         } catch (WebMediaTypeException e) {
             logger.warn("Web Unsupported Media Type: " + e.message)
             sendErrorResponse(request, response, HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE, "media-type", e.message, e, ecfi, webappName, sri)

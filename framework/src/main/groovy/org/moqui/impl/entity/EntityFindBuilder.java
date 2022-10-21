@@ -196,8 +196,7 @@ public class EntityFindBuilder extends EntityQueryBuilder {
             // logger.warn("============== entityAliasUsedSet=${entityAliasUsedSet} for entity ${localEntityDefinition.entityName}\nfieldUsedSet=${fieldUsedSet}\n fieldInfoList=${fieldInfoList}\n orderByFields=${entityFindBase.orderByFields}")
 
             // at this point entityAliasUsedSet is finalized so do authz filter if needed
-            ArrayList<EntityConditionImplBase> filterCondList = efi.ecfi.getEci().artifactExecutionFacade.filterFindForUser(localEntityDefinition, entityAliasUsedSet);
-            outWhereCondition = EntityConditionFactoryImpl.addAndListToCondition(outWhereCondition, filterCondList);
+            outWhereCondition = EntityConditionFactoryImpl.addAndListToCondition(outWhereCondition, null);
 
             // keep a set of all aliases in the join so far and if the left entity alias isn't there yet, and this
             // isn't the first one, throw an exception
@@ -319,8 +318,7 @@ public class EntityFindBuilder extends EntityQueryBuilder {
             }
         } else {
             // not a view-entity so do authz filter now if needed
-            ArrayList<EntityConditionImplBase> filterCondList = efi.ecfi.getEci().artifactExecutionFacade.filterFindForUser(localEntityDefinition, null);
-            outWhereCondition = EntityConditionFactoryImpl.addAndListToCondition(outWhereCondition, filterCondList);
+            outWhereCondition = EntityConditionFactoryImpl.addAndListToCondition(outWhereCondition, null);
 
             localBuilder.append(localEntityDefinition.getFullTableName());
         }
