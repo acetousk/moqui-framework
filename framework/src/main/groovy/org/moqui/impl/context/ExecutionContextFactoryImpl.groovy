@@ -664,7 +664,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
 
             ExecutionContext ec = getExecutionContext()
             try {
-                ec.getUser().loginAnonymousIfNoUser()
 
                 EntityDataLoader edl = ec.getEntity().makeDataLoader()
                 if (emptyDbLoad != 'all') edl.dataTypes(new HashSet(emptyDbLoad.split(",") as List))
@@ -689,7 +688,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
                 logger.warn("Loading 'test' type data (instance_purpose=test)")
                 ExecutionContext ec = getExecutionContext()
                 try {
-                    ec.getUser().loginAnonymousIfNoUser()
 
                     EntityDataLoader edl = ec.getEntity().makeDataLoader()
                     edl.dataTypes(new HashSet(['test']))

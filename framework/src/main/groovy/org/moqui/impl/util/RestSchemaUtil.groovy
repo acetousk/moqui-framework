@@ -570,10 +570,6 @@ class RestSchemaUtil {
     static void handleEntityRestSchema(ExecutionContextImpl eci, List<String> extraPathNameList, String schemaUri, String linkPrefix,
                                        String schemaLinkPrefix, boolean getMaster) {
         // make sure a user is logged in, screen/etc that calls will generally be configured to not require auth
-        if (!eci.getUser().getUsername()) {
-            // if there was a login error there will be a MessageFacade error message
-            return
-        }
 
         EntityFacadeImpl efi = eci.entityFacade
 
@@ -654,10 +650,6 @@ class RestSchemaUtil {
 
     static void handleEntityRestRaml(ExecutionContextImpl eci, List<String> extraPathNameList, String linkPrefix, String schemaLinkPrefix, boolean getMaster) {
         // make sure a user is logged in, screen/etc that calls will generally be configured to not require auth
-        if (!eci.getUser().getUsername()) {
-            // if there was a login error there will be a MessageFacade error message
-            return
-        }
 
         EntityFacadeImpl efi = eci.entityFacade
 

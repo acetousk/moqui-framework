@@ -119,8 +119,6 @@ public class ServiceCallImpl implements ServiceCall {
         // always do an authz before scheduling the job
         // pop immediately, just did the push to to an authz
 
-        parameters.put("authUsername", eci.userFacade.getUsername());
-
         // logger.warn("=========== async call ${serviceName}, parameters: ${parameters}")
     }
 }

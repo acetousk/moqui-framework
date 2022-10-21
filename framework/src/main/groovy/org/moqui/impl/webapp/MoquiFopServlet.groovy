@@ -66,7 +66,7 @@ class MoquiFopServlet extends HttpServlet {
 
         ExecutionContextImpl activeEc = ecfi.activeContext.get()
         if (activeEc != null) {
-            logger.warn("In MoquiServlet.service there is already an ExecutionContext for user ${activeEc.user.username} (from ${activeEc.forThreadId}:${activeEc.forThreadName}) in this thread (${Thread.currentThread().id}:${Thread.currentThread().name}), destroying")
+            logger.warn("In MoquiServlet.service there is already an ExecutionContext for user ... (from ${activeEc.forThreadId}:${activeEc.forThreadName}) in this thread (${Thread.currentThread().id}:${Thread.currentThread().name}), destroying")
             activeEc.destroy()
         }
         ExecutionContextImpl ec = ecfi.getEci()

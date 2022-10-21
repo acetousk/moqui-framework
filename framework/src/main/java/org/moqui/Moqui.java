@@ -124,7 +124,6 @@ public class Moqui {
         // disable authz and add an artifact set to anonymous authorized all
 
         // login anonymous user
-        ec.getUser().loginAnonymousIfNoUser();
 
         // set the data load parameters
         EntityDataLoader edl = ec.getEntity().makeDataLoader();

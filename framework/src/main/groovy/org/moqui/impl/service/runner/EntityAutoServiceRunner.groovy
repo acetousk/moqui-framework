@@ -108,9 +108,6 @@ class EntityAutoServiceRunner implements ServiceRunner {
 
         // always make fromDate optional, whether or not part of the pk; do this before the allPksIn check
         if (pkFieldNames.contains("fromDate") && parameters.get("fromDate") == null) {
-            Timestamp fromDate = ecfi.getExecutionContext().getUser().getNowTimestamp()
-            parameters.put("fromDate", fromDate)
-            result.put("fromDate", fromDate)
             // logger.info("Set fromDate field to default [${parameters.fromDate}]")
         }
     }
@@ -470,11 +467,6 @@ class EntityAutoServiceRunner implements ServiceRunner {
                     if (userPermissionId == null || userPermissionId.isEmpty()) {
                         validTransitionCount++
                     } else {
-                        if (eci.userFacade.hasPermission(userPermissionId)) {
-                            validTransitionCount++
-                        } else {
-                            transitionCheckMessages.add("User ${eci.userFacade.username} (${eci.userFacade.userId}) does not have permission ${userPermissionId} to change status in flow ${statusFlowTransition.statusFlowId} from ${lookedUpStatusId} to ${parameterStatusId} for ${ed.getFullEntityName()} ${lookedUpValue.getPrimaryKeys()}".toString())
-                        }
                     }
                 }
                 if (validTransitionCount == 0) {

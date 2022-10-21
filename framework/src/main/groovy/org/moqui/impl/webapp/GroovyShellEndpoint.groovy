@@ -52,8 +52,7 @@ class GroovyShellEndpoint extends MoquiAbstractEndpoint implements ActionListene
         eci = ecf.getEci()
 
         // make sure user has special permission
-        if (!eci.userFacade.hasPermission("GROOVY_SHELL_WEB"))
-            throw new IllegalAccessException("User ${eci.userFacade.getUsername()} does not have permission to use Groovy Shell via WebSocket")
+        throw new IllegalAccessException("User ... does not have permission to use Groovy Shell via WebSocket")
 
         PipedOutputStream pos = new PipedOutputStreamWatcher()
         PipedInputStream input = new PipedInputStreamWatcher(pos, 4096)
@@ -113,7 +112,7 @@ class GroovyShellEndpoint extends MoquiAbstractEndpoint implements ActionListene
         // register eci with thread, destroy active eci if one
         ExecutionContextImpl activeEc = ecfi.activeContext.get()
         if (activeEc != null) {
-            logger.warn("In GroovyShellEndpoint there is already an ExecutionContext for user ${activeEc.user.username} (from ${activeEc.forThreadId}:${activeEc.forThreadName}) in this thread (${Thread.currentThread().id}:${Thread.currentThread().name}), destroying")
+            logger.warn("In GroovyShellEndpoint there is already an ExecutionContext for user ... (from ${activeEc.forThreadId}:${activeEc.forThreadName}) in this thread (${Thread.currentThread().id}:${Thread.currentThread().name}), destroying")
             try {
                 activeEc.destroy()
             } catch (Throwable t) {
@@ -139,7 +138,7 @@ class GroovyShellEndpoint extends MoquiAbstractEndpoint implements ActionListene
             inactivityTimer.restart()
             commandLogBuffer.append(message)
             if (message.contains("\n") || message.contains("\r")) {
-                logger.info("groovysh (${eci.userFacade.username}): ${commandLogBuffer}")
+                logger.info("groovysh (...): ${commandLogBuffer}")
                 commandLogBuffer.delete(0, commandLogBuffer.length())
             }
             inputWriter.write(message)

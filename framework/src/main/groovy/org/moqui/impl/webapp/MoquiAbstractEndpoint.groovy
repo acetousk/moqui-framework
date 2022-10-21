@@ -62,16 +62,12 @@ abstract class MoquiAbstractEndpoint extends Endpoint implements MessageHandler.
         ExecutionContextImpl eci = ecfi.getEci()
         try {
             if (handshakeRequest != null) {
-                eci.userFacade.initFromHandshakeRequest(handshakeRequest)
             } else if (httpSession != null) {
-                eci.userFacade.initFromHttpSession(httpSession)
             } else {
                 logger.warn("No HandshakeRequest or HttpSession found opening WebSocket Session ${session.id}, not logging in user")
             }
 
 
-            userId = eci.user.userId
-            username = eci.user.username
 
             Long timeout = (Long) config.userProperties.get("maxIdleTimeout")
             if (timeout != null && session.getMaxIdleTimeout() > 0 && session.getMaxIdleTimeout() < timeout)

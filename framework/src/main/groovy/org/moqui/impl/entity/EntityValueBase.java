@@ -258,131 +258,6 @@ public abstract class EntityValueBase implements EntityValue {
         // if enabled use moqui.basic.LocalizedEntityField for any localized fields
         if (fieldInfo.enableLocalization) {
             String name = fieldInfo.name;
-            Locale locale = getEntityFacadeImpl().ecfi.getEci().userFacade.getLocale();
-            String localeStr = locale != null ? locale.toString() : null;
-            if (localeStr != null) {
-                Object internalValue = valueMapInternal.getByIString(fieldInfo.name, fieldInfo.index);
-
-                boolean knownNoLocalized = false;
-                if (localizedByLocaleByField == null) {
-                    localizedByLocaleByField = new HashMap<>();
-                } else {
-                    Map<String, String> localizedByLocale = localizedByLocaleByField.get(name);
-                    if (localizedByLocale != null) {
-                        String cachedLocalized = localizedByLocale.get(localeStr);
-                        if (cachedLocalized != null && cachedLocalized.length() > 0) {
-                            // logger.warn("======== field ${name}:${internalValue} found cached localized ${cachedLocalized}")
-                            return cachedLocalized;
-                        } else {
-                            // logger.warn("======== field ${name}:${internalValue} known no localized")
-                            knownNoLocalized = localizedByLocale.containsKey(localeStr);
-                        }
-                    }
-                }
-
-                if (!knownNoLocalized) {
-                    List<String> pks;
-                    MNode aliasNode = null;
-                    String memberEntityName = null;
-                    if (ed.isViewEntity && !ed.entityInfo.isDynamicView) {
-                        // NOTE: there are issues with dynamic view entities here, may be possible to fix them but for now not running for EntityDynamicView
-                        aliasNode = ed.getFieldNode(name);
-                        memberEntityName = ed.getMemberEntityName(aliasNode.attribute("entity-alias"));
-                        EntityDefinition memberEd = getEntityFacadeImpl().getEntityDefinition(memberEntityName);
-                        pks = memberEd.getPkFieldNames();
-                    } else {
-                        pks = ed.getPkFieldNames();
-                    }
-
-                    if (pks.size() == 1) {
-                        String pk = pks.get(0);
-                        if (aliasNode != null) {
-                            pk = null;
-                            Map<String, String> pkToAliasMap = ed.getMePkFieldToAliasNameMap(aliasNode.attribute("entity-alias"));
-                            Set<String> pkSet = pkToAliasMap.keySet();
-                            if (pkSet.size() == 1) pk = pkToAliasMap.get(pkSet.iterator().next());
-                        }
-
-                        String pkValue = pk != null ? (String) valueMapInternal.get(pk) : null;
-                        if (pkValue != null) {
-                            // logger.warn("======== field ${name}:${internalValue} finding LocalizedEntityField, localizedByLocaleByField=${localizedByLocaleByField}")
-                            String entityName = ed.getFullEntityName();
-                            String fieldName = name;
-                            if (aliasNode != null) {
-                                entityName = memberEntityName;
-                                final String fieldAttr = aliasNode.attribute("field");
-                                fieldName = fieldAttr != null && !fieldAttr.isEmpty() ? fieldAttr : aliasNode.attribute("name");
-                                // logger.warn("localizing field for ViewEntity ${ed.fullEntityName} field ${name}, using entityName: ${entityName}, fieldName: ${fieldName}, pkValue: ${pkValue}, locale: ${localeStr}")
-                            }
-
-                            EntityFind lefFind = getEntityFacadeImpl().find("moqui.basic.LocalizedEntityField")
-                                    .condition("entityName", entityName).condition("fieldName", fieldName)
-                                    .condition("pkValue", pkValue).condition("locale", localeStr);
-                            EntityValue lefValue = lefFind.useCache(true).one();
-                            if (lefValue != null) {
-                                String localized = (String) lefValue.get("localized");
-                                CollectionUtilities.addToMapInMap(name, localeStr, localized, localizedByLocaleByField);
-                                return localized;
-                            }
-
-                            // no result found, try with shortened locale
-                            if (localeStr.contains("_")) {
-                                lefFind.condition("locale", localeStr.substring(0, localeStr.indexOf("_")));
-                                lefValue = lefFind.useCache(true).one();
-                                if (lefValue != null) {
-                                    String localized = (String) lefValue.get("localized");
-                                    CollectionUtilities.addToMapInMap(name, localeStr, localized, localizedByLocaleByField);
-                                    return localized;
-                                }
-                            }
-
-                            // no result found, try "default" locale
-                            lefFind.condition("locale", "default");
-                            lefValue = lefFind.useCache(true).one();
-                            if (lefValue != null) {
-                                String localized = (String) lefValue.get("localized");
-                                CollectionUtilities.addToMapInMap(name, localeStr, localized, localizedByLocaleByField);
-                                return localized;
-                            }
-                        }
-                    }
-
-                    // no luck? try getting a localized value from moqui.basic.LocalizedMessage
-                    // logger.warn("======== field ${name}:${internalValue} finding LocalizedMessage")
-                    EntityFind lmFind = getEntityFacadeImpl().find("moqui.basic.LocalizedMessage")
-                            .condition("original", internalValue).condition("locale", localeStr);
-                    EntityValue lmValue = lmFind.useCache(true).one();
-                    if (lmValue != null) {
-                        String localized = (String) lmValue.get("localized");
-                        CollectionUtilities.addToMapInMap(name, localeStr, localized, localizedByLocaleByField);
-                        return localized;
-                    }
-
-                    if (localeStr.contains("_")) {
-                        lmFind.condition("locale", localeStr.substring(0, localeStr.indexOf("_")));
-                        lmValue = lmFind.useCache(true).one();
-                        if (lmValue != null) {
-                            String localized = (String) lmValue.get("localized");
-                            CollectionUtilities.addToMapInMap(name, localeStr, localized, localizedByLocaleByField);
-                            return localized;
-                        }
-                    }
-
-                    lmFind.condition("locale", "default");
-                    lmValue = lmFind.useCache(true).one();
-                    if (lmValue != null) {
-                        String localized = (String) lmValue.get("localized");
-                        CollectionUtilities.addToMapInMap(name, localeStr, localized, localizedByLocaleByField);
-                        return localized;
-                    }
-
-                    // we didn't find a localized value, remember that so we don't do the queries again (common case)
-                    CollectionUtilities.addToMapInMap(name, localeStr, null, localizedByLocaleByField);
-                    // logger.warn("======== field ${name}:${internalValue} remembering no localized, localizedByLocaleByField=${localizedByLocaleByField}")
-                }
-
-                return internalValue;
-            }
         }
 
 
@@ -651,8 +526,6 @@ public abstract class EntityValueBase implements EntityValue {
 
     private void handleAuditLog(boolean isUpdate, LiteStringMap<Object> oldValues, EntityDefinition ed, ExecutionContextImpl ec) {
 
-        Timestamp nowTimestamp = ec.userFacade.getNowTimestamp();
-
         LiteStringMap<Object> pksValueMap = new LiteStringMap<>(ed.entityInfo.pkFieldInfoArray.length).useManualIndex();
         addThreeFieldPkValues(pksValueMap, ed);
 
@@ -702,9 +575,6 @@ public abstract class EntityValueBase implements EntityValue {
                 parms.put("changedEntityName", getEntityName());
                 parms.put("changedFieldName", fieldName);
                 if (changeReason != null) parms.put("changeReason", changeReason);
-                parms.put("changedDate", nowTimestamp);
-                parms.put("changedByUserId", ec.getUser().getUserId());
-                parms.put("changedInVisitId", ec.getUser().getVisitId());
 
                 // prep values, encrypt if needed
                 if (value != null) {

@@ -48,8 +48,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     private WebFacade webFacade = (WebFacade) null;
     private WebFacadeImpl webFacadeImpl = (WebFacadeImpl) null;
 
-    public final UserFacadeImpl userFacade;
-
     // local references to ECFI fields
     public final CacheFacadeImpl cacheFacade;
     public final LoggerFacadeImpl loggerFacade;
@@ -75,7 +73,6 @@ public class ExecutionContextImpl implements ExecutionContext {
         // createLoc = new BaseException("ec create");
 
         activeEntityFacade = ecfi.entityFacade;
-        userFacade = new UserFacadeImpl(this);
 
         cacheFacade = ecfi.cacheFacade;
         loggerFacade = ecfi.loggerFacade;
@@ -116,7 +113,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     @Override public @Nullable WebFacade getWeb() { return webFacade; }
     public @Nullable WebFacadeImpl getWebImpl() { return webFacadeImpl; }
 
-    @Override public @Nonnull UserFacade getUser() { return userFacade; }
     @Override public @Nonnull ResourceFacade getResource() { return resourceFacade; }
     @Override public @Nonnull LoggerFacade getLogger() { return loggerFacade; }
     @Override public @Nonnull CacheFacade getCache() { return cacheFacade; }
@@ -128,7 +124,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     @Override public @Nonnull ElasticFacade getElastic() { return ecfi.elasticFacade; }
     @Override public @Nonnull ServiceFacade getService() { return serviceFacade; }
 
-
     @Override
     public void initWebFacade(@Nonnull String webappMoquiName, @Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response) {
         WebFacadeImpl wfi = new WebFacadeImpl(webappMoquiName, request, response, this);
@@ -136,16 +131,10 @@ public class ExecutionContextImpl implements ExecutionContext {
         webFacadeImpl = wfi;
 
         // now that we have the webFacade in place we can do init UserFacade
-        userFacade.initFromHttpRequest(request, response);
         // for convenience (and more consistent code in screen actions, services, etc) add all requestParameters to the context
         contextStack.putAll(webFacadeImpl.getRequestParameters());
         // this is the beginning of a request, so trigger before-request actions
         wfi.runBeforeRequestActions();
-
-        String userId = userFacade.getUserId();
-        if (userId != null && !userId.isEmpty()) MDC.put("moqui_userId", userId);
-        String visitorId = userFacade.getVisitorId();
-        if (visitorId != null && !visitorId.isEmpty()) MDC.put("moqui_visitorId", visitorId);
 
         if (loggerDirect.isTraceEnabled()) loggerDirect.trace("ExecutionContextImpl WebFacade initialized");
     }
@@ -221,9 +210,6 @@ public class ExecutionContextImpl implements ExecutionContext {
             if (threadEci != null) {
                 // ecfi.useExecutionContextInThread(threadEci);
                 ExecutionContextImpl eci = ecfi.getEci();
-                String threadUsername = threadEci.userFacade.getUsername();
-                if (threadUsername != null && !threadUsername.isEmpty())
-                    eci.userFacade.internalLoginUser(threadUsername, false);
             }
             try {
                 closure.call();

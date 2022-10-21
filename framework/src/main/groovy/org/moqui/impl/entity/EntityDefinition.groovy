@@ -1032,7 +1032,7 @@ class EntityDefinition {
             String thruFieldName = dateFilter.attribute("thru-field-name") ?: "thruDate"
 
             Timestamp validDate = dateFilter.attribute("valid-date") ? efi.ecfi.resourceFacade.expand(dateFilter.attribute("valid-date"), "") as Timestamp : null
-            if (validDate == (Timestamp) null) validDate = efi.ecfi.getEci().userFacade.getNowTimestamp()
+            if (validDate == (Timestamp) null) validDate = null
 
             String entityAliasAttr = dateFilter.attribute("entity-alias")
             // if no entity-alias specified, use entity-alias from join member-entity node (if field exists on join entity)

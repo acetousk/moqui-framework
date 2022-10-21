@@ -16,7 +16,6 @@ package org.moqui.impl.webapp
 import groovy.transform.CompileStatic
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
-import org.moqui.impl.context.UserFacadeImpl
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -63,21 +62,15 @@ class MoquiAuthFilter implements Filter {
         }
         ExecutionContextImpl activeEc = ecfi.activeContext.get()
         if (activeEc != null) {
-            logger.warn("In MoquiAuthFilter.doFilter there is already an ExecutionContext for user ${activeEc.user.username} (from ${activeEc.forThreadId}:${activeEc.forThreadName}) in this thread (${Thread.currentThread().id}:${Thread.currentThread().name}), destroying")
+            logger.warn("In MoquiAuthFilter.doFilter there is already an ExecutionContext for user ... (from ${activeEc.forThreadId}:${activeEc.forThreadName}) in this thread (${Thread.currentThread().id}:${Thread.currentThread().name}), destroying")
             activeEc.destroy()
         }
 
         ExecutionContextImpl ec = ecfi.getEci()
         try {
-            UserFacadeImpl ufi = ec.userFacade
-            ufi.initFromHttpRequest(request, response)
 
-            if (!ufi.username) {
-                return
-            }
-
-            if (permission && !ufi.hasPermission(permission)) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "User ${ufi.username} does not have permission ${permission}")
+            if (permission) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "User ... does not have permission ${permission}")
                 return
             }
 

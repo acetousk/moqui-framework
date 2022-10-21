@@ -419,7 +419,6 @@ class WebFacadeImpl implements WebFacade {
         sessionAttributes = new WebUtilities.AttributeContainerMap(new WebUtilities.HttpSessionContainer(newSession))
 
         // UserFacadeImpl keeps a session reference, update it
-        if (eci.userFacade != null) eci.userFacade.session = newSession
 
         // done
         return newSession
@@ -811,10 +810,6 @@ class WebFacadeImpl implements WebFacade {
         }
 
         // make sure a user is logged in, screen/etc that calls will generally be configured to not require auth
-        if (!eci.getUser().getUsername()) {
-            // if there was a login error there will be a MessageFacade error message
-            return
-        }
 
         String method = request.getMethod()
         if ("post".equalsIgnoreCase(method)) {
@@ -870,7 +865,6 @@ class WebFacadeImpl implements WebFacade {
             // record doesn't exist, send 404 Not Found
             sendJsonError(HttpServletResponse.SC_NOT_FOUND, null, e)
         } catch (Throwable t) {
-            String errorMessage = t.toString()
             logger.warn((String) "General error in entity REST: " + t.toString(), t)
             sendJsonError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, errorMessage, null)
         }
@@ -983,20 +977,15 @@ class WebFacadeImpl implements WebFacade {
             }
 
             // authc mechanism, what can clients send? custom header or body or anything? may need various options
-            String userId = eci.userFacade.getUserId()
             String messageAuthEnumId = systemMessageRemote.getNoCheckSimple("messageAuthEnumId")
             // TODO: consider moving this elsewhere
             if (!messageAuthEnumId || "SmatLogin".equals(messageAuthEnumId)) {
                 // require that user is logged in by this point (handled by UserFacadeImpl init)
-                if (!userId) {
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Receive message for remote system ${systemMessageRemoteId} requires login")
-                    return
-                }
                 // see if isPermitted for service org.moqui.impl.SystemMessageServices.receive#IncomingSystemMessage
                 try {
                 } catch (Exception e) {
                     logger.warn("Authz failutre for system message receive from remote ${systemMessageRemoteId}", e.toString())
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Receive message for remote system ${systemMessageRemoteId} not authorized for user with ID ${userId}")
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Receive message for remote system ${systemMessageRemoteId} not authorized for user with ID ...")
                     return
                 }
             } else if ("SmatHmacSha256".equals(messageAuthEnumId)) {
@@ -1023,7 +1012,6 @@ class WebFacadeImpl implements WebFacade {
                 }
 
                 // login anonymous if not logged in
-                eci.userFacade.loginAnonymousIfNoUser()
             } else if (!"SmatNone".equals(messageAuthEnumId)) {
                 logger.error("Got system message for remote ${systemMessageRemoteId} with unsupported messageAuthEnumId ${messageAuthEnumId}, returning error")
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Remote system ${systemMessageRemoteId} auth configuration not valid")
@@ -1124,7 +1112,7 @@ class WebFacadeImpl implements WebFacade {
                     logger.warn("Tried to mark EmailMessage ${emailMessageId} viewed but not found")
                 } else if (!"ES_VIEWED".equals(emailMessage.statusId)) {
                     eci.service.sync().name("update#moqui.basic.email.EmailMessage").parameter("emailMessageId", emailMessageId)
-                            .parameter("statusId", "ES_VIEWED").parameter("receivedDate", eci.user.nowTimestamp).disableAuthz().call()
+                            .parameter("statusId", "ES_VIEWED").parameter("receivedDate", new java.util.Date()).disableAuthz().call()
                 }
             }
         } catch (Throwable t) {

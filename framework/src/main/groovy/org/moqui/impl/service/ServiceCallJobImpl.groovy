@@ -84,7 +84,7 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
             // create the ServiceJobRun record
             String parametersString = JsonOutput.toJson(parameters)
             Map jobRunResult = ecfi.service.sync().name("create", "moqui.service.job.ServiceJobRun")
-                    .parameters([jobName:jobName, userId:eci.user.userId, parameters:parametersString] as Map<String, Object>)
+                    .parameters([jobName:jobName, userId:null, parameters:parametersString] as Map<String, Object>)
                     .disableAuthz().requireNewTransaction(true).call()
             jobRunId = jobRunResult.jobRunId
         } else {
@@ -143,8 +143,6 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
         ServiceJobCallable(ExecutionContextImpl eci, Map<String, Object> serviceJob, String jobRunId, Timestamp lastRunTime,
                            boolean clearLock, Map<String, Object> parameters) {
             ecfi = eci.ecfi
-            threadUsername = eci.userFacade.username
-            currentUserId = eci.userFacade.userId
             jobName = (String) serviceJob.jobName
             jobDescription = (String) serviceJob.description
             serviceName = (String) serviceJob.serviceName
@@ -213,7 +211,7 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
                 // check for active ExecutionContext
                 ExecutionContextImpl activeEc = ecfi.activeContext.get()
                 if (activeEc != null) {
-                    logger.error("In ServiceCallJob ${jobName} service ${serviceName} there is already an ExecutionContext for user ${activeEc.user.username} (from ${activeEc.forThreadId}:${activeEc.forThreadName}) in this thread ${Thread.currentThread().id}:${Thread.currentThread().name}, destroying")
+                    logger.error("In ServiceCallJob ${jobName} service ${serviceName} there is already an ExecutionContext for user ... (from ${activeEc.forThreadId}:${activeEc.forThreadName}) in this thread ${Thread.currentThread().id}:${Thread.currentThread().name}, destroying")
                     try {
                         activeEc.destroy()
                     } catch (Throwable t) {
@@ -223,17 +221,10 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
 
                 // get a fresh ExecutionContext
                 threadEci = ecfi.getEci()
-                if (threadUsername != null && threadUsername.length() > 0)
-                    threadEci.userFacade.internalLoginUser(threadUsername, false)
 
                 // set hostAddress, hostName, runThread, startTime on ServiceJobRun
                 InetAddress localHost = ecfi.getLocalhostAddress()
                 // NOTE: no need to run async or separate thread, is in separate TX because no wrapping TX for these service calls
-                ecfi.serviceFacade.sync().name("update", "moqui.service.job.ServiceJobRun")
-                        .parameters([jobRunId:jobRunId, hostAddress:(localHost?.getHostAddress() ?: '127.0.0.1'),
-                            hostName:(localHost?.getHostName() ?: 'localhost'), runThread:Thread.currentThread().getName(),
-                            startTime:threadEci.user.nowTimestamp] as Map<String, Object>)
-                        .disableAuthz().call()
 
                 if (lastRunTime != (Object) null) parameters.put("lastRunTime", lastRunTime)
 
@@ -259,8 +250,6 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
                         logger.warn("Error writing JSON for Service Job ${jobName} results: ${e.toString()}\n${results}")
                     }
                 }
-
-                Timestamp nowTimestamp = threadEci.userFacade.nowTimestamp
 
                 // before calling other services clear out errors or they won't run
 

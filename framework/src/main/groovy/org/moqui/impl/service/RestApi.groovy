@@ -23,7 +23,6 @@ import org.moqui.resource.ResourceReference
 import org.moqui.entity.EntityFind
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
-import org.moqui.impl.context.UserFacadeImpl
 import org.moqui.impl.entity.EntityDefinition
 import org.moqui.impl.entity.FieldInfo
 import org.moqui.impl.util.RestSchemaUtil
@@ -229,16 +228,13 @@ class RestApi {
             serviceName = serviceNode.attribute("name")
         }
         RestResult run(List<String> pathList, ExecutionContext ec) {
-            if ((requireAuthentication == null || requireAuthentication.length() == 0 || "true".equals(requireAuthentication)) &&
-                    !ec.getUser().getUsername()) {
+            if ((requireAuthentication == null || requireAuthentication.length() == 0 || "true".equals(requireAuthentication)) ) {
                 throw new AuthenticationRequiredException("User must be logged in to call service ${serviceName}")
             }
 
             boolean loggedInAnonymous = false
             if ("anonymous-all".equals(requireAuthentication)) {
-                loggedInAnonymous = ec.getUser().loginAnonymousIfNoUser()
             } else if ("anonymous-view".equals(requireAuthentication)) {
-                loggedInAnonymous = ec.getUser().loginAnonymousIfNoUser()
             }
 
             try {
@@ -246,7 +242,6 @@ class RestApi {
                 ServiceDefinition.nestedRemoveNullsFromResultMap(result)
                 return new RestResult(result, null)
             } finally {
-                if (loggedInAnonymous) ((UserFacadeImpl) ec.getUser()).logoutAnonymousOnly()
             }
         }
 
@@ -346,16 +341,13 @@ class RestApi {
         }
         RestResult run(List<String> pathList, ExecutionContext ec) {
             // for entity ops authc always required
-            if ((requireAuthentication == null || requireAuthentication.length() == 0 || "true".equals(requireAuthentication)) &&
-                    !ec.getUser().getUsername()) {
+            if ((requireAuthentication == null || requireAuthentication.length() == 0 || "true".equals(requireAuthentication)) ) {
                 throw new AuthenticationRequiredException("User must be logged in for operaton ${operation} on entity ${entityName}")
             }
 
             boolean loggedInAnonymous = false
             if ("anonymous-all".equals(requireAuthentication)) {
-                loggedInAnonymous = ec.getUser().loginAnonymousIfNoUser()
             } else if ("anonymous-view".equals(requireAuthentication)) {
-                loggedInAnonymous = ec.getUser().loginAnonymousIfNoUser()
             }
 
             try {
@@ -399,7 +391,6 @@ class RestApi {
                     throw new IllegalArgumentException("Entity operation ${operation} not supported, must be one of: one, list, count, create, update, store, delete")
                 }
             } finally {
-                if (loggedInAnonymous) ((UserFacadeImpl) ec.getUser()).logoutAnonymousOnly()
             }
         }
 
@@ -640,9 +631,7 @@ class RestApi {
 
             boolean loggedInAnonymous = false
             if ("anonymous-all".equals(requireAuthentication)) {
-                loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             } else if ("anonymous-view".equals(requireAuthentication)) {
-                loggedInAnonymous = ec.userFacade.loginAnonymousIfNoUser()
             }
 
             try {
@@ -663,7 +652,6 @@ class RestApi {
                     return runByMethod(pathList, ec)
                 }
             } finally {
-                if (loggedInAnonymous) ec.userFacade.logoutAnonymousOnly()
             }
         }
 
