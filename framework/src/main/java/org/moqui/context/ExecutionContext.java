@@ -60,7 +60,6 @@ public interface ExecutionContext {
     @Nonnull UserFacade getUser();
 
     /** For user messages including general feedback, errors, and field-specific validation errors. */
-    @Nonnull MessageFacade getMessage();
 
     /** For information about artifacts as they are being executed. */
     @Nonnull ArtifactExecutionFacade getArtifactExecution();
@@ -91,9 +90,6 @@ public interface ExecutionContext {
 
     /** For rendering screens for general use (mostly for things other than web pages or web page snippets). */
     @Nonnull ScreenFacade getScreen();
-
-    @Nonnull NotificationMessage makeNotificationMessage();
-    @Nonnull List<NotificationMessage> getNotificationMessages(@Nullable String topic);
 
     /** This should be called by a filter or servlet at the beginning of an HTTP request to initialize a web facade
      * for the current thread. */

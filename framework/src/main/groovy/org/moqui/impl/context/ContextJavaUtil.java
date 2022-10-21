@@ -239,12 +239,6 @@ public class ContextJavaUtil {
             this.runningTimeMillis = runningTimeMillis;
             this.parameters = parameters;
             this.outputSize = outputSize;
-            if (eci.getMessage().hasError()) {
-                StringBuilder errorMessage = new StringBuilder();
-                for (String curErr: eci.getMessage().getErrors()) errorMessage.append(curErr).append(";");
-                if (errorMessage.length() > 255) errorMessage.delete(255, errorMessage.length());
-                this.errorMessage = errorMessage.toString();
-            }
             WebFacadeImpl wfi = eci.getWebImpl();
             if (wfi != null) {
                 String fullUrl = wfi.getRequestUrl();

@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -17,7 +17,6 @@ import groovy.transform.CompileStatic
 import org.moqui.context.ArtifactTarpitException
 import org.moqui.context.AuthenticationRequiredException
 import org.moqui.context.ArtifactAuthorizationException
-import org.moqui.context.NotificationMessage
 import org.moqui.context.WebMediaTypeException
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
@@ -136,26 +135,14 @@ class MoquiServlet extends HttpServlet {
             logger.warn("Web Unsupported Media Type: " + e.message)
             sendErrorResponse(request, response, HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE, "media-type", e.message, e, ecfi, webappName, sri)
         } catch (Throwable t) {
-            if (ec.message.hasError()) {
-                String errorsString = ec.message.errorsString
-                logger.error(errorsString, t)
-                if ("true".equals(request.getAttribute("moqui.login.error"))) {
-                    sendErrorResponse(request, response, HttpServletResponse.SC_UNAUTHORIZED, "unauthorized",
-                            errorsString, t, ecfi, webappName, sri)
-                } else {
-                    sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "internal-error",
-                            errorsString, t, ecfi, webappName, sri)
-                }
+            String tString = t.toString()
+            if (isBrokenPipe(t)) {
+                logger.error("Internal error processing request: " + tString)
             } else {
-                String tString = t.toString()
-                if (isBrokenPipe(t)) {
-                    logger.error("Internal error processing request: " + tString)
-                } else {
-                    logger.error("Internal error processing request: " + tString, t)
-                }
-                sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "internal-error",
-                        null, t, ecfi, webappName, sri)
+                logger.error("Internal error processing request: " + tString, t)
             }
+            sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "internal-error",
+                    null, t, ecfi, webappName, sri)
         } finally {
             /* this is here just for kicks, uncomment to log a list of all artifacts hit/used in the screen render
             StringBuilder hits = new StringBuilder()
@@ -261,15 +248,6 @@ class MoquiServlet extends HttpServlet {
             int msgListSize = msgList.size()
             if (msgListSize > 4) msgList = (List<String>) msgList.subList(msgListSize - 4, msgListSize)
             message = msgList.join(" ")
-        }
-
-        if (ecfi != null && errorCode == HttpServletResponse.SC_INTERNAL_SERVER_ERROR && !isBrokenPipe(origThrowable)) {
-            ExecutionContextImpl ec = ecfi.getEci()
-            ec.makeNotificationMessage().topic("WebServletError").type(NotificationMessage.danger)
-                    .title('''Web Error ${errorCode?:''} (${username?:'no user'}) ${path?:''} ${message?:'N/A'}''')
-                    .message([errorCode:errorCode, errorType:errorType, message:message, exception:origThrowable?.toString(),
-                        path:ec.web?.getPathInfo(), parameters:ec.web?.getRequestParameters(), username:ec.user.username] as Map<String, Object>)
-                    .send()
         }
 
         if (ecfi == null) {

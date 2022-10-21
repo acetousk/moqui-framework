@@ -51,7 +51,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     private WebFacadeImpl webFacadeImpl = (WebFacadeImpl) null;
 
     public final UserFacadeImpl userFacade;
-    public final MessageFacadeImpl messageFacade;
     public final ArtifactExecutionFacadeImpl artifactExecutionFacade;
     public final L10nFacadeImpl l10nFacade;
 
@@ -82,7 +81,6 @@ public class ExecutionContextImpl implements ExecutionContext {
 
         activeEntityFacade = ecfi.entityFacade;
         userFacade = new UserFacadeImpl(this);
-        messageFacade = new MessageFacadeImpl();
         artifactExecutionFacade = new ArtifactExecutionFacadeImpl(this);
         l10nFacade = new L10nFacadeImpl(this);
 
@@ -128,7 +126,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     public @Nullable WebFacadeImpl getWebImpl() { return webFacadeImpl; }
 
     @Override public @Nonnull UserFacade getUser() { return userFacade; }
-    @Override public @Nonnull MessageFacade getMessage() { return messageFacade; }
     @Override public @Nonnull ArtifactExecutionFacade getArtifactExecution() { return artifactExecutionFacade; }
     @Override public @Nonnull L10nFacade getL10n() { return l10nFacade; }
     @Override public @Nonnull ResourceFacade getResource() { return resourceFacade; }
@@ -142,31 +139,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     @Override public @Nonnull ElasticFacade getElastic() { return ecfi.elasticFacade; }
     @Override public @Nonnull ServiceFacade getService() { return serviceFacade; }
     @Override public @Nonnull ScreenFacade getScreen() { return screenFacade; }
-
-    @Override public @Nonnull NotificationMessage makeNotificationMessage() { return new NotificationMessageImpl(ecfi); }
-
-    @Override
-    public @Nonnull List<NotificationMessage> getNotificationMessages(@Nullable String topic) {
-        String userId = userFacade.getUserId();
-        if (userId == null || userId.isEmpty()) return new ArrayList<>();
-
-        List<NotificationMessage> nmList = new ArrayList<>();
-        boolean alreadyDisabled = artifactExecutionFacade.disableAuthz();
-        try {
-            EntityFind nmbuFind = activeEntityFacade.find("moqui.security.user.NotificationMessageByUser").condition("userId", userId);
-            if (topic != null && !topic.isEmpty()) nmbuFind.condition("topic", topic);
-            EntityList nmbuList = nmbuFind.list();
-            for (EntityValue nmbu : nmbuList) {
-                NotificationMessageImpl nmi = new NotificationMessageImpl(ecfi);
-                nmi.populateFromValue(nmbu);
-                nmList.add(nmi);
-            }
-        } finally {
-            if (!alreadyDisabled) artifactExecutionFacade.enableAuthz();
-        }
-
-        return nmList;
-    }
 
     @Override
     public void initWebFacade(@Nonnull String webappMoquiName, @Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response) {

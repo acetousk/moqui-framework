@@ -572,9 +572,6 @@ class RestSchemaUtil {
         // make sure a user is logged in, screen/etc that calls will generally be configured to not require auth
         if (!eci.getUser().getUsername()) {
             // if there was a login error there will be a MessageFacade error message
-            String errorMessage = eci.message.errorsString
-            if (!errorMessage) errorMessage = "Authentication required for entity REST schema"
-            eci.webImpl.sendJsonError(HttpServletResponse.SC_UNAUTHORIZED, errorMessage, null)
             return
         }
 
@@ -659,9 +656,6 @@ class RestSchemaUtil {
         // make sure a user is logged in, screen/etc that calls will generally be configured to not require auth
         if (!eci.getUser().getUsername()) {
             // if there was a login error there will be a MessageFacade error message
-            String errorMessage = eci.message.errorsString
-            if (!errorMessage) errorMessage = "Authentication required for entity REST schema"
-            eci.webImpl.sendJsonError(HttpServletResponse.SC_UNAUTHORIZED, errorMessage, null)
             return
         }
 

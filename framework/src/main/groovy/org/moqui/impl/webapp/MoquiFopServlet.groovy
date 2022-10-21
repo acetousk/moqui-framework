@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -83,11 +83,6 @@ class MoquiFopServlet extends HttpServlet {
                     .rootScreenFromHost(request.getServerName()).screenPath(pathInfoList)
             xslFoText = sr.render()
 
-            if (ec.message.hasError()) {
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, ec.message.errorsString)
-                return
-            }
-
             // logger.warn("======== XSL-FO content:\n${xslFoText}")
             if (logger.traceEnabled) logger.trace("XSL-FO content:\n${xslFoText}")
 
@@ -132,13 +127,7 @@ class MoquiFopServlet extends HttpServlet {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, e.message)
         } catch (Throwable t) {
             logger.error("Error transforming XSL-FO content:\n${xslFoText}", t)
-            if (ec.message.hasError()) {
-                String errorsString = ec.message.errorsString
-                logger.error(errorsString, t)
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, errorsString)
-            } else {
-                throw t
-            }
+            throw t
         } finally {
             // make sure everything is cleaned up
             ec.destroy()

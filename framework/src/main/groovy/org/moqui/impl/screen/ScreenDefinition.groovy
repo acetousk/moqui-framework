@@ -947,7 +947,6 @@ class ScreenDefinition {
 
 
                 if (!checkCondition(ec)) {
-                    sri.ec.message.addError(ec.resource.expand('Condition failed for transition [${location}], not running actions or redirecting','',[location:location]))
                     if (errorResponse) return errorResponse
                     return defaultResponse
                 }
@@ -970,16 +969,12 @@ class ScreenDefinition {
                                 if (fieldValue instanceof CharSequence) {
                                     String fieldString = fieldValue.toString()
                                     if (fieldString.contains("<")) {
-                                        ec.messageFacade.addValidationError(null, fieldName, singleServiceName,
-                                                ec.getL10n().localize("HTML not allowed including less-than (<), greater-than (>), etc symbols"), null)
                                     }
                                 }
                             }
                         }
                     }
-                    if (!ec.messageFacade.hasError()) {
-                        serviceActions.run(ec)
-                    }
+                    serviceActions.run(ec)
                 }
                 // run actions if any defined, even if service-call also used
                 // NOTE: prior code also required !ec.messageFacade.hasError() which doesn't allow actions to handle errors
@@ -989,7 +984,6 @@ class ScreenDefinition {
 
                 ResponseItem ri = null
                 // if there is an error-response and there are errors, we have a winner
-                if (ec.messageFacade.hasError() && errorResponse) ri = errorResponse
 
                 // check all conditional-response, if condition then return that response
                 if (ri == null) for (ResponseItem condResp in conditionalResponseList) {

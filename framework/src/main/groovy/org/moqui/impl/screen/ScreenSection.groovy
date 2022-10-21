@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -152,12 +152,8 @@ class ScreenSection {
             if (!skipActions && actions != null) actions.run(ec)
             if (widgets != null) {
                 // was there an error in the actions? don't try to render the widgets, likely to be more and more errors
-                if (ec.message.hasError()) {
-                    sri.writer.append(WebUtilities.encodeHtml(ec.message.getErrorsString()))
-                } else {
-                    // render the widgets
-                    widgets.render(sri)
-                }
+                // render the widgets
+                widgets.render(sri)
             }
         } else {
             if (failWidgets != null) failWidgets.render(sri)

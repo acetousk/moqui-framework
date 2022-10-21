@@ -262,14 +262,6 @@ class ScreenTestImpl implements ScreenTest {
             stri.postRenderContext = cs.pop()
 
             // check, pass through, error messages
-            if (eci.message.hasError()) {
-                stri.errorMessages.addAll(eci.message.getErrors())
-                eci.message.clearErrors()
-                StringBuilder sb = new StringBuilder("Error messages from ${stri.screenPath}: ")
-                for (String errorMessage in stri.errorMessages) sb.append("\n").append(errorMessage)
-                logger.warn(sb.toString())
-                sti.errorCount += stri.errorMessages.size()
-            }
 
             // check for error strings in output
             if (stri.outputString != null) for (String errorStr in sti.errorStrings) if (stri.outputString.contains(errorStr)) {

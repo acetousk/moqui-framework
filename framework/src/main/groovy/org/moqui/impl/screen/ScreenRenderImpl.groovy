@@ -14,13 +14,12 @@
 package org.moqui.impl.screen
 
 import freemarker.template.Template
-import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 import org.moqui.BaseArtifactException
 import org.moqui.BaseException
 import org.moqui.context.*
-import org.moqui.context.MessageFacade.MessageInfo
+
 import org.moqui.entity.EntityCondition.ComparisonOperator
 import org.moqui.entity.EntityException
 import org.moqui.entity.EntityList
@@ -249,24 +248,6 @@ class ScreenRenderImpl implements ScreenRender {
         Map<String, Object> responseMap = new HashMap<>()
         // add saveMessagesToSession, saveRequestParametersToSession/saveErrorParametersToSession data
         // add all plain object data from session?
-        List<MessageInfo> messageInfos = ec.message.getMessageInfos()
-        int messageInfosSize = messageInfos.size()
-        if (messageInfosSize > 0) {
-            List<Map> miMapList = new ArrayList<>(messageInfosSize)
-            for (int i = 0; i < messageInfosSize; i++) {
-                MessageInfo messageInfo = (MessageInfo) messageInfos.get(i)
-                miMapList.add([message:messageInfo.message, type:messageInfo.typeString])
-            }
-            responseMap.put("messageInfos", miMapList)
-        }
-        if (ec.message.getErrors().size() > 0) responseMap.put("errors", ec.message.errors)
-        if (ec.message.getValidationErrors().size() > 0) {
-            List<ValidationError> valErrorList = ec.message.getValidationErrors()
-            int valErrorListSize = valErrorList.size()
-            ArrayList<Map> valErrMapList = new ArrayList<>(valErrorListSize)
-            for (int i = 0; i < valErrorListSize; i++) valErrMapList.add(valErrorList.get(i).getMap())
-            responseMap.put("validationErrors", valErrMapList)
-        }
 
         Map parms = new HashMap()
         if (ec.web.requestParameters != null) parms.putAll(ec.web.requestParameters)
@@ -459,11 +440,7 @@ class ScreenRenderImpl implements ScreenRender {
             } finally {
                 try {
                     if (transactionFacade.isTransactionInPlace()) {
-                        if (ec.getMessage().hasError()) {
-                            transactionFacade.rollback(beganTransaction, ec.getMessage().getErrorsString(), null)
-                        } else {
-                            transactionFacade.commit(beganTransaction)
-                        }
+                        transactionFacade.commit(beganTransaction)
                     }
                 } catch (Exception e) {
                     logger.error("Error ending screen transition transaction", e)
@@ -496,7 +473,6 @@ class ScreenRenderImpl implements ScreenRender {
             if ("none".equals(ri.type)) {
                 // for response type none also save parameters if configured to do so, and save errors if there are any
                 if (ri.saveParameters) wfi.saveRequestParametersToSession()
-                if (ec.message.hasError()) wfi.saveErrorParametersToSession()
                 if (logger.isTraceEnabled()) logger.trace("Transition ${screenUrlInfo.getFullPathNameList().join("/")} in ${System.currentTimeMillis() - renderStartTime}ms, type none response")
                 return
             }
@@ -531,9 +507,7 @@ class ScreenRenderImpl implements ScreenRender {
                 }
 
                 // save messages in session before redirecting so they can be displayed on the next screen
-                wfi.saveMessagesToSession()
                 if (ri.saveParameters) wfi.saveRequestParametersToSession()
-                if (ec.message.hasError()) wfi.saveErrorParametersToSession()
             }
 
             // either send a redirect for the response, if possible, or just render the response now
@@ -911,7 +885,6 @@ class ScreenRenderImpl implements ScreenRender {
                             if (!pi.required) continue
                             Object parmValue = ec.context.getByString(pi.name)
                             if (ObjectUtilities.isEmpty(parmValue)) {
-                                ec.message.addError(ec.resource.expand("Required parameter missing (${pi.name})","",[pi:pi]))
                                 logger.warn("Tried to render screen [${sd.getLocation()}] without required parameter [${pi.name}], error message added and adding to stop list to not render")
                                 stopRenderScreenLocations.add(sd.getLocation())
                             }
@@ -984,7 +957,6 @@ class ScreenRenderImpl implements ScreenRender {
                 // logger.warn("saving screen last: ${screenPath.toString()}")
                 wfi.saveScreenLastInfo(screenPath.toString(), null)
                 // save messages in session before redirecting so they can be displayed on the next screen
-                wfi.saveMessagesToSession()
             }
 
             // find the last login path from screens in path (whether rendered or not)
@@ -1060,7 +1032,6 @@ class ScreenRenderImpl implements ScreenRender {
                 webappInfo != null && webappInfo.httpsEnabled) {
             if (logger.isInfoEnabled()) logger.info("Screen at location ${currentSd.location}, which is part of ${screenUrlInfo.fullPathNameList} under screen ${screenUrlInfo.fromSd.location} requires an encrypted/secure connection but the request is not secure, sending redirect to secure.")
             // save messages in session before redirecting so they can be displayed on the next screen
-            if (wfi != null) wfi.saveMessagesToSession()
             // redirect to the same URL this came to
             response.sendRedirect(screenUrlInstance.getUrlWithParams())
             return false
