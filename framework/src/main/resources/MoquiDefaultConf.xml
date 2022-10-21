@@ -129,9 +129,6 @@
         <cache name="kie.component.releaseId" value-type="org.kie.api.builder.ReleaseId"/>
         <cache name="kie.session.component" value-type="String"/>
 
-        <cache name="screen.location" value-type="org.moqui.impl.screen.ScreenDefinition"/>
-        <cache name="screen.location.perm" value-type="org.moqui.impl.screen.ScreenDefinition"/>
-        <cache name="screen.url" value-type="org.moqui.impl.screen.ScreenUrlInfo"/>
         <cache name="screen.info" value-type="List"/>
         <cache name="screen.info.ref.rev" value-type="Set"/>
         <cache name="screen.template.mode" value-type="freemarker.template.Template"/>

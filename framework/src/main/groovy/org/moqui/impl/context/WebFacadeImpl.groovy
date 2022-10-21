@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -32,8 +32,6 @@ import org.moqui.impl.util.SimpleSigner
 import org.moqui.util.MNode
 import org.moqui.util.WebUtilities
 import org.moqui.impl.context.ExecutionContextFactoryImpl.WebappInfo
-import org.moqui.impl.screen.ScreenDefinition
-import org.moqui.impl.screen.ScreenUrlInfo
 import org.moqui.impl.service.RestApi
 import org.moqui.impl.service.ServiceJsonRpcDispatcher
 import org.moqui.util.ContextStack
@@ -249,93 +247,6 @@ class WebFacadeImpl implements WebFacade {
     void runBeforeLogoutActions() {
         WebappInfo wi = eci.ecfi.getWebappInfo(webappMoquiName)
         if (wi.beforeLogoutActions) wi.beforeLogoutActions.run(eci)
-    }
-
-    void saveScreenHistory(ScreenUrlInfo.UrlInstance urlInstanceOrig) {
-        ScreenUrlInfo sui = urlInstanceOrig.sui
-        ScreenDefinition targetScreen = urlInstanceOrig.sui.targetScreen
-
-        // logger.warn("save hist ${urlInstanceOrig.path} standalone ${sui.lastStandalone} ${targetScreen.isStandalone()} transition ${urlInstanceOrig.getTargetTransition()}")
-        // don't save standalone screens (for sui.lastStandalone int only exclude negative so vapps, etc are saved)
-        if (sui.lastStandalone < 0 || targetScreen.isStandalone()) return
-        // don't save transition requests, just screens
-        if (urlInstanceOrig.getTargetTransition() != null) return
-        // if history=false on the screen don't save
-        if ("false".equals(targetScreen.screenNode.attribute("history"))) return
-
-        List<Map> screenHistoryList = (List<Map>) session.getAttribute("moqui.screen.history")
-        if (screenHistoryList == null) {
-            screenHistoryList = Collections.<Map>synchronizedList(new LinkedList<Map>())
-            session.setAttribute("moqui.screen.history", screenHistoryList)
-        }
-
-        ScreenUrlInfo.UrlInstance urlInstance = urlInstanceOrig.cloneUrlInstance()
-        // instead of ignoring page index for history (old approach), retain but exclude in history duplicate search
-        urlInstance.getParameterMap().remove("pageIndex")
-        // logger.warn("======= parameters: ${urlInstance.getParameterMap()}")
-        String urlWithAllParams = urlInstanceOrig.getUrlWithParams()
-        String urlWithParamsNoPageIndex = urlInstance.getUrlWithParams()
-        String urlNoParams = urlInstance.getUrl()
-        // logger.warn("======= urlWithParams: ${urlWithParams}")
-
-        // if is the same as last screen skip it
-        Map firstItem = screenHistoryList.size() > 0 ? screenHistoryList.get(0) : null
-        if (firstItem != null && firstItem.url == urlWithParamsNoPageIndex) return
-
-        String targetMenuName = targetScreen.getDefaultMenuName()
-
-        StringBuilder nameBuilder = new StringBuilder()
-        // append parent screen name
-        ScreenDefinition parentScreen = sui.getParentScreen()
-        if (parentScreen != null) {
-            if (parentScreen.getLocation() != sui.rootSd.getLocation())
-                nameBuilder.append(parentScreen.getDefaultMenuName()).append(' - ')
-        }
-        // append target screen name
-        if (targetMenuName.contains('${')) {
-            nameBuilder.append(eci.getResource().expand(targetMenuName, targetScreen.getLocation()))
-        } else {
-            nameBuilder.append(targetMenuName)
-            // append parameter values
-            Map parameters = urlInstance.getParameterMap()
-            StringBuilder paramBuilder = new StringBuilder()
-            if (parameters) {
-                int pCount = 0
-                Iterator<Map.Entry<String, String>> entryIter = parameters.entrySet().iterator()
-                while (entryIter.hasNext() && pCount < 2) {
-                    Map.Entry<String, String> entry = entryIter.next()
-                    if (entry.key.contains("_op")) continue
-                    if (entry.key.contains("_not")) continue
-                    if (entry.key.contains("_ic")) continue
-                    if ("moquiSessionToken".equals(entry.key)) continue
-                    if (entry.value.trim().length() == 0) continue
-
-                    // injection issue with name field: userId=%3Cscript%3Ealert(%27Test%20Crack!%27)%3C/script%3E
-                    String parmValue = entry.value
-                    if (parmValue) parmValue = URLEncoder.encode(parmValue, "UTF-8")
-                    paramBuilder.append(parmValue)
-
-                    pCount++
-                    if (entryIter.hasNext() && pCount < 2) paramBuilder.append(', ')
-                }
-            }
-            if (paramBuilder.length() > 0) nameBuilder.append(' (').append(paramBuilder.toString()).append(')')
-        }
-
-        synchronized (screenHistoryList) {
-            // remove existing item(s) from list with same URL
-            Iterator<Map> screenHistoryIter = screenHistoryList.iterator()
-            while (screenHistoryIter.hasNext()) {
-                Map screenHistory = screenHistoryIter.next()
-                if (screenHistory.urlNoPageIndex == urlWithParamsNoPageIndex) screenHistoryIter.remove()
-            }
-            // add to history list
-            screenHistoryList.add(0, [name:nameBuilder.toString(), url:urlWithAllParams, urlNoParams:urlNoParams,
-                    urlNoPageIndex:urlWithParamsNoPageIndex, path:urlInstance.path, pathWithParams:urlInstance.pathWithParams,
-                    image:sui.menuImage, imageType:sui.menuImageType, screenLocation:targetScreen.getLocation()])
-            // trim the list if needed; keep 40, whatever uses it may display less
-            while (screenHistoryList.size() > 40) screenHistoryList.remove(40)
-        }
     }
 
     @Override

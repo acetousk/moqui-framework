@@ -95,7 +95,6 @@ along with this software (see the LICENSE.md file). If not, see
 
                 // handle formListFindId parameters (formListFindId already in context to set columns, etc)
                 if (formListFindId) {
-                    def flfParameters = org.moqui.impl.screen.ScreenForm.makeFormListFindParameters(formListFindId, ec)
                     ec.context.putAll(flfParameters)
                     bodyParameters.putAll(flfParameters)
                 }

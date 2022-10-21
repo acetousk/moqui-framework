@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -22,7 +22,6 @@ import org.moqui.context.WebMediaTypeException
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
 import org.moqui.impl.context.WebFacadeImpl
-import org.moqui.impl.screen.ScreenRenderImpl
 import org.moqui.util.MNode
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -109,42 +108,28 @@ class MoquiServlet extends HttpServlet {
          *         .rootScreenFromHost(request.getServerName()).screenPath(pathInfo.split("/") as List)
          */
 
-        ScreenRenderImpl sri = null
         try {
             ec.initWebFacade(webappName, request, response)
             ec.web.requestAttributes.put("moquiRequestStartTime", startTime)
 
-            sri = (ScreenRenderImpl) ec.screenFacade.makeRender().saveHistory(true)
-            sri.render(request, response)
         } catch (AuthenticationRequiredException e) {
             logger.warn("Web Unauthorized (no authc): " + e.message)
-            sendErrorResponse(request, response, HttpServletResponse.SC_UNAUTHORIZED, "unauthorized", null, e, ecfi, webappName, sri)
         } catch (ArtifactAuthorizationException e) {
             // SC_UNAUTHORIZED 401 used when authc/login fails, use SC_FORBIDDEN 403 for authz failures
             // See ScreenRenderImpl.checkWebappSettings for authc and SC_UNAUTHORIZED handling
             logger.warn("Web Access Forbidden (no authz): " + e.message)
-            sendErrorResponse(request, response, HttpServletResponse.SC_FORBIDDEN, "forbidden", null, e, ecfi, webappName, sri)
-        } catch (ScreenResourceNotFoundException e) {
-            logger.warn("Web Resource Not Found: " + e.message)
-            sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND, "not-found", null, e, ecfi, webappName, sri)
         } catch (ArtifactTarpitException e) {
             logger.warn("Web Too Many Requests (tarpit): " + e.message)
             if (e.getRetryAfterSeconds()) response.addIntHeader("Retry-After", e.getRetryAfterSeconds())
             // NOTE: there is no constant on HttpServletResponse for 429; see RFC 6585 for details
-            sendErrorResponse(request, response, 429, "too-many", null, e, ecfi, webappName, sri)
         } catch (WebMediaTypeException e) {
             logger.warn("Web Unsupported Media Type: " + e.message)
-            sendErrorResponse(request, response, HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE, "media-type", e.message, e, ecfi, webappName, sri)
         } catch (Throwable t) {
             if (ec.message.hasError()) {
                 String errorsString = ec.message.errorsString
                 logger.error(errorsString, t)
                 if ("true".equals(request.getAttribute("moqui.login.error"))) {
-                    sendErrorResponse(request, response, HttpServletResponse.SC_UNAUTHORIZED, "unauthorized",
-                            errorsString, t, ecfi, webappName, sri)
                 } else {
-                    sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "internal-error",
-                            errorsString, t, ecfi, webappName, sri)
                 }
             } else {
                 String tString = t.toString()
@@ -153,8 +138,6 @@ class MoquiServlet extends HttpServlet {
                 } else {
                     logger.error("Internal error processing request: " + tString, t)
                 }
-                sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "internal-error",
-                        null, t, ecfi, webappName, sri)
             }
         } finally {
             /* this is here just for kicks, uncomment to log a list of all artifacts hit/used in the screen render
@@ -249,7 +232,7 @@ class MoquiServlet extends HttpServlet {
     }
 
     static void sendErrorResponse(HttpServletRequest request, HttpServletResponse response, int errorCode, String errorType,
-            String message, Throwable origThrowable, ExecutionContextFactoryImpl ecfi, String moquiWebappName, ScreenRenderImpl sri) {
+            String message, Throwable origThrowable, ExecutionContextFactoryImpl ecfi, String moquiWebappName) {
 
         if (message == null && origThrowable != null) {
             List<String> msgList = new ArrayList<>(10)
@@ -289,9 +272,6 @@ class MoquiServlet extends HttpServlet {
                 String screenPathAttr = errorScreenNode.attribute("screen-path")
                 // NOTE 20180228: this seems to be working fine now and Jetty (at least) is returning the 404/etc responses with the custom HTML body unlike before
                 response.setStatus(errorCode)
-                ec.screen.makeRender().webappName(moquiWebappName).renderMode("html")
-                        .rootScreenFromHost(request.getServerName()).screenPath(Arrays.asList(screenPathAttr.split("/")))
-                        .render(request, response)
             } catch (Throwable t) {
                 logger.error("Error rendering ${errorType} error screen, sending code ${errorCode} with message: ${message}", t)
                 response.sendError(errorCode, message)

@@ -42,7 +42,6 @@ import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
 import org.moqui.impl.context.ArtifactExecutionInfoImpl.ArtifactAuthzCheck
 import org.moqui.impl.entity.EntityValueBase
-import org.moqui.impl.screen.ScreenUrlInfo
 import org.moqui.impl.util.MoquiShiroRealm
 import org.moqui.util.MNode
 import org.moqui.util.StringUtilities
@@ -182,10 +181,8 @@ class UserFacadeImpl implements UserFacade {
         // NOTE: only tracking Visitor and Visit if there is a WebFacadeImpl in place
         if (eci.webImpl != null && !this.visitId && !eci.getSkipStats()) {
             MNode serverStatsNode = eci.ecfi.getServerStatsNode()
-            ScreenUrlInfo sui = ScreenUrlInfo.getScreenUrlInfo(eci.screenFacade, request)
             // before doing anything with the visit, etc make sure exists
-            sui.checkExists()
-            boolean isJustContent = sui.fileResourceRef != null
+            boolean isJustContent = false
 
             // handle visitorId and cookie
             String cookieVisitorId = (String) null
