@@ -224,9 +224,7 @@ class ScreenTestImpl implements ScreenTest {
             ContextStack cs = eci.getContext()
             cs.push()
             // create the WebFacadeStub
-            WebFacadeStub wfs = new WebFacadeStub(sti.ecfi, stri.parameters, sti.sessionAttributes, stri.requestMethod)
             // set stub on eci, will also put parameters in the context
-            eci.setWebFacade(wfs)
             // make the ScreenRender
             ScreenRender screenRender = sti.sfi.makeRender()
             stri.screenRender = screenRender
@@ -238,17 +236,12 @@ class ScreenTestImpl implements ScreenTest {
             if (sti.baseLinkUrl != null && sti.baseLinkUrl.length() > 0) screenRender.baseLinkUrl(sti.baseLinkUrl)
             if (sti.servletContextPath != null && sti.servletContextPath.length() > 0) screenRender.servletContextPath(sti.servletContextPath)
             screenRender.webappName(sti.webappName)
-            if (sti.skipJsonSerialize) wfs.skipJsonSerialize = true
 
             // set the screenPath
             screenRender.screenPath(screenPathList)
 
             // do the render
             try {
-                screenRender.render(wfs.httpServletRequest, wfs.httpServletResponse)
-                // get the response text from the WebFacadeStub
-                stri.outputString = wfs.getResponseText()
-                stri.jsonObj = wfs.getResponseJsonObj()
             } catch (Throwable t) {
                 String errMsg = "Exception in render of ${stri.screenPath}: ${t.toString()}"
                 logger.warn(errMsg, t)

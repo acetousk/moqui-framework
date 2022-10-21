@@ -14,7 +14,6 @@
 package org.moqui.impl.screen
 
 import freemarker.template.Template
-import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 import org.moqui.BaseArtifactException
@@ -34,7 +33,7 @@ import org.moqui.impl.context.ContextJavaUtil
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
 import org.moqui.impl.context.ResourceFacadeImpl
-import org.moqui.impl.context.WebFacadeImpl
+
 import org.moqui.impl.entity.EntityDefinition
 import org.moqui.impl.entity.EntityValueBase
 import org.moqui.impl.screen.ScreenDefinition.ResponseItem
@@ -160,8 +159,6 @@ class ScreenRenderImpl implements ScreenRender {
         if (webappName != null && webappName.length() > 0 && (rootScreenLocation == null || rootScreenLocation.length() == 0))
             rootScreenFromHost(request.getServerName())
         if (originalScreenPathNameList == null || originalScreenPathNameList.size() == 0) {
-            ArrayList<String> pathList = ec.web.getPathInfoList()
-            screenPath(pathList)
         }
         if (servletContextPath == null || servletContextPath.isEmpty())
             servletContextPath = request.getServletContext()?.getContextPath()
@@ -226,7 +223,6 @@ class ScreenRenderImpl implements ScreenRender {
             responseMap.put("screenParameters", fullUrl.getParameterMap())
             responseMap.put("screenUrl", pathWithParams)
             // send it
-            ec.web.sendJsonResponse(responseMap)
             if (logger.isInfoEnabled()) logger.info("Transition ${screenUrlInfo.getFullPathNameList().join("/")}${renderStartTime != null ? ' in ' + (System.currentTimeMillis() - renderStartTime) + 'ms' : ''}, JSON redirect to: ${pathWithParams}")
             return true
         } else {
@@ -239,7 +235,6 @@ class ScreenRenderImpl implements ScreenRender {
             // the plain URL, send as redirect URL
             responseMap.put("redirectUrl", plainUrl)
             // send it
-            ec.web.sendJsonResponse(responseMap)
             return true
         } else {
             return false
@@ -269,8 +264,6 @@ class ScreenRenderImpl implements ScreenRender {
         }
 
         Map parms = new HashMap()
-        if (ec.web.requestParameters != null) parms.putAll(ec.web.requestParameters)
-        if (ec.web.requestAttributes != null) parms.putAll(ec.web.requestAttributes)
         responseMap.put("currentParameters", ContextJavaUtil.unwrapMap(parms))
 
         return responseMap
@@ -288,9 +281,6 @@ class ScreenRenderImpl implements ScreenRender {
         if (logger.traceEnabled) logger.trace("Rendering screen ${rootScreenLocation} with path list ${originalScreenPathNameList}")
         // logger.info("Rendering screen [${rootScreenLocation}] with path list [${originalScreenPathNameList}]")
 
-        WebFacade web = ec.getWeb()
-        if ((lastStandalone == null || lastStandalone.isEmpty()) && web != null)
-            lastStandalone = (String) web.requestParameters.lastStandalone
         ExecutionContextFactoryImpl.WebappInfo webappInfo = ec.ecfi.getWebappInfo(webappName)
 
         screenUrlInfo = ScreenUrlInfo.getScreenUrlInfo(this, rootScreenDef, originalScreenPathNameList, null,
@@ -321,7 +311,6 @@ class ScreenRenderImpl implements ScreenRender {
         if ("_clear".equals(formListFindId)) {
             formListFindId = null
             ec.contextStack.put("formListFindId", null)
-            if (web != null) web.requestParameters.put("formListFindId", "")
         }
         if (formListFindId != null && !formListFindId.isEmpty()) {
             Set<String> targetScreenParmNames = screenUrlInfo.targetScreen?.getParameterMap()?.keySet()
@@ -344,33 +333,6 @@ class ScreenRenderImpl implements ScreenRender {
             }
         }
 
-        if (web != null) {
-            // clear out the parameters used for special screen URL config
-            if (web.requestParameters.lastStandalone) web.requestParameters.lastStandalone = ""
-
-            // if screenUrlInfo has any parameters add them to the request (probably came from a transition acting as an alias)
-            Map<String, String> suiParameterMap = screenUrlInstance.getTransitionAliasParameters()
-            if (suiParameterMap != null) web.requestParameters.putAll(suiParameterMap)
-
-            // add URL parameters, if there were any in the URL (in path info or after ?)
-            screenUrlInstance.addParameters(web.requestParameters)
-
-            // check for pageSize parameter, if set save in current user's preference, if not look up from user pref
-            if (ec.userFacade.userId != null) {
-                String pageSize = web.requestParameters.get("pageSize")
-                String userPageSize = ec.userFacade.getPreference("screen.user.page.size")
-                if (pageSize != null && pageSize.isInteger()) {
-                    if (!pageSize.equals(userPageSize))
-                        ec.userFacade.setPreference("screen.user.page.size", pageSize)
-                } else {
-                    if (userPageSize != null && userPageSize.isInteger()) {
-                        // don't add to parameters, just set internally: web.requestParameters.put("pageSize", userPageSize)
-                        ec.contextStack.put("pageSize", userPageSize)
-                    }
-                }
-            }
-        }
-
         // check webapp settings for each screen in the path
         ArrayList<ScreenDefinition> screenPathDefList = screenUrlInfo.screenPathDefList
         int screenPathDefListSize = screenPathDefList.size()
@@ -380,9 +342,6 @@ class ScreenRenderImpl implements ScreenRender {
         }
 
         // check this here after the ScreenUrlInfo (with transition alias, etc) has already been handled
-        String localRenderMode = web != null ? web.requestParameters.renderMode : null
-        if ((renderMode == null || renderMode.length() == 0) && localRenderMode != null && localRenderMode.length() > 0)
-            renderMode = localRenderMode
         // if no renderMode get from target screen extension in URL
         if ((renderMode == null || renderMode.length() == 0) && screenUrlInfo.targetScreenRenderMode != null)
             renderMode = screenUrlInfo.targetScreenRenderMode
@@ -427,18 +386,6 @@ class ScreenRenderImpl implements ScreenRender {
                         targetTransition.getRequireSessionToken() &&
                         !"true".equals(request.getAttribute("moqui.session.token.created")) &&
                         !"true".equals(request.getAttribute("moqui.request.authenticated"))) {
-                    String passedToken = (String) ec.web.getParameters().get("moquiSessionToken")
-                    if (!passedToken) passedToken = request.getHeader("moquiSessionToken") ?:
-                            request.getHeader("SessionToken") ?: request.getHeader("X-CSRF-Token")
-
-                    String curToken = ec.web.getSessionToken()
-                    if (curToken != null && curToken.length() > 0) {
-                        if (passedToken == null || passedToken.length() == 0) {
-                            throw new AuthenticationRequiredException("Session token required (in X-CSRF-Token) for URL ${screenUrlInstance.url}")
-                        } else if (!curToken.equals(passedToken)) {
-                            throw new AuthenticationRequiredException("Session token does not match (in X-CSRF-Token) for URL ${screenUrlInstance.url}")
-                        }
-                    }
                 }
             }
 
@@ -473,21 +420,12 @@ class ScreenRenderImpl implements ScreenRender {
                     String riType = ri != null ? ri.type : null
                     sfi.ecfi.countArtifactHit(ArtifactExecutionInfo.AT_XML_SCREEN_TRANS, riType != null ? riType : "",
                             targetTransition.parentScreen.getLocation() + "#" + targetTransition.name,
-                            (web != null ? web.requestParameters : null), renderStartTime,
+                            (null), renderStartTime,
                             (System.nanoTime() - startTimeNanos)/1000000.0D, null)
                 }
             }
 
             if (ri == null) throw new BaseArtifactException("No response found for transition [${screenUrlInstance.targetTransition.name}] on screen ${screenUrlInfo.targetScreen.location}")
-
-            WebFacadeImpl wfi = (WebFacadeImpl) null
-            if (web != null && web instanceof WebFacadeImpl) wfi = (WebFacadeImpl) web
-
-            if (ri.saveCurrentScreen && wfi != null) {
-                StringBuilder screenPath = new StringBuilder()
-                for (String pn in screenUrlInfo.fullPathNameList) screenPath.append("/").append(pn)
-                ((WebFacadeImpl) web).saveScreenLastInfo(screenPath.toString(), null)
-            }
 
             if (this.response != null && webappInfo != null) {
                 webappInfo.addHeaders("screen-transition", this.response)
@@ -495,8 +433,6 @@ class ScreenRenderImpl implements ScreenRender {
 
             if ("none".equals(ri.type)) {
                 // for response type none also save parameters if configured to do so, and save errors if there are any
-                if (ri.saveParameters) wfi.saveRequestParametersToSession()
-                if (ec.message.hasError()) wfi.saveErrorParametersToSession()
                 if (logger.isTraceEnabled()) logger.trace("Transition ${screenUrlInfo.getFullPathNameList().join("/")} in ${System.currentTimeMillis() - renderStartTime}ms, type none response")
                 return
             }
@@ -504,37 +440,6 @@ class ScreenRenderImpl implements ScreenRender {
             String url = ri.url != null ? ri.url : ""
             String urlType = ri.urlType != null && ri.urlType.length() > 0 ? ri.urlType : "screen-path"
             boolean isScreenLast = "screen-last".equals(ri.type)
-
-            if (wfi != null) {
-                // handle screen-last, etc
-                if (isScreenLast || "screen-last-noparam".equals(ri.type)) {
-                    String savedUrl = wfi.getRemoveScreenLastPath()
-                    urlType = "screen-path"
-                    if (savedUrl != null && savedUrl.length() > 0) {
-                        if (savedUrl.startsWith("http")) urlType = "plain"
-                        url = savedUrl
-                        wfi.removeScreenLastParameters(isScreenLast)
-                        // logger.warn("going to screen-last from screen last path ${url}")
-                    } else {
-                        // try screen history when no last was saved
-                        List<Map> historyList = wfi.getScreenHistory()
-                        Map historyMap = historyList != null && historyList.size() > 0 ? historyList.first() : (Map) null
-                        if (historyMap != null) {
-                            url = isScreenLast ? historyMap.pathWithParams : historyMap.path
-                            // logger.warn("going to screen-last from screen history ${url}")
-                        } else {
-                            // if no saved URL, just go to root/default; avoid getting stuck on Login screen, etc
-                            url = "/"
-                            // logger.warn("going to screen-last no last path or history to going to root")
-                        }
-                    }
-                }
-
-                // save messages in session before redirecting so they can be displayed on the next screen
-                wfi.saveMessagesToSession()
-                if (ri.saveParameters) wfi.saveRequestParametersToSession()
-                if (ec.message.hasError()) wfi.saveErrorParametersToSession()
-            }
 
             // either send a redirect for the response, if possible, or just render the response now
             if (this.response != null) {
@@ -562,33 +467,11 @@ class ScreenRenderImpl implements ScreenRender {
                     // default is screen-path
                     UrlInstance fullUrl = buildUrl(rootScreenDef, screenUrlInfo.preTransitionPathNameList, url)
                     // copy through pageIndex if passed so in form-list with multiple pages we stay on same page
-                    if (web.requestParameters.containsKey("pageIndex")) fullUrl.addParameter("pageIndex", (String) web.parameters.get("pageIndex"))
                     // copy through orderByField if passed so in form-list with multiple pages we retain the sort order
-                    if (web.requestParameters.containsKey("orderByField")) fullUrl.addParameter("orderByField", (String) web.parameters.get("orderByField"))
                     fullUrl.addParameters(ri.expandParameters(screenUrlInfo.getExtraPathNameList(), ec))
                     // if this was a screen-last and the screen has declared parameters include them in the URL
-                    Map savedParameters = wfi?.getSavedParameters()
-                    UrlInstance.copySpecialParameters(savedParameters, fullUrl.getOtherParameterMap())
                     // screen parameters
-                    Map<String, ScreenDefinition.ParameterItem> parameterItemMap = fullUrl.sui.pathParameterItems
-                    if (isScreenLast && savedParameters != null && savedParameters.size() > 0) {
-                        if (parameterItemMap != null && parameterItemMap.size() > 0) {
-                            for (String parmName in parameterItemMap.keySet()) {
-                                if (savedParameters.get(parmName)) fullUrl.addParameter(parmName, savedParameters.get(parmName))
-                            }
-                        } else {
-                            fullUrl.addParameters(savedParameters)
-                        }
-                    }
                     // transition parameters
-                    Map<String, ScreenDefinition.ParameterItem> transParameterItemMap = fullUrl.getTargetTransition()?.getParameterMap()
-                    if (isScreenLast && savedParameters != null && savedParameters.size() > 0 &&
-                            transParameterItemMap != null && transParameterItemMap.size() > 0) {
-                        for (String parmName in transParameterItemMap.keySet()) {
-                            if (savedParameters.get(parmName))
-                                fullUrl.addParameter(parmName, savedParameters.get(parmName))
-                        }
-                    }
 
                     if (!sendJsonRedirect(fullUrl, renderStartTime)) {
                         String fullUrlString = fullUrl.getUrlWithParams(screenUrlInfo.targetTransitionExtension)
@@ -643,7 +526,7 @@ class ScreenRenderImpl implements ScreenRender {
 
                         if (screenUrlInfo.targetScreen.screenNode.attribute("track-artifact-hit") != "false") {
                             sfi.ecfi.countArtifactHit(ArtifactExecutionInfo.AT_XML_SCREEN_CONTENT, fileContentType,
-                                    fileResourceRef.location, (web != null ? web.requestParameters : null),
+                                    fileResourceRef.location, (null),
                                     resourceStartTime, (System.nanoTime() - startTimeNanos)/1000000.0D, (long) totalLen)
                         }
                         if (isTraceEnabled) logger.trace("Sent binary response of length ${totalLen} from file ${fileResourceRef.location} for request to ${screenUrlInstance.url}")
@@ -695,7 +578,7 @@ class ScreenRenderImpl implements ScreenRender {
                         writer.write(text)
                         if (!"false".equals(screenUrlInfo.targetScreen.screenNode.attribute("track-artifact-hit"))) {
                             sfi.ecfi.countArtifactHit(ArtifactExecutionInfo.AT_XML_SCREEN_CONTENT, fileContentType,
-                                    fileResourceRef.location, (web != null ? web.requestParameters : null),
+                                    fileResourceRef.location, (null),
                                     resourceStartTime, (System.nanoTime() - startTimeNanos)/1000000.0D, (long) text.length())
                         }
                     } else {
@@ -708,10 +591,6 @@ class ScreenRenderImpl implements ScreenRender {
             }
         } else {
             doActualRender()
-            if (response != null && logger.isInfoEnabled()) {
-                Map<String, Object> reqParms = web?.getRequestParameters()
-                logger.info("${screenUrlInfo.getFullPathNameList().join("/")} ${reqParms != null && reqParms.size() > 0 ? reqParms : '[]'} in ${(System.currentTimeMillis()-renderStartTime)}ms (${response.getContentType()}) session ${request.session.id}")
-            }
         }
     }
 
@@ -938,10 +817,6 @@ class ScreenRenderImpl implements ScreenRender {
             }
 
             // save the screen history
-            if (saveHistory && screenUrlInfo.targetExists) {
-                WebFacade webFacade = ec.getWeb()
-                if (webFacade != null && webFacade instanceof WebFacadeImpl) ((WebFacadeImpl) webFacade).saveScreenHistory(screenUrlInstance)
-            }
         } catch (ArtifactAuthorizationException e) {
             throw e
         } catch (ArtifactTarpitException e) {
@@ -971,21 +846,12 @@ class ScreenRenderImpl implements ScreenRender {
         // if screen requires auth and there is not active user redirect to login screen, save this request
         // if (isTraceEnabled) logger.trace("Checking screen [${currentSd.location}] for require-authentication, current user is [${ec.user.userId}]")
 
-        WebFacadeImpl wfi = ec.getWebImpl()
         String requireAuthentication = currentSd.screenNode?.attribute("require-authentication")
         String userId = ec.getUser().getUserId()
         if ((requireAuthentication == null || requireAuthentication.length() == 0 || requireAuthentication == "true")
                 && (userId == null || userId.length() == 0) && !ec.userFacade.getLoggedInAnonymous()) {
             if (logger.isInfoEnabled()) logger.info("Screen at location ${currentSd.location}, which is part of ${screenUrlInfo.fullPathNameList} under screen ${screenUrlInfo.fromSd.location} requires authentication but no user is currently logged in.")
             // save the request as a save-last to use after login
-            if (wfi != null && screenUrlInfo.fileResourceRef == null) {
-                StringBuilder screenPath = new StringBuilder()
-                for (String pn in originalScreenPathNameList) if (pn) screenPath.append("/").append(pn)
-                // logger.warn("saving screen last: ${screenPath.toString()}")
-                wfi.saveScreenLastInfo(screenPath.toString(), null)
-                // save messages in session before redirecting so they can be displayed on the next screen
-                wfi.saveMessagesToSession()
-            }
 
             // find the last login path from screens in path (whether rendered or not)
             String loginPath = "/Login"
@@ -996,8 +862,7 @@ class ScreenRenderImpl implements ScreenRender {
 
             if (screenUrlInfo.lastStandalone != 0 || screenUrlInstance.getTargetTransition() != null) {
                 // just send a 401 response, should always be for data submit, content rendering, JS AJAX requests, etc
-                if (wfi != null) wfi.sendError(401, null, null)
-                else if (response != null) response.sendError(401, "Authentication required")
+                if (response != null) response.sendError(401, "Authentication required")
                 return false
 
                 /* TODO: remove all of this, we don't need it
@@ -1060,7 +925,6 @@ class ScreenRenderImpl implements ScreenRender {
                 webappInfo != null && webappInfo.httpsEnabled) {
             if (logger.isInfoEnabled()) logger.info("Screen at location ${currentSd.location}, which is part of ${screenUrlInfo.fullPathNameList} under screen ${screenUrlInfo.fromSd.location} requires an encrypted/secure connection but the request is not secure, sending redirect to secure.")
             // save messages in session before redirecting so they can be displayed on the next screen
-            if (wfi != null) wfi.saveMessagesToSession()
             // redirect to the same URL this came to
             response.sendRedirect(screenUrlInstance.getUrlWithParams())
             return false
@@ -1530,11 +1394,6 @@ class ScreenRenderImpl implements ScreenRender {
         MNode formNode = fieldNode.parent
         if ("form-single".equals(formNode.name)) {
             // if this is an error situation try error parameters first
-            Map<String, Object> errorParameters = ec.getWeb()?.getErrorParameters()
-            if (errorParameters != null && (errorParameters.moquiFormName == fieldNode.parent.attribute("name"))) {
-                value = errorParameters.get(fieldName)
-                if (!ObjectUtilities.isEmpty(value)) return value
-            }
 
             // NOTE: field.@from attribute is handled for form-list in pre-processing done by AggregationUtil
             String fromAttr = fieldNode.attribute("from")
@@ -2248,11 +2107,8 @@ class ScreenRenderImpl implements ScreenRender {
     }
 
     List<Map> getMenuData(ArrayList<String> pathNameList) {
-        if (!ec.user.userId) { ec.web.sendJsonError(401, "Authentication required", null); return null }
         ScreenUrlInfo fullUrlInfo = ScreenUrlInfo.getScreenUrlInfo(this, rootScreenDef, pathNameList, null, 0)
-        if (!fullUrlInfo.targetExists) { ec.web.sendJsonError(404, "Screen not found for path ${pathNameList}", null); return null }
         UrlInstance fullUrlInstance = fullUrlInfo.getInstance(this, null)
-        if (!fullUrlInstance.isPermitted()) { ec.web.sendJsonError(403, "View not permitted for path ${pathNameList}", null); return null }
 
         ArrayList<String> fullPathList = fullUrlInfo.fullPathNameList
         int fullPathSize = fullPathList.size()
@@ -2353,7 +2209,6 @@ class ScreenRenderImpl implements ScreenRender {
         }
 
         String lastPathItem = (String) fullPathList.get(fullPathSize - 1)
-        fullUrlInstance.addParameters(ec.web.getRequestParameters())
         currentPath.append('/').append(StringUtilities.urlEncodeIfNeeded(lastPathItem))
         String lastPath = currentPath.toString()
         String paramString = fullUrlInstance.getParameterString()

@@ -47,9 +47,6 @@ public class ExecutionContextImpl implements ExecutionContext {
 
     private EntityFacadeImpl activeEntityFacade;
 
-    private WebFacade webFacade = (WebFacade) null;
-    private WebFacadeImpl webFacadeImpl = (WebFacadeImpl) null;
-
     public final UserFacadeImpl userFacade;
     public final MessageFacadeImpl messageFacade;
     public final ArtifactExecutionFacadeImpl artifactExecutionFacade;
@@ -124,9 +121,6 @@ public class ExecutionContextImpl implements ExecutionContext {
         return ecfi.getTool(toolName, instanceClass, parameters);
     }
 
-    @Override public @Nullable WebFacade getWeb() { return webFacade; }
-    public @Nullable WebFacadeImpl getWebImpl() { return webFacadeImpl; }
-
     @Override public @Nonnull UserFacade getUser() { return userFacade; }
     @Override public @Nonnull MessageFacade getMessage() { return messageFacade; }
     @Override public @Nonnull ArtifactExecutionFacade getArtifactExecution() { return artifactExecutionFacade; }
@@ -170,16 +164,11 @@ public class ExecutionContextImpl implements ExecutionContext {
 
     @Override
     public void initWebFacade(@Nonnull String webappMoquiName, @Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response) {
-        WebFacadeImpl wfi = new WebFacadeImpl(webappMoquiName, request, response, this);
-        webFacade = wfi;
-        webFacadeImpl = wfi;
 
         // now that we have the webFacade in place we can do init UserFacade
         userFacade.initFromHttpRequest(request, response);
         // for convenience (and more consistent code in screen actions, services, etc) add all requestParameters to the context
-        contextStack.putAll(webFacadeImpl.getRequestParameters());
         // this is the beginning of a request, so trigger before-request actions
-        wfi.runBeforeRequestActions();
 
         String userId = userFacade.getUserId();
         if (userId != null && !userId.isEmpty()) MDC.put("moqui_userId", userId);
@@ -190,17 +179,11 @@ public class ExecutionContextImpl implements ExecutionContext {
     }
 
     /** Meant to be used to set a test stub that implements the WebFacade interface */
-    public void setWebFacade(WebFacade wf) {
-        webFacade = wf;
-        if (wf instanceof WebFacadeImpl) webFacadeImpl = (WebFacadeImpl) wf;
-        contextStack.putAll(webFacade.getRequestParameters());
-    }
 
     public boolean getSkipStats() {
         if (skipStats != null) return skipStats;
         String skipStatsCond = ecfi.skipStatsCond;
         Map<String, Object> skipParms = new HashMap<>();
-        if (webFacade != null) skipParms.put("pathInfo", webFacade.getPathInfo());
         skipStats = (skipStatsCond != null && !skipStatsCond.isEmpty()) && ecfi.resourceFacade.condition(skipStatsCond, null, skipParms);
         return skipStats;
     }
@@ -219,7 +202,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     @Override
     public void destroy() {
         // if webFacade exists this is the end of a request, so trigger after-request actions
-        if (webFacadeImpl != null) webFacadeImpl.runAfterRequestActions();
 
         // make sure there are no transactions open, if any commit them all now
         ecfi.transactionFacade.destroyAllInThread();

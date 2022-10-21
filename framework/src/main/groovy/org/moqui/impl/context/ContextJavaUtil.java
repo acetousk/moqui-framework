@@ -245,12 +245,6 @@ public class ContextJavaUtil {
                 if (errorMessage.length() > 255) errorMessage.delete(255, errorMessage.length());
                 this.errorMessage = errorMessage.toString();
             }
-            WebFacadeImpl wfi = eci.getWebImpl();
-            if (wfi != null) {
-                String fullUrl = wfi.getRequestUrl();
-                requestUrl = (fullUrl.length() > 255) ? fullUrl.substring(0, 255) : fullUrl;
-                referrerUrl = wfi.getRequest().getHeader("Referer");
-            }
         }
         EntityValue makeAhiValue(ExecutionContextFactoryImpl ecfi) {
             EntityValueBase ahp = (EntityValueBase) ecfi.entityFacade.makeValue("moqui.server.ArtifactHit");

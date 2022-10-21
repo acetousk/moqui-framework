@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -621,18 +621,6 @@ class RestApi {
             }
         }
 
-        RestResult runByMethod(List<String> pathList, ExecutionContext ec) {
-            HttpServletRequest request = ec.web.getRequest()
-            String method = request.getMethod().toLowerCase()
-            if ("post".equals(method)) {
-                String ovdMethod = request.getHeader("X-HTTP-Method-Override")
-                if (ovdMethod != null && !ovdMethod.isEmpty()) method = ovdMethod.toLowerCase()
-            }
-            MethodHandler mh = methodMap.get(method)
-            if (mh == null) throw new MethodNotSupportedException("Method ${method} not supported at ${pathList}")
-            return mh.run(pathList, ec)
-        }
-
         RestResult visitChildOrRun(List<String> pathList, int pathIndex, ExecutionContextImpl ec) {
             // more in path? visit the next, otherwise run by request method
             int nextPathIndex = pathIndex + 1
@@ -671,7 +659,6 @@ class RestApi {
                         throw new ResourceNotFoundException("Resource ${nextPath} not valid, index ${pathIndex} in path ${pathList}; resources available are ${resourceMap.keySet()}")
                     }
                 } else {
-                    return runByMethod(pathList, ec)
                 }
             } finally {
                 ec.artifactExecutionFacade.pop(aei)
@@ -712,8 +699,6 @@ class RestApi {
                 post:ArtifactExecutionInfo.AUTHZA_CREATE, delete:ArtifactExecutionInfo.AUTHZA_DELETE,
                 options:ArtifactExecutionInfo.AUTHZA_VIEW, head:ArtifactExecutionInfo.AUTHZA_VIEW]
         static ArtifactExecutionInfo.AuthzAction getActionFromMethod(ExecutionContext ec) {
-            String method = ec.web.getRequest().getMethod().toLowerCase()
-            return actionByMethodMap.get(method)
         }
 
         Map getRamlChildrenMap(Map<String, Object> typesMap) {

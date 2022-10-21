@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -21,7 +21,7 @@ import org.moqui.context.NotificationMessage
 import org.moqui.context.WebMediaTypeException
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
-import org.moqui.impl.context.WebFacadeImpl
+
 import org.moqui.impl.screen.ScreenRenderImpl
 import org.moqui.util.MNode
 import org.slf4j.Logger
@@ -112,7 +112,6 @@ class MoquiServlet extends HttpServlet {
         ScreenRenderImpl sri = null
         try {
             ec.initWebFacade(webappName, request, response)
-            ec.web.requestAttributes.put("moquiRequestStartTime", startTime)
 
             sri = (ScreenRenderImpl) ec.screenFacade.makeRender().saveHistory(true)
             sri.render(request, response)
@@ -227,7 +226,6 @@ class MoquiServlet extends HttpServlet {
                         logger.warn("Returning 401, Origin ${originHeader} not allowed for configuration ${allowOriginSet} or server name ${serverName} or request host ${hostName}")
                         // Origin not allowed, send 401 response
                         // response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Origin not allowed")
-                        WebFacadeImpl.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Origin not allowed", null, request, response)
                         return true
                     }
                 }
@@ -265,11 +263,6 @@ class MoquiServlet extends HttpServlet {
 
         if (ecfi != null && errorCode == HttpServletResponse.SC_INTERNAL_SERVER_ERROR && !isBrokenPipe(origThrowable)) {
             ExecutionContextImpl ec = ecfi.getEci()
-            ec.makeNotificationMessage().topic("WebServletError").type(NotificationMessage.danger)
-                    .title('''Web Error ${errorCode?:''} (${username?:'no user'}) ${path?:''} ${message?:'N/A'}''')
-                    .message([errorCode:errorCode, errorType:errorType, message:message, exception:origThrowable?.toString(),
-                        path:ec.web?.getPathInfo(), parameters:ec.web?.getRequestParameters(), username:ec.user.username] as Map<String, Object>)
-                    .send()
         }
 
         if (ecfi == null) {
@@ -297,7 +290,6 @@ class MoquiServlet extends HttpServlet {
                 response.sendError(errorCode, message)
             }
         } else {
-            WebFacadeImpl.sendError(errorCode, message, origThrowable, request, response)
         }
     }
 

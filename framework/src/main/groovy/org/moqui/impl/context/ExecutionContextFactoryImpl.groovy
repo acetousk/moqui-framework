@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -81,7 +81,7 @@ import java.util.zip.ZipInputStream
 class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     protected final static Logger logger = LoggerFactory.getLogger(ExecutionContextFactoryImpl.class)
     protected final static boolean isTraceEnabled = logger.isTraceEnabled()
-    
+
     private AtomicBoolean destroyed = new AtomicBoolean(false)
 
     public final long initStartTime
@@ -1115,12 +1115,9 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         long diskTotalSpace = runtimeFile.getTotalSpace()
         BigDecimal diskPercent = (((diskTotalSpace - diskFreeSpace) / diskTotalSpace) * 100.0).setScale(2, RoundingMode.HALF_UP)
 
-        HttpServletRequest request = getEci().getWeb()?.getRequest()
         Map<String, Object> statusMap = [
             // because security: MoquiFramework:moquiVersion,
             Utilization: [LoadPercent:loadPercent, HeapPercent:heapPercent, DiskPercent:diskPercent],
-            Web: [ LocalAddr:request?.getLocalAddr(), LocalPort:request?.getLocalPort(), LocalName:request?.getLocalName(),
-                    ServerName:request?.getServerName(), ServerPort:request?.getServerPort() ],
             Heap: [ Used:(heapUsed/(1024*1024)).setScale(3, RoundingMode.HALF_UP),
                     Committed:(heapMemoryUsage.getCommitted()/(1024*1024)).setScale(3, RoundingMode.HALF_UP),
                     Max:(heapMax/(1024*1024)).setScale(3, RoundingMode.HALF_UP) ],

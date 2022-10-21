@@ -19,7 +19,7 @@ along with this software (see the LICENSE.md file). If not, see
             <if condition="webHostName"><then>
                 <set field="linkUrl" from="'https://' + webHostName + (link.startsWith('/') ? '' : '/') + link"/>
             </then><else>
-                <set field="rootUrl" from="org.moqui.impl.context.WebFacadeImpl.getWebappRootUrl(sri?.webappName ?: 'webroot', null, true, false, ec)"/>
+                <set field="rootUrl" from=""/>
                 <set field="linkUrl" from="rootUrl &amp;&amp; !rootUrl.contains('localhost') ? rootUrl + '/' + link : link"/>
                 <!-- <log level="warn" message="rootUrl ${rootUrl} link ${link} linkUrl ${linkUrl}"/> -->
             </else></if>

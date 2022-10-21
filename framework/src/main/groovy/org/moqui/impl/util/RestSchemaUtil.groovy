@@ -19,7 +19,7 @@ import org.moqui.entity.EntityList
 import org.moqui.entity.EntityNotFoundException
 import org.moqui.entity.EntityValue
 import org.moqui.impl.context.ExecutionContextImpl
-import org.moqui.impl.context.WebFacadeImpl
+
 import org.moqui.impl.entity.EntityDefinition
 import org.moqui.impl.entity.EntityDefinition.MasterDefinition
 import org.moqui.impl.entity.EntityDefinition.MasterDetail
@@ -574,7 +574,6 @@ class RestSchemaUtil {
             // if there was a login error there will be a MessageFacade error message
             String errorMessage = eci.message.errorsString
             if (!errorMessage) errorMessage = "Authentication required for entity REST schema"
-            eci.webImpl.sendJsonError(HttpServletResponse.SC_UNAUTHORIZED, errorMessage, null)
             return
         }
 
@@ -620,7 +619,6 @@ class RestSchemaUtil {
             jb.call(rootMap)
             String jsonStr = jb.toPrettyString()
 
-            eci.webImpl.sendTextResponse(jsonStr, "application/schema+json", "MoquiEntities.schema.json")
         } else {
             String entityName = extraPathNameList.get(0)
             if (entityName.endsWith(".json")) entityName = entityName.substring(0, entityName.length() - 5)
@@ -635,7 +633,6 @@ class RestSchemaUtil {
             try {
                 EntityDefinition ed = efi.getEntityDefinition(entityName)
                 if (ed == null) {
-                    eci.webImpl.sendJsonError(HttpServletResponse.SC_BAD_REQUEST, "No entity found with name or alias [${entityName}]", null)
                     return
                 }
 
@@ -647,10 +644,8 @@ class RestSchemaUtil {
                 jb.call(schema)
                 String jsonStr = jb.toPrettyString()
 
-                eci.webImpl.sendTextResponse(jsonStr, "application/schema+json", "${entityName}.schema.json")
             } catch (EntityNotFoundException e) {
                 if (logger.isTraceEnabled()) logger.trace("In entity REST schema entity not found: " + e.toString())
-                eci.webImpl.sendJsonError(HttpServletResponse.SC_BAD_REQUEST, "No entity found with name or alias [${entityName}]", null)
             }
         }
     }
@@ -661,7 +656,6 @@ class RestSchemaUtil {
             // if there was a login error there will be a MessageFacade error message
             String errorMessage = eci.message.errorsString
             if (!errorMessage) errorMessage = "Authentication required for entity REST schema"
-            eci.webImpl.sendJsonError(HttpServletResponse.SC_UNAUTHORIZED, errorMessage, null)
             return
         }
 
@@ -727,12 +721,10 @@ class RestSchemaUtil {
         // add beginning line "#%RAML 0.8", more efficient way to do this?
         yamlString = "#%RAML 0.8\n" + yamlString
 
-        eci.webImpl.sendTextResponse(yamlString, "application/raml+yaml", "MoquiEntities.raml")
     }
 
     static void handleEntityRestSwagger(ExecutionContextImpl eci, List<String> extraPathNameList, String basePath, boolean getMaster) {
         if (extraPathNameList.size() == 0) {
-            eci.webImpl.sendJsonError(HttpServletResponse.SC_BAD_REQUEST, "No entity name specified in path (for all entities use 'all')", null)
             return
         }
 
@@ -755,17 +747,10 @@ class RestSchemaUtil {
         String filename = entityName ?: "Entities"
         if (masterName) filename = filename + "." + masterName
 
-        eci.webImpl.response.setHeader("Access-Control-Allow-Origin", "*")
-        eci.webImpl.response.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, PATCH, OPTIONS")
-        eci.webImpl.response.setHeader("Access-Control-Allow-Headers", "Content-Type, api_key, Authorization")
-
-        String fullHost = WebFacadeImpl.makeWebappHost(eci.webImpl.webappMoquiName, eci, eci.webImpl, true)
-        String scheme = fullHost.substring(0, fullHost.indexOf("://"))
-        String hostName = fullHost.substring(fullHost.indexOf("://") + 3)
         Map definitionsMap = new TreeMap()
         Map<String, Object> swaggerMap = [swagger:'2.0',
-            info:[title:("${filename} REST API"), version:eci.factory.moquiVersion], host:hostName, basePath:basePath,
-            schemes:[scheme], consumes:['application/json', 'multipart/form-data'], produces:['application/json'],
+            info:[title:("${filename} REST API"), version:eci.factory.moquiVersion], host:"hostName", basePath:basePath,
+            schemes:["scheme"], consumes:['application/json', 'multipart/form-data'], produces:['application/json'],
             securityDefinitions:[basicAuth:[type:'basic', description:'HTTP Basic Authentication'],
                 api_key:[type:"apiKey", name:"api_key", in:"header", description:'HTTP Header api_key']],
             paths:[:], definitions:definitionsMap
@@ -804,7 +789,6 @@ class RestSchemaUtil {
             JsonBuilder jb = new JsonBuilder()
             jb.call(swaggerMap)
             String jsonStr = jb.toPrettyString()
-            eci.webImpl.sendTextResponse(jsonStr, "application/json", "${filename}.swagger.json")
         } else if (outputType == "application/yaml") {
             DumperOptions options = new DumperOptions()
             options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK)
@@ -813,15 +797,12 @@ class RestSchemaUtil {
             Yaml yaml = new Yaml(options)
             String yamlString = yaml.dump(swaggerMap)
 
-            eci.webImpl.sendTextResponse(yamlString, "application/yaml", "${filename}.swagger.yaml")
         } else {
-            eci.webImpl.sendJsonError(HttpServletResponse.SC_BAD_REQUEST, "Output type ${outputType} not supported", null)
         }
     }
 
     static void handleServiceRestSwagger(ExecutionContextImpl eci, List<String> extraPathNameList, String basePath) {
         if (extraPathNameList.size() == 0) {
-            eci.webImpl.sendJsonError(HttpServletResponse.SC_BAD_REQUEST, "No root resource name specified in path", null)
             return
         }
 
@@ -836,19 +817,11 @@ class RestSchemaUtil {
             filenameBase.append(pathName).append('.')
         }
 
-        eci.webImpl.response.setHeader("Access-Control-Allow-Origin", "*")
-        eci.webImpl.response.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, PATCH, OPTIONS")
-        eci.webImpl.response.setHeader("Access-Control-Allow-Headers", "Content-Type, api_key, Authorization")
-
-        String fullHost = WebFacadeImpl.makeWebappHost(eci.webImpl.webappMoquiName, eci, eci.webImpl, true)
-        String scheme = fullHost.substring(0, fullHost.indexOf("://"))
-        String hostName = fullHost.substring(fullHost.indexOf("://") + 3)
-        Map swaggerMap = eci.serviceFacade.restApi.getSwaggerMap(rootPathList, [scheme], hostName, basePath)
+        Map swaggerMap = eci.serviceFacade.restApi.getSwaggerMap(rootPathList, ["scheme"], "hostName", basePath)
         if (outputType == "application/json") {
             JsonBuilder jb = new JsonBuilder()
             jb.call(swaggerMap)
             String jsonStr = jb.toPrettyString()
-            eci.webImpl.sendTextResponse(jsonStr, "application/json", "${filenameBase}swagger.json")
         } else if (outputType == "application/yaml") {
             DumperOptions options = new DumperOptions()
             options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK)
@@ -857,15 +830,12 @@ class RestSchemaUtil {
             Yaml yaml = new Yaml(options)
             String yamlString = yaml.dump(swaggerMap)
 
-            eci.webImpl.sendTextResponse(yamlString, "application/yaml", "${filenameBase}swagger.yaml")
         } else {
-            eci.webImpl.sendJsonError(HttpServletResponse.SC_BAD_REQUEST, "Output type ${outputType} not supported", null)
         }
     }
 
     static void handleServiceRestRaml(ExecutionContextImpl eci, List<String> extraPathNameList, String linkPrefix) {
         if (extraPathNameList.size() == 0) {
-            eci.webImpl.sendJsonError(HttpServletResponse.SC_BAD_REQUEST, "No root resource name specified in path", null)
             return
         }
         String rootResourceName = extraPathNameList.get(0)
@@ -881,6 +851,5 @@ class RestSchemaUtil {
         // add beginning line "#%RAML 1.0", more efficient way to do this?
         yamlString = "#%RAML 1.0\n" + yamlString
 
-        eci.webImpl.sendTextResponse(yamlString, "application/raml+yaml", "${rootResourceName}.raml")
     }
 }

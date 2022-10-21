@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -26,7 +26,7 @@ import org.moqui.impl.context.ArtifactExecutionInfoImpl
 import org.moqui.impl.context.ArtifactExecutionFacadeImpl
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
-import org.moqui.impl.context.WebFacadeImpl
+
 import org.moqui.impl.entity.EntityDefinition
 import org.moqui.impl.screen.ScreenDefinition.ParameterItem
 import org.moqui.impl.screen.ScreenDefinition.SubscreensItem
@@ -170,8 +170,7 @@ class ScreenUrlInfo {
         ScreenDefinition rootScreenDef = sfi.getScreenDefinition(rootScreenLocation)
         if (rootScreenDef == null) throw new BaseArtifactException("Could not find root screen at location ${rootScreenLocation}")
 
-        ArrayList<String> screenPath = WebFacadeImpl.getPathInfoList(request)
-        return getScreenUrlInfo(sfi, rootScreenDef, rootScreenDef, screenPath, null, 0)
+        return getScreenUrlInfo(sfi, rootScreenDef, rootScreenDef, null, null, 0)
 
     }
 
@@ -346,8 +345,7 @@ class ScreenUrlInfo {
         } else {
             if (sri.webappName == null || sri.webappName.length() == 0)
                 throw new BaseArtifactException("No webappName specified, cannot get base URL for screen location ${sri.rootScreenLocation}")
-            baseUrl = WebFacadeImpl.getWebappRootUrl(sri.webappName, sri.servletContextPath, true,
-                    this.requireEncryption, sri.ec)
+            baseUrl = null
         }
         return baseUrl
     }
@@ -960,10 +958,9 @@ class ScreenUrlInfo {
             // logger.warn("======= Creating UrlInstance ${sui.getFullPathNameList()} - ${sui.targetScreen.getLocation()} - ${sui.getTargetTransitionActualName()}")
         }
 
-        String getRequestMethod() { return ec.web != null ? ec.web.request.method : "" }
         TransitionItem getTargetTransition() {
             if (curTargetTransition == null && sui.targetScreen != null && sui.targetTransitionActualName != null)
-                curTargetTransition = sui.targetScreen.getTransitionItem(sui.targetTransitionActualName, getRequestMethod())
+                curTargetTransition = sui.targetScreen.getTransitionItem(sui.targetTransitionActualName, "")
             return curTargetTransition
         }
         boolean getHasActions() { getTargetTransition() != null && (getTargetTransition().actions != null || getTargetTransition().serviceActions != null) }
@@ -989,22 +986,6 @@ class ScreenUrlInfo {
             // if fromScreenPath is a transition, and that transition has no condition,
             // service/actions or conditional-response then use the default-response.url instead
             // of the name (if type is screen-path or empty, url-type is url or empty)
-            if (ti.condition == null && !ti.hasActionsOrSingleService() && !ti.conditionalResponseList &&
-                    ti.defaultResponse != null && "url".equals(ti.defaultResponse.type) &&
-                    "screen-path".equals(ti.defaultResponse.urlType) && ec.web != null) {
-
-                transitionAliasParameters = ti.defaultResponse.expandParameters(sui.getExtraPathNameList(), ec)
-
-                // create a ScreenUrlInfo, then copy its info into this
-                String expandedUrl = ti.defaultResponse.url
-                if (expandedUrl.contains('${')) expandedUrl = ec.resourceFacade.expand(expandedUrl, "")
-                ScreenUrlInfo aliasUrlInfo = getScreenUrlInfo(sri.sfi, sui.rootSd, sui.fromSd,
-                        sui.preTransitionPathNameList, expandedUrl, parseLastStandalone((String) transitionAliasParameters.lastStandalone, sui.lastStandalone))
-
-                // logger.warn("Made transition alias: ${aliasUrlInfo.toString()}")
-                sui = aliasUrlInfo
-                curTargetTransition = (TransitionItem) null
-            }
         }
         Map getTransitionAliasParameters() { return transitionAliasParameters }
 
@@ -1068,15 +1049,12 @@ class ScreenUrlInfo {
                 if (targetServiceName != null && targetServiceName.length() > 0) {
                     ServiceDefinition sd = ec.serviceFacade.getServiceDefinition(targetServiceName)
                     Map<String, Object> csMap = ec.contextStack.getCombinedMap()
-                    Map<String, Object> wfParameters = ec.getWeb()?.getParameters()
                     if (sd != null) {
                         ArrayList<String> inParameterNames = sd.getInParameterNames()
                         int inParameterNamesSize = inParameterNames.size()
                         for (int i = 0; i < inParameterNamesSize; i++) {
                             String pn = (String) inParameterNames.get(i)
                             Object value = csMap.get(pn)
-                            if (ObjectUtilities.isEmpty(value) && wfParameters != null)
-                                value = wfParameters.get(pn)
                             String valueStr = ObjectUtilities.toPlainString(value)
                             if (valueStr != null && valueStr.length() > 0) allParameterMap.put(pn, valueStr)
                         }
@@ -1089,8 +1067,6 @@ class ScreenUrlInfo {
                             if (ed != null) {
                                 for (String fn in ed.getPkFieldNames()) {
                                     Object value = csMap.get(fn)
-                                    if (ObjectUtilities.isEmpty(value) && wfParameters != null)
-                                        value = wfParameters.get(fn)
                                     String valueStr = ObjectUtilities.toPlainString(value)
                                     if (valueStr != null && valueStr.length() > 0) allParameterMap.put(fn, valueStr)
                                 }

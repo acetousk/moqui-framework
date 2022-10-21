@@ -13,7 +13,7 @@
  */
 package org.moqui.impl.screen
 
-import groovy.json.JsonOutput
+
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.moqui.BaseArtifactException
@@ -21,11 +21,10 @@ import org.moqui.BaseException
 import org.moqui.context.ArtifactExecutionInfo
 import org.moqui.context.ExecutionContext
 import org.moqui.context.ResourceFacade
-import org.moqui.impl.context.ContextJavaUtil
 import org.moqui.impl.entity.EntityDefinition
 import org.moqui.impl.service.ServiceDefinition
 import org.moqui.resource.ResourceReference
-import org.moqui.context.WebFacade
+
 import org.moqui.entity.EntityFind
 import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
@@ -792,7 +791,6 @@ class ScreenDefinition {
                 else { value = valueString }
             }
             if (value == null) value = ec.context.getByString(name)
-            if (value == null && ec.web != null) value = ec.web.parameters.get(name)
             return value
         }
     }
@@ -894,7 +892,6 @@ class ScreenDefinition {
                 for (String extraPathName in extraPathNameList) {
                     if (pathParameterList.size() > i) {
                         // logger.warn("extraPathName ${extraPathName} i ${i} name ${pathParameterList.get(i)}")
-                        if (ec.webImpl != null) ec.webImpl.addDeclaredPathParameter(pathParameterList.get(i), extraPathName)
                         ec.getContext().put(pathParameterList.get(i), extraPathName)
                         i++
                     } else {
@@ -904,18 +901,6 @@ class ScreenDefinition {
             }
 
             // put parameters in the context
-            if (ec.getWeb() != null) {
-                // screen parameters
-                for (ParameterItem pi in parentScreen.getParameterMap().values()) {
-                    Object value = pi.getValue(ec)
-                    if (value != null) ec.contextStack.put(pi.getName(), value)
-                }
-                // transition parameters
-                for (ParameterItem pi in parameterByName.values()) {
-                    Object value = pi.getValue(ec)
-                    if (value != null) ec.contextStack.put(pi.getName(), value)
-                }
-            }
         }
 
         ResponseItem run(ScreenRenderImpl sri) {
@@ -1024,59 +1009,7 @@ class ScreenDefinition {
             ExecutionContextImpl ec = sri.ec
             ContextStack context = ec.contextStack
             context.put("sri", sri)
-            WebFacade wf = ec.getWeb()
-            if (wf == null) throw new BaseArtifactException("Cannot run actions transition outside of a web request")
-
-            ArrayList<String> extraPathList = sri.screenUrlInfo.extraPathNameList
-            if (extraPathList != null && extraPathList.size() > 0) {
-                String partName = (String) extraPathList.get(0)
-                // is it a form or tree?
-                ScreenForm form = parentScreen.formByName.get(partName)
-                if (form != null) {
-                    if (!form.hasDataPrep()) throw new BaseArtifactException("Found form ${partName} in screen ${parentScreen.getScreenName()} but it does not have its own data preparation")
-                    ScreenForm.FormInstance formInstance = form.getFormInstance()
-                    if (formInstance.isList()) {
-                        ScreenForm.FormListRenderInfo renderInfo = formInstance.makeFormListRenderInfo()
-                        // old approach, raw data: Object listObj = renderInfo.getListObject(true)
-                        // new approach: transformed and auto values filled in based on field defs
-                        ArrayList<Map<String, Object>> listObj = sri.getFormListRowValues(renderInfo)
-
-                        HttpServletResponse response = wf.response
-                        String listName = formInstance.formNode.attribute("list")
-                        if (context.get(listName.concat("Count")) != null) {
-                            response.addIntHeader('X-Total-Count', context.get(listName.concat("Count")) as int)
-                            response.addIntHeader('X-Page-Index', context.get(listName.concat("PageIndex")) as int)
-                            response.addIntHeader('X-Page-Size', context.get(listName.concat("PageSize")) as int)
-                            response.addIntHeader('X-Page-Max-Index', context.get(listName.concat("PageMaxIndex")) as int)
-                            response.addIntHeader('X-Page-Range-Low', context.get(listName.concat("PageRangeLow")) as int)
-                            response.addIntHeader('X-Page-Range-High', context.get(listName.concat("PageRangeHigh")) as int)
-                        }
-
-                        logger.info("form ${partName} actions result:\n${JsonOutput.prettyPrint(JsonOutput.toJson(listObj))}")
-                        wf.sendJsonResponse(listObj)
-                    }
-                    // TODO: else support form-single data prep once something is added
-                } else {
-                    ScreenTree tree = parentScreen.treeByName.get(partName)
-                    if (tree != null) {
-                        tree.sendSubNodeJson()
-                    } else {
-                        throw new BaseArtifactException("Could not find form or tree named ${partName} in screen ${parentScreen.getScreenName()} so cannot run its actions")
-                    }
-                }
-            } else {
-                // run actions (if there are any)
-                XmlAction actions = parentScreen.rootSection.actions
-                if (actions != null) {
-                    actions.run(ec)
-                    // use entire ec.context to get values from always-actions and pre-actions
-                    wf.sendJsonResponse(ContextJavaUtil.unwrapMap(context))
-                } else {
-                    wf.sendJsonResponse(new HashMap())
-                }
-            }
-
-            return defaultResponse
+            throw new BaseArtifactException("Cannot run actions transition outside of a web request")
         }
     }
 
@@ -1148,7 +1081,6 @@ class ScreenDefinition {
             ExecutionContextImpl eci = sri.ec
             String docIndexString = eci.contextStack.getByString("docIndex")
             if (docIndexString == null || docIndexString.isEmpty()) {
-                eci.web.sendError(HttpServletResponse.SC_NOT_FOUND, "No docIndex specified", null)
                 return defaultResponse
             }
             Long docIndex = docIndexString as Long
@@ -1156,7 +1088,6 @@ class ScreenDefinition {
                     .condition("screenLocation", parentScreen.location).condition("docIndex", docIndex)
                     .useCache(true).disableAuthz().one()
             if (screenDocument == null) {
-                eci.web.sendError(HttpServletResponse.SC_NOT_FOUND, "No document found for index ${docIndex}", null)
                 return defaultResponse
             }
 

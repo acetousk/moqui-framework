@@ -3,14 +3,14 @@ package org.moqui.impl.service
 import groovy.transform.CompileStatic
 
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -43,36 +43,13 @@ public class ServiceJsonRpcDispatcher {
         this.eci = eci
     }
 
-    public void dispatch() {
-        Map callMap = eci.web.getRequestParameters()
-        if (callMap._requestBodyJsonList) {
-            List callList = (List) callMap._requestBodyJsonList
-            List<Map> jsonRespList = []
-            for (Object callSingleObj in callList) {
-                if (callSingleObj instanceof Map) {
-                    Map callSingleMap = (Map) callSingleObj
-                    jsonRespList.add(callSingle(callSingleMap.method as String, callSingleMap.params, callSingleMap.id ?: null))
-                } else {
-                    jsonRespList.add(callSingle(null, callSingleObj, null))
-                }
-            }
-        } else {
-            // logger.info("========= JSON-RPC request with map: ${callMap}")
-            Map jsonResp = callSingle(callMap.method as String, callMap.params, callMap.id ?: null)
-            eci.getWeb().sendJsonResponse(jsonResp)
-        }
-    }
-
     protected Map callSingle(String method, Object paramsObj, Object id) {
         // logger.warn("========= JSON-RPC call method=[${method}], id=[${id}], params=${paramsObj}")
 
         String errorMessage = null
         Integer errorCode = null
         ServiceDefinition sd = method ? eci.serviceFacade.getServiceDefinition(method) : null
-        if (eci.web.getRequestParameters()._requestBodyJsonParseError) {
-            errorMessage = eci.web.getRequestParameters()._requestBodyJsonParseError
-            errorCode = PARSE_ERROR
-        } else if (!method) {
+         if (!method) {
             errorMessage = "No method specified"
             errorCode = INVALID_REQUEST
         } else if (sd == null) {
