@@ -15,7 +15,6 @@ package org.moqui.impl.entity;
 
 import org.moqui.BaseArtifactException;
 import org.moqui.entity.EntityException;
-import org.moqui.impl.context.L10nFacadeImpl;
 import org.moqui.impl.entity.condition.ConditionField;
 import org.moqui.util.LiteStringMap;
 import org.moqui.util.MNode;
@@ -171,7 +170,7 @@ public class FieldInfo {
         return temp;
     }
 
-    public Object convertFromString(String value, L10nFacadeImpl l10n) {
+    public Object convertFromString(String value) {
         if (value == null) return null;
         if ("null".equals(value)) return null;
 
@@ -181,28 +180,25 @@ public class FieldInfo {
         try {
             switch (typeValue) {
                 case 1: outValue = value; break;
-                case 2: // outValue = java.sql.Timestamp.valueOf(value);
+                case 2: outValue = java.sql.Timestamp.valueOf(value);
                     if (isEmpty) { outValue = null; break; }
-                    outValue = l10n.parseTimestamp(value, null);
                     if (outValue == null) throw new BaseArtifactException("The value [" + value + "] is not a valid date/time for field " + entityName + "." + name);
                     break;
-                case 3: // outValue = java.sql.Time.valueOf(value);
+                case 3: outValue = java.sql.Time.valueOf(value);
                     if (isEmpty) { outValue = null; break; }
-                    outValue = l10n.parseTime(value, null);
                     if (outValue == null) throw new BaseArtifactException("The value [" + value + "] is not a valid time for field " + entityName + "." + name);
                     break;
-                case 4: // outValue = java.sql.Date.valueOf(value);
+                case 4: outValue = java.sql.Date.valueOf(value);
                     if (isEmpty) { outValue = null; break; }
-                    outValue = l10n.parseDate(value, null);
                     if (outValue == null) throw new BaseArtifactException("The value [" + value + "] is not a valid date for field " + entityName + "." + name);
                     break;
                 case 5: // outValue = Integer.valueOf(value); break
                 case 6: // outValue = Long.valueOf(value); break
                 case 7: // outValue = Float.valueOf(value); break
                 case 8: // outValue = Double.valueOf(value); break
-                case 9: // outValue = new BigDecimal(value); break
+                case 9:
+                    BigDecimal bdVal = new BigDecimal(value); // break
                     if (isEmpty) { outValue = null; break; }
-                    BigDecimal bdVal = l10n.parseNumber(value, null);
                     if (bdVal == null) {
                         throw new BaseArtifactException("The value [" + value + "] is not valid for type " + javaType + " for field " + entityName + "." + name);
                     } else {
@@ -230,8 +226,7 @@ public class FieldInfo {
                 case 13: outValue = value; break;
                 case 14:
                     if (isEmpty) { outValue = null; break; }
-                    Timestamp ts = l10n.parseTimestamp(value, null);
-                    outValue = new java.util.Date(ts.getTime());
+                    outValue = new java.util.Date(value);
                     break;
             // better way for Collection (15)? maybe parse comma separated, but probably doesn't make sense in the first place
                 case 15: outValue = value; break;
@@ -245,7 +240,7 @@ public class FieldInfo {
     }
     public String convertToString(Object value) {
         if (value == null) return null;
-        String outValue;
+        String outValue = null;
         try {
             switch (typeValue) {
                 case 1: outValue = value.toString(); break;
@@ -258,8 +253,6 @@ public class FieldInfo {
                 case 8:
                 case 9:
                     if (value instanceof BigDecimal) value = safeStripZeroes((BigDecimal) value);
-                    L10nFacadeImpl l10n = ed.efi.ecfi.getEci().l10nFacade;
-                    outValue = l10n.format(value, null);
                     break;
                 case 10: outValue = value.toString(); break;
                 case 11: outValue = value.toString(); break;

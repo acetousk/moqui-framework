@@ -477,7 +477,7 @@ class ScreenDefinition {
             menuName = prettyName.toString()
         }
 
-        return ecfi.getEci().l10nFacade.localize(menuName)
+        return menuName
     }
 
     /** Get macro template location specific to screen from marco-template elements */

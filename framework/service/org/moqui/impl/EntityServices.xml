@@ -257,8 +257,8 @@ along with this software (see the LICENSE.md file). If not, see
                 ExecutionContext ec = context.ec
                 EntityDataWriter edw = ec.entity.makeDataWriter()
 
-                if (fromDate) edw.fromDate(ec.l10n.parseTimestamp(fromDate, null))
-                if (thruDate) edw.thruDate(ec.l10n.parseTimestamp(thruDate, null))
+                if (fromDate) edw.fromDate(fromDate)
+                if (thruDate) edw.thruDate(thruDate)
                 if (entitiesToInclude) {
                     edw.entityNames(entitiesToInclude)
                 } else {
@@ -271,7 +271,7 @@ along with this software (see the LICENSE.md file). If not, see
                 edw.tableColumnNames(tableColumnNames)
 
                 String baseName = baseFilename
-                if (!baseName) baseName = "MoquiSnapshot-${ec.l10n.format(ec.user.nowTimestamp, 'yyyyMMdd-HHmm')}"
+                if (!baseName) baseName = "MoquiSnapshot-${ec.user.nowTimestamp.format('yyyyMMdd-HHmm')}"
 
                 if ("CSV".equals(fileType)) filePerEntity = true
 

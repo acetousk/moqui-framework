@@ -51,7 +51,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     private WebFacadeImpl webFacadeImpl = (WebFacadeImpl) null;
 
     public final UserFacadeImpl userFacade;
-    public final L10nFacadeImpl l10nFacade;
 
     // local references to ECFI fields
     public final CacheFacadeImpl cacheFacade;
@@ -80,7 +79,6 @@ public class ExecutionContextImpl implements ExecutionContext {
 
         activeEntityFacade = ecfi.entityFacade;
         userFacade = new UserFacadeImpl(this);
-        l10nFacade = new L10nFacadeImpl(this);
 
         cacheFacade = ecfi.cacheFacade;
         loggerFacade = ecfi.loggerFacade;
@@ -124,7 +122,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     public @Nullable WebFacadeImpl getWebImpl() { return webFacadeImpl; }
 
     @Override public @Nonnull UserFacade getUser() { return userFacade; }
-    @Override public @Nonnull L10nFacade getL10n() { return l10nFacade; }
     @Override public @Nonnull ResourceFacade getResource() { return resourceFacade; }
     @Override public @Nonnull LoggerFacade getLogger() { return loggerFacade; }
     @Override public @Nonnull CacheFacade getCache() { return cacheFacade; }

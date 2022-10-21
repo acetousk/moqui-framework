@@ -2192,10 +2192,10 @@ class EntityFacadeImpl implements EntityFacade {
         if (fi.typeValue == 2) {
             if (value.matches("\\d*")) {
                 // date-time with only digits, ms since epoch value
-                outVal = ecfi.l10n.format(new Timestamp(Long.parseLong(value)), null)
+                outVal = new Timestamp(Long.parseLong(value))
             }
         } else if (fi.type.startsWith("currency-")) {
-            outVal = ecfi.l10n.format(new BigDecimal(value), "#,##0.00#")
+            outVal = new BigDecimal(value)
         }
         // logger.warn("formatFieldString ${entityName}:${fieldName} value ${value} outVal ${outVal}")
         return outVal

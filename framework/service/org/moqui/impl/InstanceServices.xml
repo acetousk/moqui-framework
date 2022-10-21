@@ -330,7 +330,7 @@ along with this software (see the LICENSE.md file). If not, see
 
             for (Map hostConf in appInstance.hostConfigs) if (hostConf.hostConfigName && hostConf.hostConfigValue) {
                 if (hostConf.type == null || hostConf.type == 'String') hostConfigValue = hostConf.hostConfigValue
-                else if (hostConf.type == 'Number') hostConfigValue = ec.l10n.parseNumber(hostConf.hostConfigValue, null)
+                else if (hostConf.type == 'Number') hostConfigValue = hostConf.hostConfigValue
                 else throw new BaseException("Unknown type '${hostConf.type}' for hostConfig")
                 hostConfigMap.put(hostConf.hostConfigName, hostConfigValue)
             }
@@ -560,15 +560,15 @@ along with this software (see the LICENSE.md file). If not, see
                     instanceRunning = stateMap.Running as Boolean
                     statusString = stateMap.Status as String
                     errorString = stateMap.Error as String
-                    startedAt = ec.l10n.parseTimestamp(stateMap.StartedAt as String, "")
-                    if (stateMap.FinishedAt) finishedAt = ec.l10n.parseTimestamp(stateMap.FinishedAt as String, "")
+                    startedAt = stateMap.StartedAt as String
+                    if (stateMap.FinishedAt) finishedAt = stateMap.FinishedAt as String
 
                     if (!appInstance.instanceUuid) {
                         appInstance.instanceUuid = inspectMap.Id
                         appInstance.update()
                     }
 
-                    ec.message.addMessage("Docker container ${appInstance.instanceName} (${appInstance.instanceUuid}) ${instanceRunning ? 'running' : 'NOT running'}, status ${statusString}, ${errorString ? 'error: ' + errorString + ', ' : ''}started at ${ec.l10n.format(startedAt, '')}${finishedAt ? ', finished at ' + ec.l10n.format(finishedAt, '') : ''}")
+                    ec.message.addMessage("Docker container ${appInstance.instanceName} (${appInstance.instanceUuid}) ${instanceRunning ? 'running' : 'NOT running'}, status ${statusString}, ${errorString ? 'error: ' + errorString + ', ' : ''}started at ${startedAt}${finishedAt ? ', finished at ' + finishedAt : ''}")
                 } else if (restResponse.statusCode == 404) {
                     instanceExists = false
                     ec.message.addMessage("Docker container ${appInstance.instanceName} (${appInstance.instanceUuid}) does not exist")

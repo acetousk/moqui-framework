@@ -1240,7 +1240,7 @@ class EntityDbMeta {
                         dbms:dbmsDefault.join(",")])
         }
 
-        String dateStr = efi.ecfi.l10n.format(new Timestamp(System.currentTimeMillis()), "yyyyMMdd")
+        String dateStr = new Timestamp(System.currentTimeMillis())
         int changeSetIdx = 1
         Set<String> entityNames = efi.getAllEntityNames(filterRegexp)
 

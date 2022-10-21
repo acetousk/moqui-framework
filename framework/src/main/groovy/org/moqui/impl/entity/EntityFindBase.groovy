@@ -512,13 +512,13 @@ abstract class EntityFindBase implements EntityFind {
                 Object fromValue = inputFieldsMap.get(fn + "_from")
                 if (fromValue && fromValue instanceof CharSequence) {
                     if (fi.typeValue == 2 && fromValue.length() < 12)
-                        fromValue = ec.l10nFacade.parseTimestamp(fromValue.toString() + " 00:00:00.000", "yyyy-MM-dd HH:mm:ss.SSS")
+                        fromValue = fromValue.toString()
                     else fromValue = ed.convertFieldString(fn, fromValue.toString(), ec)
                 }
                 Object thruValue = inputFieldsMap.get(fn + "_thru")
                 if (thruValue && thruValue instanceof CharSequence) {
                     if (fi.typeValue == 2 && thruValue.length() < 12)
-                        thruValue = ec.l10nFacade.parseTimestamp(thruValue.toString() + " 23:59:59.999", "yyyy-MM-dd HH:mm:ss.SSS")
+                        thruValue = thruValue.toString()
                     else thruValue = ed.convertFieldString(fn, thruValue.toString(), ec)
                 }
 

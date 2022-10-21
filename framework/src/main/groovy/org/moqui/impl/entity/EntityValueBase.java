@@ -463,8 +463,7 @@ public abstract class EntityValueBase implements EntityValue {
         // this will do a field name check
         ExecutionContextImpl eci = getEntityFacadeImpl().ecfi.getEci();
         FieldInfo fi = getEntityDefinition().getFieldInfo(name);
-        Object converted = fi.convertFromString(value, eci.l10nFacade);
-        putKnownField(fi, converted);
+        putKnownField(fi, value);
         return this;
     }
 

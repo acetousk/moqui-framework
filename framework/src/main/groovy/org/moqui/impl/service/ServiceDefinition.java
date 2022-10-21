@@ -703,7 +703,6 @@ public class ServiceDefinition {
             Calendar cal;
             String format = valNode.attribute("format");
             if (pv instanceof CharSequence) {
-                cal = eci.getL10n().parseDateTime(pv.toString(), format);
             } else {
                 // try letting groovy convert it
                 cal = Calendar.getInstance();
@@ -716,13 +715,7 @@ public class ServiceDefinition {
                 // handle after date/time/date-time depending on type of parameter, support "now" too
                 Calendar compareCal;
                 if ("now".equals(after)) {
-                    compareCal = eci.getL10n().parseDateTime(eci.getL10n().format(eci.getUser().getNowTimestamp(), format), format);
                 } else {
-                    compareCal = eci.getL10n().parseDateTime(after, format);
-                }
-                if (cal != null && cal.compareTo(compareCal) < 0) {
-                    Map<String, Object> map = new HashMap<>(2); map.put("pv", pv); map.put("after", after);
-                    return false;
                 }
             }
 
@@ -731,13 +724,7 @@ public class ServiceDefinition {
                 // handle after date/time/date-time depending on type of parameter, support "now" too
                 Calendar compareCal;
                 if ("now".equals(before)) {
-                    compareCal = eci.getL10n().parseDateTime(eci.getL10n().format(eci.getUser().getNowTimestamp(), format), format);
                 } else {
-                    compareCal = eci.getL10n().parseDateTime(before, format);
-                }
-                if (cal != null && cal.compareTo(compareCal) > 0) {
-                    Map<String, Object> map = new HashMap<>(1); map.put("pv", pv);
-                    return false;
                 }
             }
 

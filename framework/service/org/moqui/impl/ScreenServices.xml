@@ -85,10 +85,10 @@ along with this software (see the LICENSE.md file). If not, see
 
                 String extension = renderMode == "xsl-fo" ? "pdf" : renderMode
                 String lastPath = screenPath.substring(screenPath.lastIndexOf("/")+1)
-                String filename = lastPath + "-" + ec.l10n.format(ec.user.nowTimestamp, "yyyy-MM-dd-HH-mm") + "." + extension
+                String filename = lastPath + "-" + ec.user.nowTimestamp.format("yyyy-MM-dd-HH-mm") + "." + extension
 
                 emailSubject = ec.resource.expand(screenScheduled.emailSubject, null)
-                if (!emailSubject) emailSubject = "Scheduled Report ${lastPath} ${ec.l10n.format(ec.user.nowTimestamp, null)}"
+                if (!emailSubject) emailSubject = "Scheduled Report ${lastPath} ${ec.user.nowTimestamp}"
 
                 bodyParameters = [pageNoLimit:'true', emailSubject:emailSubject, title:emailSubject, screenPath:screenPath, webHostName:webHostName]
                 ec.context.putAll(bodyParameters)

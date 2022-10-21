@@ -234,7 +234,7 @@ class EntityDataDocument {
                         mainFind.conditionToField(fieldAlias, EntityConditionFactoryImpl.stringComparisonOperatorMap.get(operator), toFieldAlias)
                     } else {
                         String stringVal = (String) dataDocumentCondition.getNoCheckSimple("fieldValue")
-                        Object objVal = fi.convertFromString(stringVal, eci.l10nFacade)
+                        Object objVal = stringVal
                         mainFind.condition(fieldAlias, operator, objVal)
                     }
                 }

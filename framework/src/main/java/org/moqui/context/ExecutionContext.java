@@ -64,7 +64,6 @@ public interface ExecutionContext {
     /** For information about artifacts as they are being executed. */
 
     /** For localization (l10n) functionality, like localizing messages. */
-    @Nonnull L10nFacade getL10n();
 
     /** For accessing resources by location string (http://, jar://, component://, content://, classpath://, etc). */
     @Nonnull ResourceFacade getResource();

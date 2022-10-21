@@ -711,7 +711,7 @@ along with this software (see the LICENSE.md file). If not, see
                 <field-map field-name="emailTemplateId" value="SINGLE_USE_CODE"/>
                 <field-map field-name="toAddresses" from="emailAddress"/>
                 <field-map field-name="bodyParameters" from="[code:createSuFactorOut.code,
-                        thruDateString:ec.l10n.format(createSuFactorOut.thruDate, null)]"/>
+                        thruDateString:createSuFactorOut.thruDate]"/>
             </service-call>
             <message>Authentication code sent to ${emailAddress}</message>
 
@@ -721,7 +721,7 @@ along with this software (see the LICENSE.md file). If not, see
                     <field-map field-name="emailTemplateId" value="ADDED_EMAIL_AUTHC_FACTOR"/>
                     <field-map field-name="toAddresses" from="userAccount.emailAddress"/>
                     <field-map field-name="bodyParameters" from="[userEmail:emailAddress,
-                            thruDateString:ec.l10n.format(createSuFactorOut.thruDate, null)]"/>
+                            thruDateString:createSuFactorOut.thruDate]"/>
                 </service-call>
             </if>
         </actions>
@@ -748,7 +748,7 @@ along with this software (see the LICENSE.md file). If not, see
                 <field-map field-name="emailTemplateId" value="SINGLE_USE_CODE"/>
                 <field-map field-name="toAddresses" from="emailAddress"/>
                 <field-map field-name="bodyParameters" from="[code:createSuFactorOut.code,
-                        thruDateString:ec.l10n.format(createSuFactorOut.thruDate, null)]"/>
+                        thruDateString:createSuFactorOut.thruDate]"/>
             </service-call>
             <message>Authentication code sent to ${emailAddress}</message>
         </actions>

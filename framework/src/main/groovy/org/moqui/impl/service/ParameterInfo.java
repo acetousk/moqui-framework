@@ -161,7 +161,7 @@ public class ParameterInfo {
                 case DOUBLE:
                 case BIG_DECIMAL:
                 case BIG_INTEGER:
-                    BigDecimal bdVal = eci.l10nFacade.parseNumber(valueStr, format);
+                    BigDecimal bdVal = new BigDecimal(valueStr);
                     if (bdVal == null) {
                     } else {
                         switch (parmType) {
@@ -175,13 +175,13 @@ public class ParameterInfo {
                     }
                     break;
                 case TIME:
-                    converted = eci.l10nFacade.parseTime(valueStr, format);
+                    converted = valueStr;
                     break;
                 case DATE:
-                    converted = eci.l10nFacade.parseDate(valueStr, format);
+                    converted = valueStr;
                     break;
                 case TIMESTAMP:
-                    converted = eci.l10nFacade.parseTimestamp(valueStr, format);
+                    converted = valueStr;
                     break;
                 case LIST:
                     // strip off square braces

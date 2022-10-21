@@ -937,7 +937,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         return compLocMap
     }
 
-    @Override @Nonnull L10nFacade getL10n() { getEci().l10nFacade }
     @Override @Nonnull ResourceFacade getResource() { resourceFacade }
     @Override @Nonnull LoggerFacade getLogger() { loggerFacade }
     @Override @Nonnull CacheFacade getCache() { cacheFacade }
