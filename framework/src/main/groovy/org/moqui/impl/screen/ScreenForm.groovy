@@ -1234,7 +1234,7 @@ class ScreenForm {
                                 addFieldOption(options, fieldNode, childNode, [entry:listOption], ec)
                             } else {
                                 String loString = ObjectUtilities.toPlainString(listOption)
-                                if (loString != null) options.put(loString, ec.l10n.localize(loString))
+                                if (loString != null) options.put(loString, loString)
                             }
                         }
                     }
@@ -1244,7 +1244,7 @@ class ScreenForm {
                 if (key != null && key.contains('${')) key = ec.resource.expandNoL10n(key, null)
                 String text = childNode.attribute('text')
                 if (text != null) text = ec.resource.expand(text, null)
-                options.put(key, text ?: ec.l10n.localize(key))
+                options.put(key, text ?: key)
             }
         }
         return options
@@ -1276,13 +1276,13 @@ class ScreenForm {
             if (text == null || text.length() == 0) {
                 if (listOptionEvb == null || listOptionEvb.getEntityDefinition().isField("description")) {
                     Object desc = listOption.get("description")
-                    options.put(key, desc != null ? (String) desc : ec.l10n.localize(key))
+                    options.put(key, desc != null ? (String) desc : key)
                 } else {
-                    options.put(key, ec.l10n.localize(key))
+                    options.put(key, key)
                 }
             } else {
                 String value = ec.resource.expand(text, null)
-                if ("null".equals(value)) value = ec.l10n.localize(key)
+                if ("null".equals(value)) value = key
                 options.put(key, value)
             }
         } finally {
@@ -1562,7 +1562,7 @@ class ScreenForm {
             ArrayList<Map<String, String>> ruleList = new ArrayList<>(5)
             if (validateNode.name == "parameter") {
                 if ("true".equals(validateNode.attribute('required')))
-                    ruleList.add([expr:"!!value", message:eci.l10nFacade.localize(MSG_REQUIRED)])
+                    ruleList.add([expr:"!!value", message:MSG_REQUIRED])
 
                 boolean foundNumber = false
                 ArrayList<MNode> children = validateNode.getChildren()
@@ -1571,33 +1571,33 @@ class ScreenForm {
                     MNode child = (MNode) children.get(i)
                     if ("number-integer".equals(child.getName())) {
                         if (!foundNumber) {
-                            ruleList.add([expr:VALIDATE_NUMBER_INT, message:eci.l10nFacade.localize(MSG_NUMBER_INT)])
+                            ruleList.add([expr:VALIDATE_NUMBER_INT, message:MSG_NUMBER_INT])
                             foundNumber = true
                         }
                     } else if ("number-decimal".equals(child.getName())) {
                         if (!foundNumber) {
-                            ruleList.add([expr:VALIDATE_NUMBER, message:eci.l10nFacade.localize(MSG_NUMBER)])
+                            ruleList.add([expr:VALIDATE_NUMBER, message:MSG_NUMBER])
                             foundNumber = true
                         }
                     } else if ("text-digits".equals(child.getName())) {
                         if (!foundNumber) {
-                            ruleList.add([expr:'!value || /^\\d*$/.test(value)', message:eci.l10nFacade.localize(MSG_DIGITS)])
+                            ruleList.add([expr:'!value || /^\\d*$/.test(value)', message:MSG_DIGITS])
                             foundNumber = true
                         }
                     } else if ("text-letters".equals(child.getName())) {
                         // TODO: how to handle UTF-8 letters?
-                        ruleList.add([expr:'!value || /^[a-zA-Z]*$/.test(value)', message:eci.l10nFacade.localize(MSG_LETTERS)])
+                        ruleList.add([expr:'!value || /^[a-zA-Z]*$/.test(value)', message:MSG_LETTERS])
                     } else if ("text-email".equals(child.getName())) {
                         // from https://emailregex.com/ - could be looser/simpler for this purpose
                         ruleList.add([expr:'!value || /^(([^<>()\\[\\]\\\\.,;:\\s@"]+(\\.[^<>()\\[\\]\\\\.,;:\\s@"]+)*)|(".+"))@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$/.test(value)',
-                                message:eci.l10nFacade.localize(MSG_EMAIL)])
+                                message:MSG_EMAIL])
                     } else if ("text-url".equals(child.getName())) {
                         // from https://urlregex.com/ - could be looser/simpler for this purpose
                         ruleList.add([expr:'!value || /((([A-Za-z]{3,9}:(?:\\/\\/)?)(?:[\\-;:&=\\+\\$,\\w]+@)?[A-Za-z0-9\\.\\-]+|(?:www\\.|[\\-;:&=\\+\\$,\\w]+@)[A-Za-z0-9\\.\\-]+)((?:\\/[\\+~%\\/\\.\\w\\-_]*)?\\??(?:[\\-\\+=&;%@\\.\\w_]*)#?(?:[\\.\\!\\/\\\\\\w]*))?)/.test(value)',
-                                message:eci.l10nFacade.localize(MSG_URL)])
+                                message:MSG_URL])
                     } else if ("matches".equals(child.getName())) {
                         ruleList.add([expr:'!value || /' + child.attribute("regexp") + '/.test(value)',
-                                message:eci.l10nFacade.localize(child.attribute("message"))])
+                                message:child.attribute("message")])
                     } else if ("number-range".equals(child.getName())) {
                         String minStr = child.attribute("min")
                         String maxStr = child.attribute("max")
@@ -1624,18 +1624,18 @@ class ScreenForm {
                 String type = validateNode.attribute('type')
                 if (!foundNumber && type != null) {
                     if (type.endsWith("BigInteger") || type.endsWith("Long") || type.endsWith("Integer")) {
-                        ruleList.add([expr:VALIDATE_NUMBER_INT, message:eci.l10nFacade.localize(MSG_NUMBER_INT)])
+                        ruleList.add([expr:VALIDATE_NUMBER_INT, message:MSG_NUMBER_INT])
                     } else if (type.endsWith("BigDecimal") || type.endsWith("Double") || type.endsWith("Float") || type.endsWith("Number")) {
-                        ruleList.add([expr:VALIDATE_NUMBER, message:eci.l10nFacade.localize(MSG_NUMBER)])
+                        ruleList.add([expr:VALIDATE_NUMBER, message:MSG_NUMBER])
                     }
                 }
             } else if (validateNode.name == "field") {
                 String type = validateNode.attribute('type')
                 if (type != null && (type.startsWith("number-") || type.startsWith("currency-"))) {
                     if (type.endsWith("integer")) {
-                        ruleList.add([expr:VALIDATE_NUMBER_INT, message:eci.l10nFacade.localize(MSG_NUMBER_INT)])
+                        ruleList.add([expr:VALIDATE_NUMBER_INT, message:MSG_NUMBER_INT])
                     } else {
-                        ruleList.add([expr:VALIDATE_NUMBER, message:eci.l10nFacade.localize(MSG_NUMBER)])
+                        ruleList.add([expr:VALIDATE_NUMBER, message:MSG_NUMBER])
                     }
                 }
                 // bad idea, for create forms with optional PK messes it up: if (fieldNode."@is-pk" == "true") vcs.add("required")
@@ -2538,7 +2538,7 @@ class ScreenForm {
 
             flf = ec.entity.makeValue("moqui.screen.form.FormListFind")
             flf.formLocation = formLocation
-            flf.description = cs._findDescription ?: "${ec.user.username} - ${ec.l10n.format(ec.user.nowTimestamp, "yyyy-MM-dd HH:mm")}"
+            flf.description = cs._findDescription ?: "${ec.user.username} - ${ec.user.nowTimestamp}"
             if (cs.orderByField) flf.orderByField = cs.orderByField
             if (formConfig != null) flf.formConfigId = formConfig.formConfigId
             flf.setSequencedIdPrimary()

@@ -161,10 +161,8 @@ public class ParameterInfo {
                 case DOUBLE:
                 case BIG_DECIMAL:
                 case BIG_INTEGER:
-                    BigDecimal bdVal = eci.l10nFacade.parseNumber(valueStr, format);
+                    BigDecimal bdVal = new BigDecimal(valueStr);
                     if (bdVal == null) {
-                        eci.messageFacade.addValidationError(null, namePrefix + name, serviceName,
-                                MessageFormat.format(eci.getL10n().localize("Value entered ({0}) could not be converted to a {1}{2,choice,0#|1# using format [}{3}{2,choice,0#|1#]}"),valueStr,type,(format != null ? 1 : 0),(format == null ? "" : format)), null);
                     } else {
                         switch (parmType) {
                             case INTEGER: converted = bdVal.intValue(); break;
@@ -177,19 +175,13 @@ public class ParameterInfo {
                     }
                     break;
                 case TIME:
-                    converted = eci.l10nFacade.parseTime(valueStr, format);
-                    if (converted == null) eci.messageFacade.addValidationError(null, namePrefix + name,
-                            serviceName, MessageFormat.format(eci.getL10n().localize("Value entered ({0}) could not be converted to a {1}{2,choice,0#|1# using format [}{3}{2,choice,0#|1#]}"),valueStr,type,(format != null ? 1 : 0),(format == null ? "" : format)), null);
+                    converted = valueStr;
                     break;
                 case DATE:
-                    converted = eci.l10nFacade.parseDate(valueStr, format);
-                    if (converted == null) eci.messageFacade.addValidationError(null, namePrefix + name,
-                            serviceName, MessageFormat.format(eci.getL10n().localize("Value entered ({0}) could not be converted to a {1}{2,choice,0#|1# using format [}{3}{2,choice,0#|1#]}"),valueStr,type,(format != null ? 1 : 0),(format == null ? "" : format)), null);
+                    converted = valueStr;
                     break;
                 case TIMESTAMP:
-                    converted = eci.l10nFacade.parseTimestamp(valueStr, format);
-                    if (converted == null) eci.messageFacade.addValidationError(null, namePrefix + name,
-                            serviceName, MessageFormat.format(eci.getL10n().localize("Value entered ({0}) could not be converted to a {1}{2,choice,0#|1# using format [}{3}{2,choice,0#|1#]}"),valueStr,type,(format != null ? 1 : 0),(format == null ? "" : format)), null);
+                    converted = valueStr;
                     break;
                 case LIST:
                     // strip off square braces
@@ -284,7 +276,6 @@ public class ParameterInfo {
                 return Jsoup.clean(parameterValue, "", Safelist.relaxed(), outputSettings);
             } else {
                 // check for "<"; this will protect against HTML/JavaScript injection
-                eci.getMessage().addValidationError(null, namePrefix + name, sd.serviceName, eci.getL10n().localize("HTML not allowed including less-than (<), greater-than (>), etc symbols"), null);
             }
         }
 

@@ -489,8 +489,6 @@ public class ServiceDefinition {
                     }
                 }
                 // if required and still empty (nothing from default), complain
-                if (parameterIsEmpty && validate && parameterInfo.required)
-                    eci.messageFacade.addValidationError(null, namePrefix + parameterName, serviceName, eci.getL10n().localize("Field cannot be empty"), null);
             }
             // NOTE: not else because parameterIsEmpty may be changed
             if (!parameterIsEmpty) {
@@ -739,7 +737,6 @@ public class ServiceDefinition {
             Calendar cal;
             String format = valNode.attribute("format");
             if (pv instanceof CharSequence) {
-                cal = eci.getL10n().parseDateTime(pv.toString(), format);
             } else {
                 // try letting groovy convert it
                 cal = Calendar.getInstance();
@@ -752,14 +749,7 @@ public class ServiceDefinition {
                 // handle after date/time/date-time depending on type of parameter, support "now" too
                 Calendar compareCal;
                 if ("now".equals(after)) {
-                    compareCal = eci.getL10n().parseDateTime(eci.getL10n().format(eci.getUser().getNowTimestamp(), format), format);
                 } else {
-                    compareCal = eci.getL10n().parseDateTime(after, format);
-                }
-                if (cal != null && cal.compareTo(compareCal) < 0) {
-                    Map<String, Object> map = new HashMap<>(2); map.put("pv", pv); map.put("after", after);
-                    eci.getMessage().addValidationError(null, parameterName, serviceName, eci.getResource().expand("Value entered (${pv}) is before ${after}.", "", map), null);
-                    return false;
                 }
             }
 
@@ -768,14 +758,7 @@ public class ServiceDefinition {
                 // handle after date/time/date-time depending on type of parameter, support "now" too
                 Calendar compareCal;
                 if ("now".equals(before)) {
-                    compareCal = eci.getL10n().parseDateTime(eci.getL10n().format(eci.getUser().getNowTimestamp(), format), format);
                 } else {
-                    compareCal = eci.getL10n().parseDateTime(before, format);
-                }
-                if (cal != null && cal.compareTo(compareCal) > 0) {
-                    Map<String, Object> map = new HashMap<>(1); map.put("pv", pv);
-                    eci.getMessage().addValidationError(null, parameterName, serviceName, eci.getResource().expand("Value entered (${pv}) is after ${before}.", "", map), null);
-                    return false;
                 }
             }
 

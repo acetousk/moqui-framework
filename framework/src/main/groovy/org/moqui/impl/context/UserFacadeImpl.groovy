@@ -472,8 +472,7 @@ class UserFacadeImpl implements UserFacade {
     @Override ArrayList<Timestamp> getPeriodRange(String period, String poffset) { return getPeriodRange(period, poffset, null) }
     @Override ArrayList<Timestamp> getPeriodRange(String period, String poffset, String pdate) {
         int offset = (poffset ?: "0") as int
-        java.sql.Date sqlDate = (pdate != null && !pdate.isEmpty()) ? eci.l10nFacade.parseDate(pdate, null) : null
-        return getPeriodRange(period, offset, sqlDate)
+        return getPeriodRange(period, offset, null)
     }
     @Override ArrayList<Timestamp> getPeriodRange(String period, int offset, java.sql.Date sqlDate) {
         period = (period ?: "day").toLowerCase()
@@ -570,29 +569,11 @@ class UserFacadeImpl implements UserFacade {
     @Override String getPeriodDescription(String period, String poffset, String pdate) {
         ArrayList<Timestamp> rangeList = getPeriodRange(period, poffset, pdate)
         StringBuilder desc = new StringBuilder()
-        if (poffset == "0") desc.append(eci.getL10n().localize("This"))
-        else if (poffset == "-1") desc.append(eci.getL10n().localize("Last"))
-        else if (poffset == "1") desc.append(eci.getL10n().localize("Next"))
-        else desc.append(poffset)
+        desc.append(poffset)
         desc.append(' ')
 
-        if (period == "day") desc.append(eci.getL10n().localize("Day"))
-        else if (period == "7d") desc.append('7 ').append(eci.getL10n().localize("Days"))
-        else if (period == "30d") desc.append('30 ').append(eci.getL10n().localize("Days"))
-        else if (period == "week") desc.append(eci.getL10n().localize("Week"))
-        else if (period == "weeks") desc.append(eci.getL10n().localize("Weeks"))
-        else if (period == "month") desc.append(eci.getL10n().localize("Month"))
-        else if (period == "months") desc.append(eci.getL10n().localize("Months"))
-        else if (period == "quarter") desc.append(eci.getL10n().localize("Quarter"))
-        else if (period == "year") desc.append(eci.getL10n().localize("Year"))
-        else if (period == "7r") desc.append("+/-7d")
+        if (period == "7r") desc.append("+/-7d")
         else if (period == "30r") desc.append("+/-30d")
-
-        if (pdate) desc.append(" ").append(eci.getL10n().localize("from##period")).append(" ").append(pdate)
-
-        desc.append(" (").append(eci.l10n.format(rangeList[0], 'yyyy-MM-dd')).append(' ')
-                .append(eci.getL10n().localize("to##period")).append(' ')
-                .append(eci.l10n.format(rangeList[1] - 1, 'yyyy-MM-dd')).append(')')
 
         return desc.toString()
     }
@@ -606,23 +587,9 @@ class UserFacadeImpl implements UserFacade {
             rangeList.add(null); rangeList.add(null)
 
             Object fromValue = inputFieldsMap.get(baseName + "_from")
-            if (fromValue && fromValue instanceof CharSequence) {
-                if (fromValue.length() < 12)
-                    rangeList.set(0, eci.l10nFacade.parseTimestamp(fromValue.toString() + " 00:00:00.000", "yyyy-MM-dd HH:mm:ss.SSS"))
-                else
-                    rangeList.set(0, eci.l10nFacade.parseTimestamp(fromValue.toString(), null))
-            } else if (fromValue instanceof Timestamp) {
-                rangeList.set(0, (Timestamp) fromValue)
-            }
+            rangeList.set(0, (Timestamp) fromValue)
             Object thruValue = inputFieldsMap.get(baseName + "_thru")
-            if (thruValue && thruValue instanceof CharSequence) {
-                if (thruValue.length() < 12)
-                    rangeList.set(1, eci.l10nFacade.parseTimestamp(thruValue.toString() + " 23:59:59.999", "yyyy-MM-dd HH:mm:ss.SSS"))
-                else
-                    rangeList.set(1, eci.l10nFacade.parseTimestamp(thruValue.toString(), null))
-            } else if (thruValue instanceof Timestamp) {
-                rangeList.set(1, (Timestamp) thruValue)
-            }
+            rangeList.set(1, (Timestamp) thruValue)
 
             return rangeList
         }
@@ -632,11 +599,9 @@ class UserFacadeImpl implements UserFacade {
 
     @Override boolean loginUser(String username, String password) {
         if (username == null || username.isEmpty()) {
-            eci.messageFacade.addError(eci.l10n.localize("No username specified"))
             return false
         }
         if (password == null || password.isEmpty()) {
-            eci.messageFacade.addError(eci.l10n.localize("No password specified"))
             return false
         }
 
@@ -651,7 +616,6 @@ class UserFacadeImpl implements UserFacade {
     boolean internalLoginUser(String username) { return internalLoginUser(username, true) }
     boolean internalLoginUser(String username, boolean saveHistory) {
         if (username == null || username.isEmpty()) {
-            eci.message.addError(eci.l10n.localize("No username specified"))
             return false
         }
 
@@ -747,7 +711,6 @@ class UserFacadeImpl implements UserFacade {
 
     @Override boolean loginUserKey(String loginKey) {
         if (!loginKey) {
-            eci.message.addError(eci.l10n.localize("No login key specified"))
             return false
         }
 
@@ -758,7 +721,6 @@ class UserFacadeImpl implements UserFacade {
 
         // see if we found a record for the login key
         if (userLoginKey == null) {
-            eci.message.addError(eci.l10n.localize("Login key not valid"))
             return false
         }
 
@@ -766,7 +728,6 @@ class UserFacadeImpl implements UserFacade {
         Timestamp nowDate = getNowTimestamp()
         Timestamp thruDate = userLoginKey.getTimestamp("thruDate")
         if (thruDate != (Timestamp) null && nowDate > thruDate) {
-            eci.message.addError(eci.l10n.localize("Login key expired"))
             return false
         }
 

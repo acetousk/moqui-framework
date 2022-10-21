@@ -53,7 +53,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     public final UserFacadeImpl userFacade;
     public final MessageFacadeImpl messageFacade;
     public final ArtifactExecutionFacadeImpl artifactExecutionFacade;
-    public final L10nFacadeImpl l10nFacade;
 
     // local references to ECFI fields
     public final CacheFacadeImpl cacheFacade;
@@ -84,7 +83,6 @@ public class ExecutionContextImpl implements ExecutionContext {
         userFacade = new UserFacadeImpl(this);
         messageFacade = new MessageFacadeImpl();
         artifactExecutionFacade = new ArtifactExecutionFacadeImpl(this);
-        l10nFacade = new L10nFacadeImpl(this);
 
         cacheFacade = ecfi.cacheFacade;
         loggerFacade = ecfi.loggerFacade;
@@ -130,7 +128,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     @Override public @Nonnull UserFacade getUser() { return userFacade; }
     @Override public @Nonnull MessageFacade getMessage() { return messageFacade; }
     @Override public @Nonnull ArtifactExecutionFacade getArtifactExecution() { return artifactExecutionFacade; }
-    @Override public @Nonnull L10nFacade getL10n() { return l10nFacade; }
     @Override public @Nonnull ResourceFacade getResource() { return resourceFacade; }
     @Override public @Nonnull LoggerFacade getLogger() { return loggerFacade; }
     @Override public @Nonnull CacheFacade getCache() { return cacheFacade; }

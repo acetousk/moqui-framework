@@ -1480,14 +1480,14 @@ class ScreenRenderImpl implements ScreenRender {
         Object obj = getFieldValue(fieldNodeWrapper, defaultValue)
         if (obj == null) return ""
         if (obj instanceof CharSequence) return obj.toString()
-        String strValue = ec.l10nFacade.format(obj, format)
+        String strValue = obj
         return strValue
     }
     String getFieldValueString(MNode fieldNodeWrapper, String defaultValue, String format) {
         Object obj = getFieldValue(fieldNodeWrapper, defaultValue)
         if (obj == null) return ""
         if (obj instanceof String) return (String) obj
-        String strValue = ec.l10nFacade.format(obj, format)
+        String strValue = obj
         return strValue
     }
     String getFieldValuePlainString(MNode fieldNodeWrapper, String defaultValue) {
@@ -1802,9 +1802,9 @@ class ScreenRenderImpl implements ScreenRender {
                         fieldValue = ec.resourceFacade.expand(textAttr, null)
                     }
                     if (currencyAttr != null && !currencyAttr.isEmpty())
-                        fieldValue = ec.l10nFacade.formatCurrency(fieldValue, ec.resourceFacade.expression(currencyAttr, null) as String)
+                        fieldValue = fieldValue
                 } else if (currencyAttr != null && !currencyAttr.isEmpty()) {
-                    fieldValue = ec.l10nFacade.formatCurrency(getFieldValue(fieldNode, ""), ec.resourceFacade.expression(currencyAttr, null) as String)
+                    fieldValue = getFieldValue(fieldNode, "")
                 } else {
                     fieldValue = getFieldValueString(widgetNode)
                 }
@@ -1836,8 +1836,8 @@ class ScreenRenderImpl implements ScreenRender {
             } else if ("date-find".equals(widgetName)) {
                 String type = widgetNode.attribute("type")
                 String defaultFormat = "date".equals(type) ? "yyyy-MM-dd" : ("time".equals(type) ? "HH:mm" : "yyyy-MM-dd HH:mm")
-                String fieldValueFrom = ec.l10nFacade.format(ec.contextStack.getByString(fieldName + "_from") ?: widgetNode.attribute("default-value-from"), defaultFormat)
-                String fieldValueThru = ec.l10nFacade.format(ec.contextStack.getByString(fieldName + "_thru") ?: widgetNode.attribute("default-value-thru"), defaultFormat)
+                String fieldValueFrom = ec.contextStack.getByString(fieldName + "_from") ?: widgetNode.attribute("default-value-from")
+                String fieldValueThru = ec.contextStack.getByString(fieldName + "_thru") ?: widgetNode.attribute("default-value-thru")
                 fieldValues.put(fieldName + "_from", fieldValueFrom)
                 fieldValues.put(fieldName + "_thru", fieldValueThru)
             } else if ("date-period".equals(widgetName)) {

@@ -478,7 +478,7 @@ class ScreenDefinition {
             menuName = prettyName.toString()
         }
 
-        return ecfi.getEci().l10nFacade.localize(menuName)
+        return menuName
     }
 
     /** Get macro template location specific to screen from marco-template elements */
@@ -971,7 +971,7 @@ class ScreenDefinition {
                                     String fieldString = fieldValue.toString()
                                     if (fieldString.contains("<")) {
                                         ec.messageFacade.addValidationError(null, fieldName, singleServiceName,
-                                                ec.getL10n().localize("HTML not allowed including less-than (<), greater-than (>), etc symbols"), null)
+                                                "HTML not allowed including less-than (<), greater-than (>), etc symbols", null)
                                     }
                                 }
                             }
