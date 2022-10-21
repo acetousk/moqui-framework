@@ -155,7 +155,6 @@ class MoquiShiroRealm implements Realm, Authorizer {
         }
 
         // check ipAllowed if on UserAccount or any UserGroup a member of
-        }
 
         // no more auth failures? record the various account state updates, hasLoggedOut=N
         if (newUserAccount.getNoCheckSimple("successiveFailedLogins") || "Y".equals(newUserAccount.getNoCheckSimple("disabled")) ||
@@ -248,7 +247,7 @@ class MoquiShiroRealm implements Realm, Authorizer {
         return cm.doCredentialsMatch(token, info)
     }
 
-    static class ForceLoginToken extends UsernamePasswordToken {
+    class ForceLoginToken extends UsernamePasswordToken {
         boolean saveHistory = true
         ForceLoginToken(final String username, final boolean rememberMe) {
             super (username, 'force', rememberMe)
