@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -91,7 +91,7 @@ class ScheduledJobRunner implements Runnable {
         ExecutionContextImpl eci = ecfi.getEci()
         eci.artifactExecution.disableAuthz()
         EntityFacadeImpl efi = ecfi.entityFacade
-        ThreadPoolExecutor jobWorkerPool = ecfi.serviceFacade.jobWorkerPool
+        ThreadPoolExecutor jobWorkerPool = null
         try {
             // make sure no transaction is in place, shouldn't be any so try to commit if there is one
             if (ecfi.transactionFacade.isTransactionInPlace()) {
@@ -131,9 +131,6 @@ class ScheduledJobRunner implements Runnable {
                     long runCount = efi.find("moqui.service.job.ServiceJobRun").condition("jobName", jobName).useCache(false).count()
                     if (runCount >= repeatCount) {
                         // pause the job and set thruDate for faster future filtering
-                        ecfi.service.sync().name("update", "moqui.service.job.ServiceJob")
-                                .parameters([jobName: jobName, paused:'Y', thruDate:nowTimestamp] as Map<String, Object>)
-                                .disableAuthz().call()
                         continue
                     }
                 }
@@ -229,7 +226,7 @@ class ScheduledJobRunner implements Runnable {
                 }
 
                 // at this point jobRunId and serviceJobRunLock should not be null
-                ServiceCallJobImpl serviceCallJob = new ServiceCallJobImpl(jobName, ecfi.serviceFacade)
+                ServiceCallJobImpl serviceCallJob = null
                 // use the job run we created
                 serviceCallJob.withJobRunId(jobRunId)
                 serviceCallJob.withLastRunTime(lastRunTime)

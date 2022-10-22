@@ -20,7 +20,6 @@ import java.util.concurrent.Future;
 import groovy.lang.Closure;
 import org.moqui.entity.EntityFacade;
 import org.moqui.screen.ScreenFacade;
-import org.moqui.service.ServiceFacade;
 import org.moqui.util.ContextBinding;
 import org.moqui.util.ContextStack;
 
@@ -87,7 +86,6 @@ public interface ExecutionContext {
     @Nonnull ElasticFacade getElastic();
 
     /** For calling services (local or remote, sync or async or scheduled). */
-    @Nonnull ServiceFacade getService();
 
     /** For rendering screens for general use (mostly for things other than web pages or web page snippets). */
     @Nonnull ScreenFacade getScreen();

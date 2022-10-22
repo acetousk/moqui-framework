@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -304,19 +304,12 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
                 if (tfi.isTransactionInPlace()) suspendedTransaction = tfi.suspend()
                 boolean beganTransaction = tfi.begin(null)
                 try {
-                    Map createResult = ecfi.service.sync().name("create", "moqui.security.user.NotificationMessage")
-                            .parameters([topic:this.topic, userGroupId:this.userGroupId, sentDate:this.sentDate,
-                                    messageJson:this.getMessageJson(), titleText:this.getTitle(), linkText:this.getLink(),
-                                    typeString:this.getType(), showAlert:(this.showAlert ? 'Y' : 'N')])
-                            .disableAuthz().call()
+                    Map createResult = null
                     // if it's null we got an error so return from closure
                     if (createResult == null) return
 
                     this.setNotificationMessageId((String) createResult.notificationMessageId)
-                    for (String userId in this.getNotifyUserIds())
-                        ecfi.service.sync().name("create", "moqui.security.user.NotificationMessageUser")
-                                .parameters([notificationMessageId:createResult.notificationMessageId, userId:userId])
-                                .disableAuthz().call()
+
                 } catch (Throwable t) {
                     tfi.rollback(beganTransaction, "Error saving NotificationMessage", t)
                     throw t
@@ -379,9 +372,7 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
                 String emailAddress = userAccount?.emailAddress
                 if (emailAddress) {
                     // FUTURE: if there is an option to create EmailMessage record also configure emailTypeEnumId (maybe if emailTypeEnumId is set create EmailMessage)
-                    Map<String, Object> sendOut = ecfi.serviceFacade.sync().name("org.moqui.impl.EmailServices.send#EmailTemplate")
-                            .parameters([emailTemplateId:localEmailTemplateId, toAddresses:emailAddress,
-                                    bodyParameters:wrappedMessageMap, toUserId:userId, createEmailMessage:isEmailMessageSave()]).call()
+                    Map<String, Object> sendOut = null
                     String emailMessageId = (String) sendOut.emailMessageId
                     if (emailMessageId) {
                         if (emailMessageIdByUserId == null) emailMessageIdByUserId = new HashMap<String, String>()
@@ -389,10 +380,6 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
                         String notificationMessageId = getNotificationMessageId()
                         if (notificationMessageId) {
                             // use store to update if was created above or create if not
-                            ecfi.service.sync().name("store", "moqui.security.user.NotificationMessageUser")
-                                    .parameters([notificationMessageId:notificationMessageId, userId:userId,
-                                            emailMessageId:emailMessageId, sentDate:new Timestamp(System.currentTimeMillis())])
-                                    .disableAuthz().call()
                         }
                     }
                 }

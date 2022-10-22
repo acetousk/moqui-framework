@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -30,7 +30,6 @@ import org.moqui.entity.EntityValue
 import org.moqui.impl.context.ExecutionContextImpl
 import org.moqui.impl.service.ServiceCallSyncImpl
 import org.moqui.impl.service.ServiceDefinition
-import org.moqui.impl.service.ServiceFacadeImpl
 import org.moqui.impl.service.runner.EntityAutoServiceRunner
 import org.moqui.service.ServiceCallSync
 import org.moqui.util.MNode
@@ -51,8 +50,6 @@ class EntityDataLoaderImpl implements EntityDataLoader {
     protected final static Logger logger = LoggerFactory.getLogger(EntityDataLoaderImpl.class)
 
     protected EntityFacadeImpl efi
-    protected ServiceFacadeImpl sfi
-
     // NOTE: these are Groovy Beans style with no access modifier, results in private fields with implicit getters/setters
 
     List<String> locationList = new LinkedList<String>()
@@ -82,7 +79,6 @@ class EntityDataLoaderImpl implements EntityDataLoader {
 
     EntityDataLoaderImpl(EntityFacadeImpl efi) {
         this.efi = efi
-        this.sfi = efi.ecfi.serviceFacade
     }
 
     EntityFacadeImpl getEfi() { return efi }
@@ -117,7 +113,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
     @Override EntityDataLoader csvQuoteChar(char quoteChar) { this.csvQuoteChar = quoteChar; return this }
 
     @Override EntityDataLoader csvEntityName(String entityName) {
-        if (!efi.isEntityDefined(entityName) && !sfi.isServiceDefined(entityName))
+        if (!efi.isEntityDefined(entityName))
             throw new IllegalArgumentException("Name ${entityName} is not a valid entity or service name")
         this.csvEntityName = entityName
         return this
@@ -509,17 +505,14 @@ class EntityDataLoaderImpl implements EntityDataLoader {
             messageList.add("Doing check only so not calling service [${scs.getServiceName()}] with parameters ${scs.getCurrentParameters()}".toString()) }
     }
     static class LoadValueHandler extends ValueHandler {
-        protected ServiceFacadeImpl sfi
         protected ExecutionContextImpl ec
 
         LoadValueHandler(EntityDataLoaderImpl edli) {
             super(edli)
-            sfi = edli.getEfi().ecfi.serviceFacade
             ec = edli.getEfi().ecfi.getEci()
         }
         LoadValueHandler(EntityDataLoaderImpl edli, List<String> messages) {
             super(edli)
-            sfi = edli.getEfi().ecfi.serviceFacade
             ec = edli.getEfi().ecfi.getEci()
             messageList = messages
         }
@@ -763,14 +756,6 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                     currentEntityDef = edli.efi.getEntityDefinition(elementName)
                     // logger.warn("Found entity ${currentEntityDef.getFullEntityName()} for ${entityName}")
                     rootValueMap = getAttributesMap(attributes, currentEntityDef)
-                } else if (edli.sfi.isServiceDefined(elementName)) {
-                    currentServiceDef = edli.sfi.getServiceDefinition(elementName)
-                    if (currentServiceDef == null) {
-                        int hashIndex = elementName.indexOf('#')
-                        entityOperation = elementName.substring(0, hashIndex)
-                        currentEntityDef = edli.efi.getEntityDefinition(elementName.substring(hashIndex + 1))
-                    }
-                    rootValueMap = getAttributesMap(attributes, null)
                 } else {
                     throw new SAXException("Found element [${qName}] name, transformed to [${elementName}], that is not a valid entity name or service name (file ${location} line ${locator?.lineNumber})")
                 }
@@ -873,7 +858,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                         }
                     } else {
                         try {
-                            ServiceCallSync currentScs = edli.sfi.sync().name(entityOperation, currentEntityDef.getFullEntityName()).parameters(valueMap)
+                            ServiceCallSync currentScs = null
                             valueHandler.handleService(currentScs, location)
                             valuesRead++
                         } catch (Exception e) {
@@ -885,7 +870,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                     }
                 } else if (currentServiceDef != null) {
                     try {
-                        ServiceCallSync currentScs = edli.sfi.sync().name(currentServiceDef.serviceName).parameters(valueMap)
+                        ServiceCallSync currentScs = null
                         valueHandler.handleService(currentScs, location)
                         valuesRead++
                     } catch (Exception e) {
@@ -937,14 +922,12 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                 entityName = edli.csvEntityName
                 // NOTE: when csvEntityName set it is checked to make sure it is a valid entity or service name, so
                 //     just check to see if it is a service
-                isService = edli.sfi.isServiceDefined(entityName)
+                isService = null
             } else {
                 CSVRecord firstLineRecord = iterator.next()
                 entityName = firstLineRecord.get(0)
                 if (edli.efi.isEntityDefined(entityName)) {
                     isService = false
-                } else if (edli.sfi.isServiceDefined(entityName)) {
-                    isService = true
                 } else {
                     throw new BaseException("CSV first line first field [${entityName}] is not a valid entity name or service name")
                 }
@@ -974,7 +957,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                 CSVRecord record = iterator.next()
                 // logger.warn("======== CSV record: ${record.toString()}")
                 if (isService) {
-                    ServiceCallSyncImpl currentScs = (ServiceCallSyncImpl) edli.sfi.sync().name(entityName)
+                    ServiceCallSyncImpl currentScs = null
                     if (edli.defaultValues) currentScs.parameters(edli.defaultValues)
                     for (Map.Entry<String, Integer> header in headerMap) {
                         // if not enough elements in the record for the index, skip it
@@ -1092,14 +1075,12 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                 boolean isService
                 if (edli.efi.isEntityDefined(entityName)) {
                     isService = false
-                } else if (edli.sfi.isServiceDefined(entityName)) {
-                    isService = true
                 } else {
                     throw new BaseException("JSON _entity value [${entityName}] is not a valid entity name or service name")
                 }
 
                 if (isService) {
-                    ServiceCallSyncImpl currentScs = (ServiceCallSyncImpl) edli.sfi.sync().name(entityName).parameters(value)
+                    ServiceCallSyncImpl currentScs = (ServiceCallSyncImpl) null
                     valueHandler.handleService(currentScs, location)
                     valuesRead++
                 } else {

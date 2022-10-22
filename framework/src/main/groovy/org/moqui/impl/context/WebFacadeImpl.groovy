@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -1067,7 +1067,7 @@ class WebFacadeImpl implements WebFacade {
                     parmStack.putAll((Map) bodyListObj)
                     eci.contextStack.push(parmStack)
 
-                    RestApi.RestResult restResult = eci.serviceFacade.restApi.run(extraPathNameList, eci)
+                    RestApi.RestResult restResult = null
                     responseList.add(restResult.responseObj ?: [:])
 
                     eci.contextStack.pop()
@@ -1086,7 +1086,7 @@ class WebFacadeImpl implements WebFacade {
                 }
             } else {
                 eci.contextStack.push(parmStack)
-                RestApi.RestResult restResult = eci.serviceFacade.restApi.run(extraPathNameList, eci)
+                RestApi.RestResult restResult = null
                 eci.contextStack.pop()
                 response.addIntHeader('X-Run-Time-ms', (System.currentTimeMillis() - startTime) as int)
                 restResult.setHeaders(response)
@@ -1219,9 +1219,7 @@ class WebFacadeImpl implements WebFacade {
             }
 
             // NOTE: called with disableAuthz() since we do an authz check before when needed
-            Map<String, Object> result = eci.serviceFacade.sync().name("org.moqui.impl.SystemMessageServices.receive#IncomingSystemMessage")
-                    .parameter("systemMessageTypeId", systemMessageTypeId).parameter("systemMessageRemoteId", systemMessageRemoteId)
-                    .parameter("remoteMessageId", remoteMessageId).parameter("messageText", messageText).disableAuthz().call()
+            Map<String, Object> result = null
 
             if (eci.messageFacade.hasError()) {
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, eci.messageFacade.getErrorsString())
@@ -1333,8 +1331,6 @@ class WebFacadeImpl implements WebFacade {
                 if (emailMessage == null) {
                     logger.warn("Tried to mark EmailMessage ${emailMessageId} viewed but not found")
                 } else if (!"ES_VIEWED".equals(emailMessage.statusId)) {
-                    eci.service.sync().name("update#moqui.basic.email.EmailMessage").parameter("emailMessageId", emailMessageId)
-                            .parameter("statusId", "ES_VIEWED").parameter("receivedDate", eci.user.nowTimestamp).disableAuthz().call()
                 }
             }
         } catch (Throwable t) {

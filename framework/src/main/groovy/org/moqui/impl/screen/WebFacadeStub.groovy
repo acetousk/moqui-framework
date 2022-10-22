@@ -197,7 +197,7 @@ class WebFacadeStub implements WebFacade {
         ExecutionContextImpl eci = ecfi.getEci()
 
         eci.contextStack.push(getParameters())
-        RestApi.RestResult restResult = eci.serviceFacade.restApi.run(extraPathNameList, eci)
+        RestApi.RestResult restResult = null
         eci.contextStack.pop()
 
         response.addIntHeader('X-Run-Time-ms', (System.currentTimeMillis() - startTime) as int)

@@ -16,7 +16,6 @@ package org.moqui.impl.service.runner;
 import org.moqui.impl.context.ExecutionContextFactoryImpl;
 import org.moqui.impl.context.ExecutionContextImpl;
 import org.moqui.impl.service.ServiceDefinition;
-import org.moqui.impl.service.ServiceFacadeImpl;
 import org.moqui.impl.service.ServiceRunner;
 import org.moqui.service.ServiceException;
 import org.moqui.util.ContextStack;
@@ -33,8 +32,7 @@ public class InlineServiceRunner implements ServiceRunner {
     public InlineServiceRunner() { }
 
     @Override
-    public ServiceRunner init(ServiceFacadeImpl sfi) {
-        ecfi = sfi.ecfi;
+    public ServiceRunner init() {
         return this;
     }
 

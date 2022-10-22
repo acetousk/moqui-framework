@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -348,9 +348,7 @@ class ArtifactExecutionFacadeImpl implements ArtifactExecutionFacade {
                 ArtifactExecutionInfo.AuthzType authzType = aacv.authzType
                 String authzServiceName = aacv.authzServiceName
                 if (authzServiceName != null && authzServiceName.length() > 0) {
-                    Map result = eci.getService().sync().name(authzServiceName)
-                            .parameters([userId:userId, authzActionEnumId:aeii.getActionEnum().name(),
-                            artifactTypeEnumId:artifactTypeEnum.name(), artifactName:aeii.getName()]).call()
+                    Map result = null
                     if (result?.authzTypeEnumId) authzType = ArtifactExecutionInfo.AuthzType.valueOf((String) result.authzTypeEnumId)
                 }
 
@@ -393,10 +391,6 @@ class ArtifactExecutionFacadeImpl implements ArtifactExecutionFacade {
                 for (warnAei in this.stack) warning.append("\n").append(warnAei.toString())
                 logger.warn(warning.toString())
 
-                eci.getService().sync().name("create", "moqui.security.ArtifactAuthzFailure").parameters(
-                        [artifactName:aeii.getName(), artifactTypeEnumId:artifactTypeEnum.name(),
-                        authzActionEnumId:aeii.getActionEnum().name(), userId:userId,
-                        failureDate:new Timestamp(System.currentTimeMillis()), isDeny:"Y"]).disableAuthz().call()
 
                 return false
             }
@@ -444,10 +438,7 @@ class ArtifactExecutionFacadeImpl implements ArtifactExecutionFacade {
                 try {
                     // NOTE: this is called sync because failures should be rare and not as performance sensitive, and
                     //    because this is still in a disableAuthz block (if async a service would have to be written for that)
-                    eci.service.sync().name("create", "moqui.security.ArtifactAuthzFailure").parameters(
-                            [artifactName:aeii.getName(), artifactTypeEnumId:artifactTypeEnum.name(),
-                             authzActionEnumId:aeii.getActionEnum().name(), userId:userId,
-                             failureDate:new Timestamp(System.currentTimeMillis()), isDeny:"N"]).call()
+
                 } finally {
                     if (!alreadyDisabled) enableAuthz()
                 }
@@ -532,9 +523,6 @@ class ArtifactExecutionFacadeImpl implements ArtifactExecutionFacade {
             }
             // record the tarpit lock
             if (lockForSeconds > 0L) {
-                eci.getService().sync().name('create', 'moqui.security.ArtifactTarpitLock').parameters(
-                        [userId:userId, artifactName:aeii.getName(), artifactTypeEnumId:artifactTypeEnum.name(),
-                         releaseDateTime:(new Timestamp(checkTime + ((lockForSeconds as BigDecimal) * 1000).intValue()))]).call()
                 eci.tarpitHitCache.remove(tarpitKey)
             }
         } finally {

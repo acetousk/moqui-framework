@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -44,10 +44,8 @@ import org.moqui.impl.context.ContextJavaUtil.CustomScheduledExecutor
 import org.moqui.impl.context.ContextJavaUtil.ScheduledRunnableInfo
 import org.moqui.impl.entity.EntityFacadeImpl
 import org.moqui.impl.screen.ScreenFacadeImpl
-import org.moqui.impl.service.ServiceFacadeImpl
 import org.moqui.impl.webapp.NotificationWebSocketListener
 import org.moqui.screen.ScreenFacade
-import org.moqui.service.ServiceFacade
 import org.moqui.util.MNode
 import org.moqui.resource.ResourceReference
 import org.moqui.util.ObjectUtilities
@@ -81,7 +79,7 @@ import java.util.zip.ZipInputStream
 class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     protected final static Logger logger = LoggerFactory.getLogger(ExecutionContextFactoryImpl.class)
     protected final static boolean isTraceEnabled = logger.isTraceEnabled()
-    
+
     private AtomicBoolean destroyed = new AtomicBoolean(false)
 
     public final long initStartTime
@@ -142,7 +140,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     @SuppressWarnings("GrFinalVariableAccess") public final TransactionFacadeImpl transactionFacade
     @SuppressWarnings("GrFinalVariableAccess") public final EntityFacadeImpl entityFacade
     @SuppressWarnings("GrFinalVariableAccess") public final ElasticFacadeImpl elasticFacade
-    @SuppressWarnings("GrFinalVariableAccess") public final ServiceFacadeImpl serviceFacade
     @SuppressWarnings("GrFinalVariableAccess") public final ScreenFacadeImpl screenFacade
 
     /** The main worker pool for services, running async closures and runnables, etc */
@@ -229,8 +226,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         logger.info("Transaction Facade initialized")
         entityFacade = new EntityFacadeImpl(this)
         logger.info("Entity Facade initialized")
-        serviceFacade = new ServiceFacadeImpl(this)
-        logger.info("Service Facade initialized")
         screenFacade = new ScreenFacadeImpl(this)
         logger.info("Screen Facade initialized")
 
@@ -289,8 +284,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         logger.info("Transaction Facade initialized")
         entityFacade = new EntityFacadeImpl(this)
         logger.info("Entity Facade initialized")
-        serviceFacade = new ServiceFacadeImpl(this)
-        logger.info("Service Facade initialized")
         screenFacade = new ScreenFacadeImpl(this)
         logger.info("Screen Facade initialized")
 
@@ -465,16 +458,14 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
                 workQueue, new ContextJavaUtil.WorkerThreadFactory())
     }
     boolean waitWorkerPoolEmpty(int retryLimit) {
-        ThreadPoolExecutor jobWorkerPool = serviceFacade.jobWorkerPool
         int count = 0
-        logger.warn("Wait for workerPool and jobWorkerPool empty: worker queue size ${workerPool.getQueue().size()} active ${workerPool.getActiveCount()}; service job queue size ${jobWorkerPool.getQueue().size()} active ${jobWorkerPool.getActiveCount()}")
-        while (count < retryLimit && (workerPool.getQueue().size() > 0 || workerPool.getActiveCount() > 0 ||
-                jobWorkerPool.getQueue().size() > 0 || jobWorkerPool.getActiveCount() > 0)) {
+        logger.warn("Wait for workerPool and jobWorkerPool empty: worker queue size ${workerPool.getQueue().size()} active ${workerPool.getActiveCount()}; service job queue size ... active ...")
+        while (count < retryLimit && (workerPool.getQueue().size() > 0 || workerPool.getActiveCount() > 0)) {
             Thread.sleep(100)
             count++
         }
         int afterSize = workerPool.getQueue().size() + workerPool.getActiveCount()
-        int jobAfterSize = jobWorkerPool.getQueue().size() + jobWorkerPool.getActiveCount()
+        int jobAfterSize = 0
         if (afterSize > 0 || jobAfterSize > 0) logger.warn("After ${retryLimit} 100ms waits worker pool size is ${afterSize} and service job pool size is ${jobAfterSize}")
         return afterSize == 0 && jobAfterSize == 0
     }
@@ -587,7 +578,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
 
     private void postFacadeInit() {
         entityFacade.postFacadeInit()
-        serviceFacade.postFacadeInit()
 
         // Warm cache on start if configured to do so
         if (confXmlRoot.first("cache-list").attribute("warm-on-start") != "false") warmCache()
@@ -628,7 +618,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
 
     void warmCache() {
         this.entityFacade.warmCache()
-        this.serviceFacade.warmCache()
         this.screenFacade.warmCache()
     }
 
@@ -833,7 +822,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         */
 
         // this destroy order is important as some use others so must be destroyed first
-        if (this.serviceFacade != null) this.serviceFacade.destroy()
         if (this.elasticFacade != null) this.elasticFacade.destroy()
         if (this.entityFacade != null) this.entityFacade.destroy()
         if (this.transactionFacade != null) this.transactionFacade.destroy()
@@ -1025,7 +1013,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     @Override @Nonnull TransactionFacade getTransaction() { transactionFacade }
     @Override @Nonnull EntityFacade getEntity() { entityFacade }
     @Override @Nonnull ElasticFacade getElastic() { elasticFacade }
-    @Override @Nonnull ServiceFacade getService() { serviceFacade }
     @Override @Nonnull ScreenFacade getScreen() { screenFacade }
 
     @Override @Nonnull ClassLoader getClassLoader() { moquiClassLoader }

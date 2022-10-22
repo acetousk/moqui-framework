@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -32,8 +32,7 @@ class ServiceCallAsyncImpl extends ServiceCallImpl implements ServiceCallAsync {
 
     protected boolean distribute = false
 
-    ServiceCallAsyncImpl(ServiceFacadeImpl sfi) {
-        super(sfi)
+    ServiceCallAsyncImpl() {
     }
 
     @Override
@@ -53,40 +52,32 @@ class ServiceCallAsyncImpl extends ServiceCallImpl implements ServiceCallAsync {
 
     @Override
     void call() {
-        ExecutionContextFactoryImpl ecfi = sfi.ecfi
+        ExecutionContextFactoryImpl ecfi = null
         ExecutionContextImpl eci = ecfi.getEci()
         validateCall(eci)
 
         AsyncServiceRunnable runnable = new AsyncServiceRunnable(eci, serviceName, parameters)
-        if (distribute && sfi.distributedExecutorService != null) {
-            sfi.distributedExecutorService.execute(runnable)
-        } else {
-            ecfi.workerPool.execute(runnable)
-        }
+        ecfi.workerPool.execute(runnable)
     }
 
     @Override
     Future<Map<String, Object>> callFuture() throws ServiceException {
-        ExecutionContextFactoryImpl ecfi = sfi.ecfi
+        ExecutionContextFactoryImpl ecfi = null
         ExecutionContextImpl eci = ecfi.getEci()
         validateCall(eci)
 
         AsyncServiceCallable callable = new AsyncServiceCallable(eci, serviceName, parameters)
-        if (distribute && sfi.distributedExecutorService != null) {
-            return sfi.distributedExecutorService.submit(callable)
-        } else {
-            return ecfi.workerPool.submit(callable)
-        }
+        return ecfi.workerPool.submit(callable)
     }
 
     @Override
     Runnable getRunnable() {
-        return new AsyncServiceRunnable(sfi.ecfi.getEci(), serviceName, parameters)
+        return null
     }
 
     @Override
     Callable<Map<String, Object>> getCallable() {
-        return new AsyncServiceCallable(sfi.ecfi.getEci(), serviceName, parameters)
+        return null
     }
 
     static class AsyncServiceInfo implements Externalizable {
@@ -150,7 +141,7 @@ class ServiceCallAsyncImpl extends ServiceCallImpl implements ServiceCallAsync {
                     threadEci.userFacade.internalLoginUser(threadUsername, false)
 
                 // NOTE: authz is disabled because authz is checked before queueing
-                Map<String, Object> result = threadEci.serviceFacade.sync().name(serviceName).parameters(parameters).disableAuthz().call()
+                Map<String, Object> result = null
                 return result
             } catch (Throwable t) {
                 logger.error("Error in async service", t)

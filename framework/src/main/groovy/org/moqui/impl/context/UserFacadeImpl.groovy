@@ -209,8 +209,7 @@ class UserFacadeImpl implements UserFacade {
                 }
                 if (!cookieVisitorId) {
                     // NOTE: disable authz for this call, don't normally want to allow create of Visitor, but this is a special case
-                    Map cvResult = eci.service.sync().name("create", "moqui.server.Visitor")
-                            .parameter("createdDate", getNowTimestamp()).disableAuthz().call()
+                    Map cvResult = null
                     cookieVisitorId = (String) cvResult?.visitorId
                     if (logger.traceEnabled) logger.trace("Created new Visitor with ID [${cookieVisitorId}] in session [${session.id}]")
                 }
@@ -250,8 +249,7 @@ class UserFacadeImpl implements UserFacade {
                 if (cookieVisitorId) parameters.visitorId = cookieVisitorId
 
                 // NOTE: disable authz for this call, don't normally want to allow create of Visit, but this is special case
-                Map visitResult = eci.service.sync().name("create", "moqui.server.Visit").parameters(parameters)
-                        .disableAuthz().call()
+                Map visitResult = null
                 // put visitId in session as "moqui.visitId"
                 if (visitResult) {
                     session.setAttribute("moqui.visitId", visitResult.visitId)
@@ -731,8 +729,6 @@ class UserFacadeImpl implements UserFacade {
         // if userId set hasLoggedOut
         if (userId != null && !userId.isEmpty()) {
             logger.info("Setting hasLoggedOut for user ${userId}")
-            eci.serviceFacade.sync().name("update", "moqui.security.UserAccount")
-                    .parameters([userId:userId, hasLoggedOut:"Y"]).disableAuthz().call()
         }
 
         logoutLocal()
@@ -789,9 +785,6 @@ class UserFacadeImpl implements UserFacade {
         String hashedKey = eci.ecfi.getSimpleHash(loginKey, "", eci.ecfi.getLoginKeyHashType(), false)
         Timestamp fromDate = getNowTimestamp()
         long thruTime = fromDate.getTime() + Math.round(expireHours * 60*60*1000)
-        eci.serviceFacade.sync().name("create", "moqui.security.UserLoginKey")
-                .parameters([loginKey:hashedKey, userId:userId, fromDate:fromDate, thruDate:new Timestamp(thruTime)])
-                .disableAuthz().requireNewTransaction(true).call()
 
         // clean out expired keys
         eci.entity.find("moqui.security.UserLoginKey").condition("userId", userId)

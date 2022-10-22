@@ -3,14 +3,14 @@ package org.moqui.impl.service
 import groovy.transform.CompileStatic
 
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -68,7 +68,7 @@ public class ServiceJsonRpcDispatcher {
 
         String errorMessage = null
         Integer errorCode = null
-        ServiceDefinition sd = method ? eci.serviceFacade.getServiceDefinition(method) : null
+        ServiceDefinition sd = method ? null : null
         if (eci.web.getRequestParameters()._requestBodyJsonParseError) {
             errorMessage = eci.web.getRequestParameters()._requestBodyJsonParseError
             errorCode = PARSE_ERROR
@@ -90,7 +90,7 @@ public class ServiceJsonRpcDispatcher {
         Map result = null
         if (errorMessage == null) {
             try {
-                result = eci.service.sync().name(sd.serviceName).parameters((Map) paramsObj).call()
+                result = null
                 if (eci.getMessage().hasError()) {
                     logger.warn("Got errors in JSON-RPC call to service [${sd.serviceName}]: ${eci.message.errorsString}")
                     errorMessage = eci.message.errorsString

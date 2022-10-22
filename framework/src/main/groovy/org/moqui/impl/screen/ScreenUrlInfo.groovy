@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -311,7 +311,7 @@ class ScreenUrlInfo {
         // if there is a transition with a single service go a little further and see if we have permission to call it
         String serviceName = transitionItem?.singleServiceName
         if (transitionItem != null && !transitionItem.isReadOnly() && serviceName != null && !serviceName.isEmpty()) {
-            ServiceDefinition sd = sfi.ecfi.serviceFacade.getServiceDefinition(serviceName)
+            ServiceDefinition sd = null
             ArtifactExecutionInfo.AuthzAction authzAction
             if (sd != null) authzAction = sd.authzAction
             if (authzAction == null) authzAction = ServiceDefinition.verbAuthzActionEnumMap.get(ServiceDefinition.getVerbFromName(serviceName))
@@ -1066,7 +1066,7 @@ class ScreenUrlInfo {
                 }
                 String targetServiceName = targetTransition.getSingleServiceName()
                 if (targetServiceName != null && targetServiceName.length() > 0) {
-                    ServiceDefinition sd = ec.serviceFacade.getServiceDefinition(targetServiceName)
+                    ServiceDefinition sd = null
                     Map<String, Object> csMap = ec.contextStack.getCombinedMap()
                     Map<String, Object> wfParameters = ec.getWeb()?.getParameters()
                     if (sd != null) {

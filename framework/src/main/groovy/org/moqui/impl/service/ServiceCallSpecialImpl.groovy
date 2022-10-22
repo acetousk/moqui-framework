@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -32,8 +32,7 @@ import org.slf4j.LoggerFactory
 @CompileStatic
 class ServiceCallSpecialImpl extends ServiceCallImpl implements ServiceCallSpecial {
 
-    ServiceCallSpecialImpl(ServiceFacadeImpl sfi) {
-        super(sfi)
+    ServiceCallSpecialImpl() {
     }
 
     @Override
@@ -52,7 +51,7 @@ class ServiceCallSpecialImpl extends ServiceCallImpl implements ServiceCallSpeci
     void registerOnCommit() {
         if (getServiceDefinition() == null && !isEntityAutoPattern()) throw new ServiceException("Could not find service with name [${getServiceName()}]")
 
-        ServiceSynchronization sxr = new ServiceSynchronization(this, sfi.ecfi, true)
+        ServiceSynchronization sxr = new ServiceSynchronization(this, null, true)
         sxr.enlist()
     }
 
@@ -60,7 +59,7 @@ class ServiceCallSpecialImpl extends ServiceCallImpl implements ServiceCallSpeci
     void registerOnRollback() {
         if (getServiceDefinition() == null && !isEntityAutoPattern()) throw new ServiceException("Could not find service with name [${getServiceName()}]")
 
-        ServiceSynchronization sxr = new ServiceSynchronization(this, sfi.ecfi, false)
+        ServiceSynchronization sxr = new ServiceSynchronization(this, null, false)
         sxr.enlist()
     }
 
@@ -98,9 +97,7 @@ class ServiceCallSpecialImpl extends ServiceCallImpl implements ServiceCallSpeci
         @Override
         void afterCompletion(int status) {
             if (status == Status.STATUS_COMMITTED) {
-                if (runOnCommit) ecfi.serviceFacade.async().name(this.serviceName).parameters(this.parameters).call()
             } else {
-                if (!runOnCommit) ecfi.serviceFacade.async().name(this.serviceName).parameters(this.parameters).call()
             }
         }
 

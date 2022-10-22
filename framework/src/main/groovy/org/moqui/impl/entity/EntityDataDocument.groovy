@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -328,8 +328,6 @@ class EntityDataDocument {
                         postProcessDocMapList(documentMapList, ddi)
 
                         // call the feed receive service
-                        efi.ecfi.serviceFacade.sync().name(feedReceiveServiceName).parameter("documentList", documentMapList)
-                                .noRememberParameters().call()
                         // stop if there was an error
                         if (efi.ecfi.getEci().messageFacade.hasError()) break
 
@@ -348,7 +346,6 @@ class EntityDataDocument {
             if (documentMapList != null && documentMapList.size() > 0) {
                 postProcessDocMapList(documentMapList, ddi)
                 // call the feed receive service
-                efi.ecfi.serviceFacade.sync().name(feedReceiveServiceName).parameter("documentList", documentMapList).call()
             }
         } finally {
             mainEli.close()
@@ -449,8 +446,7 @@ class EntityDataDocument {
             // call the manualDataServiceName service for each document
             if (manualDataServiceName != null && !manualDataServiceName.isEmpty()) {
                 // logger.warn("Calling ${manualDataServiceName} with doc: ${docMap}")
-                Map result = efi.ecfi.serviceFacade.sync().name(manualDataServiceName)
-                        .parameter("dataDocumentId", ddi.dataDocumentId).parameter("document", docMap).call()
+                Map result = null
                 if (result == null || efi.ecfi.getEci().messageFacade.hasError()) {
                     logger.error("Error calling manual data service for ${ddi.dataDocumentId}, document may be missing data: ${efi.ecfi.getEci().messageFacade.getErrorsString()}")
                     efi.ecfi.getEci().messageFacade.clearErrors()

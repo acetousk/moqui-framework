@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -125,7 +125,6 @@ class SubEthaSmtpToolFactory implements ToolFactory<SMTPServer> {
         @Override
         void done() {
             // run EMECA rules
-            toolFactory.ecfi.serviceFacade.runEmecaRules(mimeMessage, EMAIL_SERVER_ID)
             // always save EmailMessage record? better to let an EMECA rule do it...
             // logger.warn("Got email: ${mimeMessage.getSubject()} from ${from} recipients ${recipientList}\n${EmailEcaRule.makeBodyPartList(mimeMessage)}")
         }

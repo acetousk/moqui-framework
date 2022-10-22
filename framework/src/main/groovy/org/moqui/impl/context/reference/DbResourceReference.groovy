@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -39,7 +39,7 @@ class DbResourceReference extends BaseResourceReference {
     String resourceId = (String) null
 
     DbResourceReference() { }
-    
+
     @Override ResourceReference init(String location, ExecutionContextFactoryImpl ecf) {
         this.ecf = ecf
         this.location = location
@@ -170,17 +170,10 @@ class DbResourceReference extends BaseResourceReference {
                 makeNextVersion(dbrf, fileObj)
             } else {
                 // now write the DbResource and DbResourceFile records
-                Map createDbrResult = ecf.service.sync().name("create", "moqui.resource.DbResource")
-                        .parameters([parentResourceId:parentResourceId, filename:filename, isFile:"Y"]).call()
+                Map createDbrResult = null
                 resourceId = createDbrResult.resourceId
                 String versionName = "01"
-                ecf.service.sync().name("create", "moqui.resource.DbResourceFile")
-                        .parameters([resourceId:resourceId, mimeType:getContentType(), versionName:versionName,
-                                     rootVersionName:versionName, fileData:fileObj]).call()
                 ExecutionContextImpl eci = ecf.getEci()
-                ecf.service.sync().name("create", "moqui.resource.DbResourceFileHistory")
-                        .parameters([resourceId:resourceId, versionDate:eci.userFacade.nowTimestamp, userId:eci.userFacade.userId,
-                                     isDiff:"N"]).call() // NOTE: no fileData, for non-diff only past versions
             }
         }
     }
@@ -195,10 +188,7 @@ class DbResourceReference extends BaseResourceReference {
             }
         }
         ExecutionContextImpl eci = ecf.getEci()
-        Map createOut = ecf.service.sync().name("create", "moqui.resource.DbResourceFileHistory")
-                .parameters([resourceId:resourceId, previousVersionName:currentVersionName,
-                             versionDate:eci.userFacade.nowTimestamp, userId:eci.userFacade.userId,
-                             isDiff:"N"]).call()  // NOTE: no fileData, for non-diff only past versions
+        Map createOut = null // NOTE: no fileData, for non-diff only past versions
         String newVersionName = createOut.versionName
         if (!dbrf.rootVersionName) dbrf.rootVersionName = currentVersionName ?: newVersionName
         dbrf.versionName = newVersionName
@@ -225,8 +215,7 @@ class DbResourceReference extends BaseResourceReference {
                                 .condition("parentResourceId", parentResourceId).condition("filename", filename)
                                 .useCache(false).disableAuthz().list().getFirst()
                         if (directoryValue == null) {
-                            Map createResult = ecf.service.sync().name("create", "moqui.resource.DbResource")
-                                    .parameters([parentResourceId:parentResourceId, filename:filename, isFile:"N"]).call()
+                            Map createResult = null
                             parentResourceId = createResult.resourceId
                             // logger.warn("=============== put text to ${location}, created dir ${filename}")
                         }

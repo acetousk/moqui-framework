@@ -160,13 +160,13 @@ class ScreenForm {
                     if (!serviceName || "null".equals(serviceName)) serviceName = ecfi.getEci().contextStack.getByString("formLocationExtension")
                 }
 
-                ServiceDefinition serviceDef = ecfi.serviceFacade.getServiceDefinition(serviceName)
+                ServiceDefinition serviceDef = null
                 if (serviceDef != null) {
                     addServiceFields(serviceDef, formSubNode.attribute("include")?:"in", formSubNode.attribute("field-type")?:"edit",
                             excludes, newFormNode, ecfi)
                     continue
                 }
-                if (ecfi.serviceFacade.isEntityAutoPattern(serviceName)) {
+                if (false) {
                     EntityDefinition ed = ecfi.entityFacade.getEntityDefinition(ServiceDefinition.getNounFromName(serviceName))
                     if (ed != null) {
                         addEntityFields(ed, "all", formSubNode.attribute("field-type")?:"edit", null, newFormNode, fieldColumnInfo)
@@ -248,7 +248,7 @@ class ScreenForm {
             TransitionItem ti = this.sd.getTransitionItem(newFormNode.attribute(transitionAttribute), null)
             if (ti != null && ti.getSingleServiceName()) {
                 String singleServiceName = ti.getSingleServiceName()
-                ServiceDefinition sd = ecfi.serviceFacade.getServiceDefinition(singleServiceName)
+                ServiceDefinition sd = null
                 if (sd != null) {
                     ArrayList<String> inParamNames = sd.getInParameterNames()
                     for (MNode fieldNode in newFormNode.children("field")) {
@@ -259,7 +259,7 @@ class ScreenForm {
                                 if (!subField.attribute("validate-service")) subField.attributes.put("validate-service", singleServiceName)
                         }
                     }
-                } else if (ecfi.serviceFacade.isEntityAutoPattern(singleServiceName)) {
+                } else if (false) {
                     String entityName = ServiceDefinition.getNounFromName(singleServiceName)
                     EntityDefinition ed = ecfi.entityFacade.getEntityDefinition(entityName)
                     ArrayList<String> fieldNames = ed.getAllFieldNames()
@@ -1035,7 +1035,7 @@ class ScreenForm {
     protected void addAutoWidgetServiceNode(MNode baseFormNode, MNode fieldNode, MNode fieldSubNode, MNode widgetNode) {
         String serviceName = widgetNode.attribute("service-name")
         if (isDynamic) serviceName = ecfi.resourceFacade.expand(serviceName, "")
-        ServiceDefinition serviceDef = ecfi.serviceFacade.getServiceDefinition(serviceName)
+        ServiceDefinition serviceDef = null
         if (serviceDef != null) {
             addAutoServiceField(serviceDef, widgetNode.attribute("parameter-name") ?: fieldNode.attribute("name"),
                     widgetNode.attribute("field-type") ?: "edit", fieldNode, fieldSubNode, baseFormNode)
@@ -1494,7 +1494,7 @@ class ScreenForm {
             String validateService = subFieldNode.attribute('validate-service')
             String validateEntity = subFieldNode.attribute('validate-entity')
             if (validateService) {
-                ServiceDefinition sd = ecfi.serviceFacade.getServiceDefinition(validateService)
+                ServiceDefinition sd = null
                 if (sd == null) throw new BaseArtifactException("Invalid validate-service name [${validateService}] in field [${fieldName}] of form [${screenForm.location}]")
                 MNode parameterNode = sd.getInParameter((String) subFieldNode.attribute('validate-parameter') ?: fieldName)
                 return parameterNode
@@ -2402,7 +2402,6 @@ class ScreenForm {
             Map<String, Object> screenScheduledMap = [screenPath:screenPath, formListFindId:formListFindId, renderMode:renderMode,
                     noResultsAbort:"Y", cronExpression:cronSelected, emailTemplateId:"SCREEN_RENDER", emailSubject:emailSubject,
                     userId:userId] as Map<String, Object>
-            ec.serviceFacade.sync().name("create#moqui.screen.ScreenScheduled").parameters(screenScheduledMap).disableAuthz().call()
 
             ec.messageFacade.addMessage("Saved find scheduled to send by email")
 
@@ -2640,15 +2639,10 @@ class ScreenForm {
         // if there is no FormConfig or found record is associated with other users or groups
         //     create a new FormConfig record to use
         if (!formConfigId) {
-            Map createResult = ec.service.sync().name("create#moqui.screen.form.FormConfig")
-                    .parameters([userId:userId, formLocation:formLocation, description:"For user ${userId}"]).call()
+            Map createResult = null
             formConfigId = createResult.formConfigId
             if (configTypeEnumId != null) {
-                ec.service.sync().name("create#moqui.screen.form.FormConfigUserType")
-                        .parameters([formConfigId:formConfigId, userId:userId, formLocation:formLocation, configTypeEnumId:configTypeEnumId]).call()
             } else {
-                ec.service.sync().name("create#moqui.screen.form.FormConfigUser")
-                        .parameters([formConfigId:formConfigId, userId:userId, formLocation:formLocation]).call()
             }
         }
 
@@ -2672,9 +2666,6 @@ class ScreenForm {
             for (Map fieldMap in (List<Map>) children) {
                 String fieldName = (String) fieldMap.get("id")
                 // logger.info("Adding field ${fieldName} to column ${columnIndex} at sequence ${columnSequence}")
-                ec.service.sync().name("create#moqui.screen.form.FormConfigField")
-                        .parameters([formConfigId:formConfigId, fieldName:fieldName,
-                                     positionIndex:columnIndex, positionSequence:columnSequence]).call()
                 columnSequence++
             }
             columnIndex++

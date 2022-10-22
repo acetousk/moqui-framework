@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -765,8 +765,6 @@ class EntityDataFeed {
                                 //     so user/etc are not inherited here
                                 String serviceName = (String) dataFeedAndDocument.feedReceiveServiceName ?: 'org.moqui.search.SearchServices.index#DataDocuments'
                                 try {
-                                    ecfi.serviceFacade.sync().name(serviceName).parameters([dataFeedId:dataFeedAndDocument.dataFeedId,
-                                            feedStamp:feedStamp, documentList:documents]).call()
                                     if (threadEci.messageFacade.hasError()) {
                                         logger.error("Error calling DataFeed ${dataFeedAndDocument.dataFeedId} service ${serviceName}: ${threadEci.messageFacade.getErrorsString()}")
                                         threadEci.messageFacade.clearErrors()
@@ -828,9 +826,6 @@ class EntityDataFeed {
                         String serviceName = (String) dataFeedAndDocument.feedDeleteServiceName ?: 'org.moqui.search.SearchServices.delete#DataDocument'
                         try {
                             if (servicesCalled.contains(serviceName)) continue
-                            ecfi.serviceFacade.sync().name(serviceName)
-                                    .parameters([dataFeedId:dataFeedAndDocument.dataFeedId, feedStamp:feedStamp,
-                                            dataDocumentId:dataDocumentId, documentId:documentId]).call()
                             servicesCalled.add(serviceName)
                             if (threadEci.messageFacade.hasError()) {
                                 logger.error("Error calling DataFeed ${dataFeedAndDocument.dataFeedId} delete service ${serviceName} for entity ${entityName} PK ${deleteEv.getPrimaryKeys()}: ${threadEci.messageFacade.getErrorsString()}")

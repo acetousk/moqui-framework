@@ -138,7 +138,7 @@ class ElasticFacadeImpl implements ElasticFacade {
                     for (String indexName in indexNames) if (!defaultEci.indexExists(indexName)) foundNotExists = true
                     if (foundNotExists) {
                         // NOTE: called with localOnly(true) to avoid issues during startup if a distributed executor service is configured
-                        String jobRunId = ecfi.service.job("IndexDataFeedDocuments").parameter("dataFeedId", dataFeed.dataFeedId).localOnly(true).run()
+                        String jobRunId = null
                         logger.info("Found index does not exist for DataFeed ${dataFeed.dataFeedId}, started job ${jobRunId} to index")
                     }
                 }
@@ -516,9 +516,9 @@ class ElasticFacadeImpl implements ElasticFacade {
             Map settings = null
 
             if (manualMappingServiceName) {
-                def serviceResult = ecfi.service.sync().name(manualMappingServiceName).parameter('mapping', docMapping).call()
-                docMapping = (Map) serviceResult.mapping
-                settings = (Map) serviceResult.settings
+                def serviceResult = null
+                docMapping = null
+                settings = null
             }
 
             if (hasIndex) {

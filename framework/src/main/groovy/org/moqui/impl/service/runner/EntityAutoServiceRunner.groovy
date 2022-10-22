@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -29,7 +29,6 @@ import org.moqui.impl.entity.EntityJavaUtil.RelationshipInfo
 import org.moqui.impl.entity.EntityValueBase
 import org.moqui.impl.entity.FieldInfo
 import org.moqui.impl.service.ServiceDefinition
-import org.moqui.impl.service.ServiceFacadeImpl
 import org.moqui.impl.service.ServiceRunner
 import org.moqui.service.ServiceException
 import org.moqui.util.ObjectUtilities
@@ -46,12 +45,9 @@ class EntityAutoServiceRunner implements ServiceRunner {
     final static Set<String> verbSet = new HashSet(['create', 'update', 'delete', 'store'])
     final static Set<String> otherFieldsToSkip = new HashSet(['ec', '_entity', 'authUsername', 'authPassword'])
 
-    private ServiceFacadeImpl sfi = null
-    private ExecutionContextFactoryImpl ecfi = null
-
     EntityAutoServiceRunner() {}
 
-    @Override ServiceRunner init(ServiceFacadeImpl sfi) { this.sfi = sfi; ecfi = sfi.ecfi; return this }
+    @Override ServiceRunner init() { return this }
     @Override void destroy() { }
 
     // TODO: add update-expire and delete-expire entity-auto service verbs for entities with from/thru dates
@@ -62,30 +58,20 @@ class EntityAutoServiceRunner implements ServiceRunner {
             throw new ServiceException("In service ${sd.serviceName} the verb must be one of ${verbSet} for entity-auto type services.")
         if (sd.noun == null || sd.noun.isEmpty()) throw new ServiceException("In service ${sd.serviceName} you must specify a noun for entity-auto service calls")
 
-        ExecutionContextImpl eci = ecfi.getEci()
-        EntityDefinition ed = eci.entityFacade.getEntityDefinition(sd.noun)
-        if (ed == null) throw new ServiceException("In service ${sd.serviceName} the specified noun ${sd.noun} is not a valid entity name")
 
         Map<String, Object> result = new HashMap()
 
         try {
             boolean allPksInOnly = true
-            for (String pkFieldName in ed.getPkFieldNames()) {
-                if (!sd.getInParameter(pkFieldName) || sd.getOutParameter(pkFieldName)) { allPksInOnly = false; break }
-            }
 
             if ("create".equals(sd.verb)) {
-                createEntity(eci, ed, parameters, result, sd.getOutParameterNames())
             } else if ("update".equals(sd.verb)) {
                 /* <auto-attributes include="pk" mode="IN" optional="false"/> */
                 if (!allPksInOnly) throw new ServiceException("In entity-auto type service ${sd.serviceName} with update noun, not all pk fields have the mode IN")
-                updateEntity(eci, ed, parameters, result, sd.getOutParameterNames(), null)
             } else if ("delete".equals(sd.verb)) {
                 /* <auto-attributes include="pk" mode="IN" optional="false"/> */
                 if (!allPksInOnly) throw new ServiceException("In entity-auto type service ${sd.serviceName} with delete noun, not all pk fields have the mode IN")
-                deleteEntity(eci, ed, parameters)
             } else if ("store".equals(sd.verb)) {
-                storeEntity(eci, ed, parameters, result, sd.getOutParameterNames())
             } else if ("update-expire".equals(sd.verb)) {
                 // TODO
             } else if ("delete-expire".equals(sd.verb)) {
@@ -96,7 +82,7 @@ class EntityAutoServiceRunner implements ServiceRunner {
                 // TODO
             }
         } catch (BaseException e) {
-            throw new ServiceException("Error doing entity-auto operation for entity [${ed.fullEntityName}] in service [${sd.serviceName}]", e)
+            throw new ServiceException("Error doing entity-auto operation for entity [...] in service [${sd.serviceName}]", e)
         }
 
         return result

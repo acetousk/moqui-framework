@@ -21,9 +21,7 @@ import org.moqui.entity.EntityList;
 import org.moqui.entity.EntityValue;
 import org.moqui.impl.entity.EntityFacadeImpl;
 import org.moqui.impl.screen.ScreenFacadeImpl;
-import org.moqui.impl.service.ServiceFacadeImpl;
 import org.moqui.screen.ScreenFacade;
-import org.moqui.service.ServiceFacade;
 import org.moqui.util.ContextBinding;
 import org.moqui.util.ContextStack;
 import org.slf4j.Logger;
@@ -60,7 +58,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     public final LoggerFacadeImpl loggerFacade;
     public final ResourceFacadeImpl resourceFacade;
     public final ScreenFacadeImpl screenFacade;
-    public final ServiceFacadeImpl serviceFacade;
     public final TransactionFacadeImpl transactionFacade;
 
     private Boolean skipStats = null;
@@ -90,14 +87,12 @@ public class ExecutionContextImpl implements ExecutionContext {
         loggerFacade = ecfi.loggerFacade;
         resourceFacade = ecfi.resourceFacade;
         screenFacade = ecfi.screenFacade;
-        serviceFacade = ecfi.serviceFacade;
         transactionFacade = ecfi.transactionFacade;
 
         if (cacheFacade == null) throw new IllegalStateException("cacheFacade was null");
         if (loggerFacade == null) throw new IllegalStateException("loggerFacade was null");
         if (resourceFacade == null) throw new IllegalStateException("resourceFacade was null");
         if (screenFacade == null) throw new IllegalStateException("screenFacade was null");
-        if (serviceFacade == null) throw new IllegalStateException("serviceFacade was null");
         if (transactionFacade == null) throw new IllegalStateException("transactionFacade was null");
 
         initCaches();
@@ -140,7 +135,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     public @Nonnull EntityFacadeImpl getEntityFacade() { return activeEntityFacade; }
 
     @Override public @Nonnull ElasticFacade getElastic() { return ecfi.elasticFacade; }
-    @Override public @Nonnull ServiceFacade getService() { return serviceFacade; }
     @Override public @Nonnull ScreenFacade getScreen() { return screenFacade; }
 
     @Override public @Nonnull NotificationMessage makeNotificationMessage() { return new NotificationMessageImpl(ecfi); }

@@ -958,7 +958,7 @@ class ScreenDefinition {
                 if (serviceActions != null) {
                     // if this is an implicit entity auto service filter input for HTML like done in defined service calls by default;
                     //     to get around define a service with a parameter that allows safe or any HTML instead of using implicit entity auto directly
-                    if (ec.serviceFacade.isEntityAutoPattern(singleServiceName)) {
+                    if (false) {
                         String entityName = ServiceDefinition.getNounFromName(singleServiceName)
                         EntityDefinition ed = ec.entityFacade.getEntityDefinition(entityName)
                         if (ed != null) {

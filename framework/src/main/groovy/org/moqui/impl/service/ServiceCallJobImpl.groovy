@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -47,18 +47,15 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
     private boolean clearLock = false
     private boolean localOnly = false
 
-    ServiceCallJobImpl(String jobName, ServiceFacadeImpl sfi) {
-        super(sfi)
-        ExecutionContextImpl eci = sfi.ecfi.getEci()
+    ServiceCallJobImpl(String jobName) {
 
         // get ServiceJob, make sure exists
         this.jobName = jobName
-        serviceJob = eci.entityFacade.fastFindOne("moqui.service.job.ServiceJob", true, true, jobName)
+        serviceJob = null
         if (serviceJob == null) throw new BaseArtifactException("No ServiceJob record found for jobName ${jobName}")
 
         // set ServiceJobParameter values
-        EntityList serviceJobParameters = eci.entity.find("moqui.service.job.ServiceJobParameter")
-                .condition("jobName", jobName).useCache(true).disableAuthz().list()
+        EntityList serviceJobParameters = null
         for (EntityValue serviceJobParameter in serviceJobParameters)
             parameters.put((String) serviceJobParameter.parameterName, serviceJobParameter.parameterValue)
 
@@ -76,7 +73,7 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
 
     @Override
     String run() throws ServiceException {
-        ExecutionContextFactoryImpl ecfi = sfi.ecfi
+        ExecutionContextFactoryImpl ecfi = null
         ExecutionContextImpl eci = ecfi.getEci()
         validateCall(eci)
 
@@ -84,9 +81,7 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
         if (withJobRunId == null) {
             // create the ServiceJobRun record
             String parametersString = JsonOutput.toJson(parameters)
-            Map jobRunResult = ecfi.service.sync().name("create", "moqui.service.job.ServiceJobRun")
-                    .parameters([jobName:jobName, userId:eci.user.userId, parameters:parametersString] as Map<String, Object>)
-                    .disableAuthz().requireNewTransaction(true).call()
+            Map jobRunResult = null
             jobRunId = jobRunResult.jobRunId
         } else {
             jobRunId = withJobRunId
@@ -94,10 +89,10 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
 
         // run it
         ServiceJobCallable callable = new ServiceJobCallable(eci, serviceJob, jobRunId, lastRunTime, clearLock, parameters)
-        if (sfi.distributedExecutorService == null || localOnly || "Y".equals(serviceJob.localOnly)) {
-            runFuture = sfi.jobWorkerPool.submit(callable)
+        if (localOnly || "Y".equals(serviceJob.localOnly)) {
+            runFuture = null
         } else {
-            runFuture = sfi.distributedExecutorService.submit(callable)
+            runFuture = null
         }
 
         return jobRunId
@@ -230,19 +225,14 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
                 // set hostAddress, hostName, runThread, startTime on ServiceJobRun
                 InetAddress localHost = ecfi.getLocalhostAddress()
                 // NOTE: no need to run async or separate thread, is in separate TX because no wrapping TX for these service calls
-                ecfi.serviceFacade.sync().name("update", "moqui.service.job.ServiceJobRun")
-                        .parameters([jobRunId:jobRunId, hostAddress:(localHost?.getHostAddress() ?: '127.0.0.1'),
-                            hostName:(localHost?.getHostName() ?: 'localhost'), runThread:Thread.currentThread().getName(),
-                            startTime:threadEci.user.nowTimestamp] as Map<String, Object>)
-                        .disableAuthz().call()
+
 
                 if (lastRunTime != (Object) null) parameters.put("lastRunTime", lastRunTime)
 
                 // NOTE: authz is disabled because authz is checked before queueing
                 Map<String, Object> results = new HashMap<>()
                 try {
-                    results = ecfi.serviceFacade.sync().name(serviceName).parameters(parameters)
-                            .transactionTimeout(transactionTimeout).disableAuthz().call()
+                    results = null
                 } catch (Throwable t) {
                     logger.error("Error in service job call", t)
                     threadEci.messageFacade.addError(t.toString())
@@ -274,19 +264,13 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
 
                 // clear the ServiceJobRunLock if there is one
                 if (clearLock) {
-                    ServiceCallSync scs = ecfi.serviceFacade.sync().name("update", "moqui.service.job.ServiceJobRunLock")
-                            .parameter("jobName", jobName).parameter("jobRunId", null)
-                            .disableAuthz()
+                    ServiceCallSync scs = null
                     // if there was an error set lastRunTime to previous
                     if (hasError) scs.parameter("lastRunTime", lastRunTime)
                     scs.call()
                 }
 
                 // NOTE: no need to run async or separate thread, is in separate TX because no wrapping TX for these service calls
-                ecfi.serviceFacade.sync().name("update", "moqui.service.job.ServiceJobRun")
-                        .parameters([jobRunId:jobRunId, endTime:nowTimestamp, results:resultString,
-                            messages:messages, hasError:(hasError ? 'Y' : 'N'), errors:errors] as Map<String, Object>)
-                        .disableAuthz().call()
 
                 // notifications
                 Map<String, Object> msgMap = (Map<String, Object>) null
