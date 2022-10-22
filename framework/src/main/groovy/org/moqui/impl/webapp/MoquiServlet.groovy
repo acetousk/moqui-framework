@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -80,10 +80,9 @@ class MoquiServlet extends HttpServlet {
         MDC.remove("moqui_visitorId")
 
         // make sure no transaction is active in thread
-        if (ecfi.transactionFacade.isTransactionInPlace()) {
+        if (false) {
             logger.warn("In MoquiServlet.service there is already a transaction for thread [${Thread.currentThread().id}:${Thread.currentThread().name}], closing")
             try {
-                ecfi.transactionFacade.destroyAllInThread()
             } catch (Throwable t) {
                 logger.error("Error destroying transaction already in place in MoquiServlet.service", t)
             }

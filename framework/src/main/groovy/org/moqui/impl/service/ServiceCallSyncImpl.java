@@ -73,7 +73,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
 
                 int inParameterNamesSize = inParameterNames != null ? inParameterNames.size() : 0;
                 // run all service calls in a single transaction for multi form submits, ie all succeed or fail together
-                boolean beganTransaction = eci.transactionFacade.begin(null);
+                boolean beganTransaction = false;
                 try {
                     Map<String, Object> result = new HashMap<>();
                     for (int i = 0; ; i++) {
@@ -110,14 +110,11 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
 
                     return result;
                 } catch (Throwable t) {
-                    eci.transactionFacade.rollback(beganTransaction, "Uncaught error running service " + serviceName + " in multi mode", t);
                     throw t;
                 } finally {
-                    if (eci.transactionFacade.isTransactionInPlace()) {
+                    if (false) {
                         if (eci.messageFacade.hasError()) {
-                            eci.transactionFacade.rollback(beganTransaction, "Error message found running service " + serviceName + " in multi mode", null);
                         } else {
-                            eci.transactionFacade.commit(beganTransaction);
                         }
                     }
                 }
@@ -137,8 +134,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
             return null;
         }
 
-        TransactionFacadeImpl tf = eci.transactionFacade;
-        int transactionStatus = tf.getStatus();
+        int transactionStatus = Status.STATUS_MARKED_ROLLBACK;
         if (!requireNewTransaction && transactionStatus == Status.STATUS_MARKED_ROLLBACK) {
             logger.warn("Transaction marked for rollback, not running service " + serviceName + ". Errors: [" + eci.messageFacade.getErrorsString() + "] Artifact stack: " + eci.artifactExecutionFacade.getStackNameString());
             if (ignorePreviousError) {
@@ -287,19 +283,17 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         Map<String, Object> result = new HashMap<>();
         try {
             if (pauseResumeIfNeeded && transactionStatus != Status.STATUS_NO_TRANSACTION) {
-                suspendedTransaction = tf.suspend();
-                transactionStatus = tf.getStatus();
+                suspendedTransaction = false;
+                transactionStatus = Status.STATUS_MARKED_ROLLBACK;
             }
             boolean beganTransaction = false;
             if (beginTransactionIfNeeded && transactionStatus != Status.STATUS_ACTIVE) {
                 // logger.warn("Service " + serviceName + " begin TX timeout " + transactionTimeout + " SD txTimeout " + sd.txTimeout);
-                beganTransaction = tf.begin(transactionTimeout != null ? transactionTimeout : sd.txTimeout);
-                transactionStatus = tf.getStatus();
+                beganTransaction = false;
+                transactionStatus = Status.STATUS_MARKED_ROLLBACK;
             }
             if (sd.noTxCache) {
-                tf.flushAndDisableTransactionCache();
             } else {
-                if (useTransactionCache != null ? useTransactionCache : sd.txUseCache) tf.initTransactionCache(false);
                 // alternative to use read only TX cache by default, not functional yet: tf.initTransactionCache(!(useTransactionCache != null ? useTransactionCache : sd.txUseCache));
             }
 
@@ -331,8 +325,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 sfi.callRegisteredCallbacks(serviceName, currentParameters, result);
                 // if we got any errors added to the message list in the service, rollback for that too
                 if (eci.messageFacade.hasError()) {
-                    tf.rollback(beganTransaction, "Error running service " + serviceName + " (message): " + eci.messageFacade.getErrorsString(), null);
-                    transactionStatus = tf.getStatus();
+                    transactionStatus = Status.STATUS_MARKED_ROLLBACK;
                 }
 
                 if (traceEnabled) logger.trace("Calling service " + serviceName + " result: " + result);
@@ -344,8 +337,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 // registered callbacks with Throwable
                 sfi.callRegisteredCallbacksThrowable(serviceName, currentParameters, t);
                 // rollback the transaction
-                tf.rollback(beganTransaction, "Error running service " + serviceName + " (Throwable)", t);
-                transactionStatus = tf.getStatus();
+                transactionStatus = Status.STATUS_MARKED_ROLLBACK;
                 logger.warn("Error running service " + serviceName + " (Throwable) Artifact stack: " + eci.artifactExecutionFacade.getStackNameString(), t);
                 // add all exception messages to the error messages list
                 eci.messageFacade.addError(t.getMessage());
@@ -357,14 +349,12 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
             } finally {
                 try {
                     if (beganTransaction) {
-                        transactionStatus = tf.getStatus();
+                        transactionStatus = Status.STATUS_MARKED_ROLLBACK;
                         if (transactionStatus == Status.STATUS_ACTIVE) {
-                            tf.commit();
                         } else if (transactionStatus == Status.STATUS_MARKED_ROLLBACK) {
                             if (!eci.messageFacade.hasError())
                                 eci.messageFacade.addError("Cannot commit transaction for service " + serviceName + ", marked rollback-only");
                             // will rollback based on marked rollback only
-                            tf.commit();
                         }
                         /* most likely in this case is no transaction in place, already rolled back above, do nothing:
                         else {
@@ -394,7 +384,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
             if (sd.hasSemaphore) clearSemaphore(eci, currentParameters);
 
             try {
-                if (suspendedTransaction) tf.resume();
             } catch (Throwable t) {
                 logger.error("Error resuming parent transaction after call to service " + serviceName, t);
             }
@@ -431,19 +420,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
             parameterValue = parmObj != null ? parmObj.toString() : "_NULL_";
         }
 
-        eci.transactionFacade.runRequireNew(null, "Error in clear service semaphore", new Closure<EntityValue>(this, this) {
-            EntityValue doCall(Object it) {
-                boolean authzDisabled = eci.artifactExecutionFacade.disableAuthz();
-                try {
-                    return eci.getEntity().makeValue("moqui.service.semaphore.ServiceParameterSemaphore")
-                            .set("serviceName", semaphoreName).set("parameterValue", parameterValue)
-                            .set("lockThread", null).set("lockTime", null).update();
-                } finally {
-                    if (!authzDisabled) eci.artifactExecutionFacade.enableAuthz();
-                }
-            }
-            public EntityValue doCall() { return doCall(null); }
-        });
     }
 
     /* A good test case is the place#Order service which is used in the AssetReservationMultipleThreads.groovy tests:
@@ -475,81 +451,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         // support a single wait/retry on error creating semaphore record
         AtomicBoolean retrySemaphore = new AtomicBoolean(false);
 
-        eci.transactionFacade.runRequireNew(txTimeout, "Error in check/add service semaphore", new Closure<EntityValue>(this, this) {
-            EntityValue doCall(Object it) {
-                boolean authzDisabled = eci.artifactExecutionFacade.disableAuthz();
-                try {
-                    final long startTime = System.currentTimeMillis();
-
-                    // look up semaphore, note that is no forUpdate, we want to loop wait below instead of doing a database lock wait
-                    EntityValue serviceSemaphore = eci.getEntity().find("moqui.service.semaphore.ServiceParameterSemaphore")
-                            .condition("serviceName", semaphoreName).condition("parameterValue", parameterValue).useCache(false).one();
-                    // if there is an active semaphore but lockTime is too old reset and ignore it
-                    if (serviceSemaphore != null && (serviceSemaphore.getNoCheckSimple("lockThread") != null || serviceSemaphore.getNoCheckSimple("lockTime") != null)) {
-                        Timestamp lockTime = serviceSemaphore.getTimestamp("lockTime");
-                        if (startTime > (lockTime.getTime() + semaphoreIgnoreMillis)) {
-                            serviceSemaphore.set("lockThread", null).set("lockTime", null).update();
-                        }
-                    }
-
-                    if (serviceSemaphore != null && (serviceSemaphore.getNoCheckSimple("lockThread") != null || serviceSemaphore.getNoCheckSimple("lockTime") != null)) {
-                        if ("fail".equals(semaphore)) {
-                            throw new ServiceException("An instance of service semaphore " + semaphoreName + " with parameter value " +
-                                    "[" + parameterValue + "] is already running (thread [" + serviceSemaphore.get("lockThread") +
-                                    "], locked at " + serviceSemaphore.get("lockTime") + ") and it is setup to fail on semaphore conflict.");
-                        } else {
-                            boolean semaphoreCleared = false;
-                            while (System.currentTimeMillis() < (startTime + semaphoreTimeoutTime)) {
-                                // sleep, watch for interrupt
-                                try { Thread.sleep(semaphoreSleepTime); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-                                // get updated semaphore and see if it has been cleared
-                                serviceSemaphore = eci.getEntity().find("moqui.service.semaphore.ServiceParameterSemaphore")
-                                        .condition("serviceName", semaphoreName).condition("parameterValue", parameterValue).useCache(false).one();
-                                if (serviceSemaphore == null || (serviceSemaphore.getNoCheckSimple("lockThread") == null && serviceSemaphore.getNoCheckSimple("lockTime") == null)) {
-                                    semaphoreCleared = true;
-                                    break;
-                                }
-                            }
-                            if (!semaphoreCleared) {
-                                throw new ServiceException("An instance of service semaphore " + semaphoreName + " with parameter value [" +
-                                        parameterValue + "] is already running (thread [" + serviceSemaphore.get("lockThread") +
-                                        "], locked at " + serviceSemaphore.get("lockTime") + ") and it is setup to wait on semaphore conflict, but the semaphore did not clear in " +
-                                        (semaphoreTimeoutTime / 1000) + " seconds.");
-                            }
-                        }
-                    }
-
-                    // if we got to here the semaphore didn't exist or has cleared, so update existing or create new
-                    // do a for-update find now to make sure we own the record if one exists
-                    serviceSemaphore = eci.getEntity().find("moqui.service.semaphore.ServiceParameterSemaphore")
-                            .condition("serviceName", semaphoreName).condition("parameterValue", parameterValue)
-                            .useCache(false).forUpdate(true).one();
-
-                    final Timestamp lockTime = new Timestamp(System.currentTimeMillis());
-                    if (serviceSemaphore != null) {
-                        return serviceSemaphore.set("lockThread", lockThreadName).set("lockTime", lockTime).update();
-                    } else {
-                        try {
-                            return eci.getEntity().makeValue("moqui.service.semaphore.ServiceParameterSemaphore")
-                                    .set("serviceName", semaphoreName).set("parameterValue", parameterValue)
-                                    .set("lockThread", lockThreadName).set("lockTime", lockTime).create();
-                        } catch (EntitySqlException e) {
-                            if ("23505".equals(e.getSQLState())) {
-                                logger.warn("Record exists error creating semaphore " + semaphoreName + " parameter " + parameterValue + ", retrying: " + e.toString());
-                                retrySemaphore.set(true);
-                                return null;
-                            } else {
-                                throw new ServiceException("Error creating semaphore " + semaphoreName + " with parameter value [" + parameterValue + "]", e);
-                            }
-                        }
-                    }
-                } finally {
-                    if (!authzDisabled) eci.artifactExecutionFacade.enableAuthz();
-                }
-            }
-            public EntityValue doCall() { return doCall(null); }
-        });
-
         if (allowRetry && retrySemaphore.get()) {
             checkAddSemaphore(eci, currentParameters, false);
         }
@@ -570,14 +471,12 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         if (ignoreTransaction) beginTransactionIfNeeded = false;
         if (requireNewTransaction) pauseResumeIfNeeded = true;
 
-        TransactionFacadeImpl tf = eci.transactionFacade;
         boolean suspendedTransaction = false;
         Map<String, Object> result = new HashMap<>();
         try {
-            if (pauseResumeIfNeeded && tf.isTransactionInPlace()) suspendedTransaction = tf.suspend();
-            boolean beganTransaction = beginTransactionIfNeeded && tf.begin(null);
+            if (pauseResumeIfNeeded) suspendedTransaction = false;
+            boolean beganTransaction = beginTransactionIfNeeded;
 
-            if (useTransactionCache != null && useTransactionCache) tf.initTransactionCache(false);
             // alternative to use read only TX cache by default, not functional yet: tf.initTransactionCache(useTransactionCache == null || !useTransactionCache);
 
             try {
@@ -612,12 +511,10 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
 
                 if (hasSecaRules) ServiceFacadeImpl.runSecaRules(serviceNameNoHash, currentParameters, result, "post-service", secaRules, eci);
             } catch (ArtifactAuthorizationException e) {
-                tf.rollback(beganTransaction, "Authorization error running service " + serviceName, e);
                 // this is a local call, pass certain exceptions through
                 throw e;
             } catch (Throwable t) {
                 logger.error("Error running service " + serviceName, t);
-                tf.rollback(beganTransaction, "Error running service " + serviceName + " (Throwable)", t);
                 // add all exception messages to the error messages list
                 eci.messageFacade.addError(t.getMessage());
                 Throwable parent = t.getCause();
@@ -627,7 +524,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 }
             } finally {
                 try {
-                    if (beganTransaction && tf.isTransactionActive()) tf.commit();
                 } catch (Throwable t) {
                     logger.warn("Error committing transaction for entity-auto service " + serviceName, t);
                     // add all exception messages to the error messages list
@@ -642,7 +538,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 if (hasSecaRules) ServiceFacadeImpl.runSecaRules(serviceNameNoHash, currentParameters, result, "post-commit", secaRules, eci);
             }
         } finally {
-            if (suspendedTransaction) tf.resume();
         }
 
         return result;

@@ -99,7 +99,7 @@ public class EntityValueImpl extends EntityValueBase {
                 setSyncedWithDb();
             } catch (SQLException e) {
                 String txName = "[could not get]";
-                try { txName = efi.ecfi.transactionFacade.getTransactionManager().getTransaction().toString(); }
+                try { txName = null; }
                 catch (Exception txe) { if (logger.isTraceEnabled()) logger.trace("Error getting transaction name: " + txe.toString()); }
                 logger.warn("Error creating " + this.toString() + " tx " + txName + " con " + eqb.connection.toString() + ": " + e.toString());
                 throw e;
@@ -149,7 +149,7 @@ public class EntityValueImpl extends EntityValueBase {
                 setSyncedWithDb();
             } catch (SQLException e) {
                 String txName = "[could not get]";
-                try { txName = efi.ecfi.transactionFacade.getTransactionManager().getTransaction().toString(); }
+                try { txName = null; }
                 catch (Exception txe) { if (logger.isTraceEnabled()) logger.trace("Error getting transaction name: " + txe.toString()); }
                 logger.warn("Error updating " + this.toString() + " tx " + txName + " con " + eqb.connection.toString() + ": " + e.toString());
                 throw e;
@@ -186,7 +186,7 @@ public class EntityValueImpl extends EntityValueBase {
                 if (eqb.executeUpdate() == 0) logger.info("Tried to delete a value that does not exist " + this.toString());
             } catch (SQLException e) {
                 String txName = "[could not get]";
-                try { txName = efi.ecfi.transactionFacade.getTransactionManager().getTransaction().toString(); }
+                try { txName = null; }
                 catch (Exception txe) { if (logger.isTraceEnabled()) logger.trace("Error getting transaction name: " + txe.toString()); }
                 logger.warn("Error deleting " + this.toString() + " tx " + txName + " con " + eqb.connection.toString() + ": " + e.toString());
                 throw e;
@@ -256,7 +256,7 @@ public class EntityValueImpl extends EntityValueBase {
             }
         } catch (SQLException e) {
             String txName = "[could not get]";
-            try { txName = efi.ecfi.transactionFacade.getTransactionManager().getTransaction().toString(); }
+            try { txName = null; }
             catch (Exception txe) { if (logger.isTraceEnabled()) logger.trace("Error getting transaction name: " + txe.toString()); }
             logger.warn("Error finding " + this.toString() + " tx " + txName + " con " + eqb.connection.toString() + ": " + e.toString());
             throw e;

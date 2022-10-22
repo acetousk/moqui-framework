@@ -329,14 +329,6 @@ class UserFacadeImpl implements UserFacade {
     @Override Locale getLocale() { return currentInfo.localeCache }
     @Override void setLocale(Locale locale) {
         if (currentInfo.userAccount != null) {
-            eci.transaction.runUseOrBegin(null, "Error saving locale", {
-                boolean alreadyDisabled = eci.getArtifactExecution().disableAuthz()
-                try {
-                    EntityValue userAccountClone = currentInfo.userAccount.cloneValue()
-                    userAccountClone.set("locale", locale.toString())
-                    userAccountClone.update()
-                } finally { if (!alreadyDisabled) eci.getArtifactExecution().enableAuthz() }
-            })
         }
         currentInfo.localeCache = locale
     }
@@ -349,14 +341,6 @@ class UserFacadeImpl implements UserFacade {
     }
     @Override void setTimeZone(TimeZone tz) {
         if (currentInfo.userAccount != null) {
-            eci.transaction.runUseOrBegin(null, "Error saving timeZone", {
-                boolean alreadyDisabled = eci.getArtifactExecution().disableAuthz()
-                try {
-                    EntityValue userAccountClone = currentInfo.userAccount.cloneValue()
-                    userAccountClone.set("timeZone", tz.getID())
-                    userAccountClone.update()
-                } finally { if (!alreadyDisabled) eci.getArtifactExecution().enableAuthz() }
-            })
         }
         currentInfo.tzCache = tz
     }
@@ -364,14 +348,6 @@ class UserFacadeImpl implements UserFacade {
     @Override String getCurrencyUomId() { return currentInfo.currencyUomId }
     @Override void setCurrencyUomId(String uomId) {
         if (currentInfo.userAccount != null) {
-            eci.transaction.runUseOrBegin(null, "Error saving currencyUomId", {
-                boolean alreadyDisabled = eci.getArtifactExecution().disableAuthz()
-                try {
-                    EntityValue userAccountClone = currentInfo.userAccount.cloneValue()
-                    userAccountClone.set("currencyUomId", uomId)
-                    userAccountClone.update()
-                } finally { if (!alreadyDisabled) eci.getArtifactExecution().enableAuthz() }
-            })
         }
         currentInfo.currencyUomId = uomId
     }
@@ -444,14 +420,12 @@ class UserFacadeImpl implements UserFacade {
         String userId = getUserId()
         if (!userId) throw new IllegalStateException("Cannot set preference with key ${preferenceKey}, no user logged in.")
         boolean alreadyDisabled = eci.getArtifactExecution().disableAuthz()
-        boolean beganTransaction = eci.transaction.begin(null)
+        boolean beganTransaction = false
         try {
             eci.getEntity().makeValue("moqui.security.UserPreference").set("userId", getUserId())
                     .set("preferenceKey", preferenceKey).set("preferenceValue", preferenceValue).createOrUpdate()
         } catch (Throwable t) {
-            eci.transaction.rollback(beganTransaction, "Error saving UserPreference", t)
         } finally {
-            if (eci.transaction.isTransactionInPlace()) eci.transaction.commit(beganTransaction)
             if (!alreadyDisabled) eci.getArtifactExecution().enableAuthz()
         }
     }

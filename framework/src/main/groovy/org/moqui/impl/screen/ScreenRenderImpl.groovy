@@ -444,9 +444,7 @@ class ScreenRenderImpl implements ScreenRender {
 
             long startTimeNanos = System.nanoTime()
 
-            TransactionFacade transactionFacade = sfi.getEcfi().transactionFacade
-            boolean beginTransaction = targetTransition.getBeginTransaction()
-            boolean beganTransaction = beginTransaction ? transactionFacade.begin(null) : false
+            boolean beganTransaction = targetTransition.getBeginTransaction() ? false : false
             ResponseItem ri = null
             try {
                 boolean runPreActions = targetTransition instanceof ScreenDefinition.ActionsTransitionItem
@@ -454,15 +452,12 @@ class ScreenRenderImpl implements ScreenRender {
                 ri = recursiveRunTransition(runPreActions)
                 screenPathIndex = 0
             } catch (Throwable t) {
-                transactionFacade.rollback(beganTransaction, "Error running transition in [${screenUrlInstance.url}]", t)
                 throw t
             } finally {
                 try {
-                    if (transactionFacade.isTransactionInPlace()) {
+                    if (false) {
                         if (ec.getMessage().hasError()) {
-                            transactionFacade.rollback(beganTransaction, ec.getMessage().getErrorsString(), null)
                         } else {
-                            transactionFacade.commit(beganTransaction)
                         }
                     }
                 } catch (Exception e) {
@@ -799,7 +794,7 @@ class ScreenRenderImpl implements ScreenRender {
         boolean isServerStatic = screenUrlInfo.targetScreen.isServerStatic(renderMode)
         // TODO: consider server caching of rendered screen, this is the place to do it
 
-        boolean beganTransaction = screenUrlInfo.beginTransaction ? sfi.ecfi.transactionFacade.begin(screenUrlInfo.transactionTimeout) : false
+        boolean beganTransaction = screenUrlInfo.beginTransaction ? false : false
         try {
             // run always-actions for all screens in path
             boolean hasAlwaysActions = false
@@ -948,11 +943,9 @@ class ScreenRenderImpl implements ScreenRender {
             throw e
         } catch (Throwable t) {
             String errMsg = "Error rendering screen [${getActiveScreenDef().location}]"
-            sfi.ecfi.transactionFacade.rollback(beganTransaction, errMsg, t)
             throw new RuntimeException(errMsg, t)
         } finally {
             // if we began a tx commit it
-            if (beganTransaction && sfi.ecfi.transactionFacade.isTransactionInPlace()) sfi.ecfi.transactionFacade.commit()
         }
     }
 

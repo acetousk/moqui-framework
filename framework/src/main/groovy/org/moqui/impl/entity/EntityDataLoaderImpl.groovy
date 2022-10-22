@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -20,9 +20,7 @@ import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVRecord
 import org.moqui.BaseException
 import org.moqui.context.NotificationMessage
-import org.moqui.impl.context.TransactionFacadeImpl
 import org.moqui.resource.ResourceReference
-import org.moqui.context.TransactionFacade
 import org.moqui.entity.EntityDataLoader
 import org.moqui.entity.EntityException
 import org.moqui.entity.EntityList
@@ -279,48 +277,6 @@ class EntityDataLoaderImpl implements EntityDataLoader {
         // logger.warn("========== Waiting 45s to attach profiler")
         // Thread.sleep(45000)
 
-        TransactionFacadeImpl tf = efi.ecfi.transactionFacade
-        tf.runRequireNew(transactionTimeout, "Error loading entity data", false, true, {
-            // load the XML text in its own transaction
-            if (this.xmlText) {
-                tf.runUseOrBegin(transactionTimeout, "Error loading XML entity data", {
-                    XMLReader reader = SAXParserFactory.newInstance().newSAXParser().XMLReader
-                    exh.setLocation("xmlText")
-                    reader.setContentHandler(exh)
-                    reader.parse(new InputSource(new StringReader(this.xmlText)))
-                })
-            }
-
-            // load the CSV text in its own transaction
-            if (this.csvText) {
-                InputStream csvInputStream = new ByteArrayInputStream(csvText.getBytes("UTF-8"))
-                try {
-                    tf.runUseOrBegin(transactionTimeout, "Error loading CSV entity data", { ech.loadFile("csvText", csvInputStream) })
-                } finally {
-                    if (csvInputStream != null) csvInputStream.close()
-                }
-            }
-
-            // load the JSON text in its own transaction
-            if (this.jsonText) {
-                InputStream jsonInputStream = new ByteArrayInputStream(jsonText.getBytes("UTF-8"))
-                try {
-                    tf.runUseOrBegin(transactionTimeout, "Error loading JSON entity data", { ejh.loadFile("jsonText", jsonInputStream) })
-                } finally {
-                    if (jsonInputStream != null) jsonInputStream.close()
-                }
-            }
-
-            // load each file in its own transaction
-            for (String location in this.locationList) {
-                try {
-                    loadSingleFile(location, exh, ech, ejh)
-                } catch (Throwable t) {
-                    logger.error("Skipping to next file after error: ${t.toString()} ${t.getCause() != null ? t.getCause().toString() : ''}")
-                }
-            }
-        })
-
         if (reenableEeca) eci.artifactExecutionFacade.enableEntityEca()
         if (reenableAuditLog) eci.artifactExecutionFacade.enableEntityAuditLog()
         if (reenableFkCreate) eci.artifactExecutionFacade.enableEntityFkCreate()
@@ -331,8 +287,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
     }
 
     void loadSingleFile(String location, EntityXmlHandler exh, EntityCsvHandler ech, EntityJsonHandler ejh) {
-        TransactionFacade tf = efi.ecfi.transactionFacade
-        boolean beganTransaction = tf.begin(transactionTimeout)
+        boolean beganTransaction = false
         try {
             InputStream inputStream = null
             try {
@@ -403,7 +358,6 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                         } catch (TypeToSkipException e) {
                             // nothing to do, this just stops the parsing when we know the file is not in the types we want
                         } catch (Throwable t) {
-                            tf.rollback(beganTransaction, "Error loading entity data", t)
                             throw new BaseException("Error loading entity data from ${entry.getName()} in zip file ${location}", t)
                         }
                     }
@@ -423,11 +377,8 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                 if (inputStream != null) inputStream.close()
             }
         } catch (Throwable t) {
-            tf.rollback(beganTransaction, "Error loading entity data", t)
             throw new BaseException("Error loading entity data from ${location}", t)
         } finally {
-            tf.commit(beganTransaction)
-
             ExecutionContextImpl ec = efi.ecfi.getEci()
             if (ec.messageFacade.hasError()) {
                 logger.error("Error messages loading entity data: " + ec.messageFacade.getErrorsString())

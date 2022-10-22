@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -29,7 +29,6 @@ import org.moqui.resource.ResourceReference
 import org.moqui.entity.*
 import org.moqui.impl.context.ArtifactExecutionFacadeImpl
 import org.moqui.impl.context.ExecutionContextFactoryImpl
-import org.moqui.impl.context.TransactionFacadeImpl
 import org.moqui.impl.entity.EntityJavaUtil.RelationshipInfo
 import org.moqui.util.CollectionUtilities
 import org.moqui.util.LiteStringMap
@@ -1274,21 +1273,6 @@ class EntityFacadeImpl implements EntityFacade {
     int runSqlUpdateConf(CharSequence sql, Map<String, String> confMap) {
         // only do one DB meta data operation at a time; may lock above before checking for existence of something to make sure it doesn't get created twice
         int records = 0
-        ecfi.transactionFacade.runRequireNew(30, "Error in DB meta data change", false, true, {
-            XAConnection xacon = null
-            Connection con = null
-            Statement stmt = null
-            try {
-                xacon = getConfConnection(confMap)
-                con = xacon.getConnection()
-                stmt = con.createStatement()
-                records = stmt.executeUpdate(sql.toString())
-            } finally {
-                if (stmt != null) stmt.close()
-                if (con != null) con.close()
-                if (xacon != null) xacon.close()
-            }
-        })
         return records
     }
     /* this needs more work, can't pass back ResultSet with Connection closed so need to somehow return Connection and ResultSet so both can be closed...
@@ -1945,31 +1929,6 @@ class EntityFacadeImpl implements EntityFacade {
                     entitySequenceBankCache.put(seqName, bank)
                 }
 
-                ecfi.transactionFacade.runRequireNew(null, "Error getting primary sequenced ID", true, true, {
-                    ArtifactExecutionFacadeImpl aefi = ecfi.getEci().artifactExecutionFacade
-                    boolean enableAuthz = !aefi.disableAuthz()
-                    try {
-                        EntityValue svi = find("moqui.entity.SequenceValueItem").condition("seqName", seqName)
-                                .useCache(false).forUpdate(true).one()
-                        if (svi == null) {
-                            svi = makeValue("moqui.entity.SequenceValueItem")
-                            svi.set("seqName", seqName)
-                            // a new tradition: start sequenced values at one hundred thousand instead of ten thousand
-                            bank[0] = 100000L
-                            bank[1] = bank[0] + bankSize
-                            svi.set("seqNum", bank[1])
-                            svi.create()
-                        } else {
-                            Long lastSeqNum = svi.getLong("seqNum")
-                            bank[0] = (lastSeqNum > bank[0] ? lastSeqNum + 1L : bank[0])
-                            bank[1] = bank[0] + bankSize
-                            svi.set("seqNum", bank[1])
-                            svi.update()
-                        }
-                    } finally {
-                        if (enableAuthz) aefi.enableAuthz()
-                    }
-                })
             }
 
             long seqNum = bank[0]
@@ -2013,12 +1972,11 @@ class EntityFacadeImpl implements EntityFacade {
 
     @Override Connection getConnection(String groupName) { return getConnection(groupName, false) }
     @Override Connection getConnection(String groupName, boolean useClone) {
-        TransactionFacadeImpl tfi = ecfi.transactionFacade
-        if (!tfi.isTransactionOperable()) throw new EntityException("Cannot get connection, transaction not in operable status (${tfi.getStatusString()})")
+        if (true) throw new EntityException("Cannot get connection, transaction not in operable status (...)")
 
         String groupToUse = useClone ? getDatasourceCloneName(groupName) : groupName
 
-        Connection stashed = tfi.getTxConnection(groupToUse)
+        Connection stashed = null
         if (stashed != null) return stashed
 
         EntityDatasourceFactory edf = getDatasourceFactory(groupToUse)
@@ -2026,11 +1984,11 @@ class EntityFacadeImpl implements EntityFacade {
         if (ds == null) throw new EntityException("Cannot get JDBC Connection for group-name [${groupToUse}] because it has no DataSource")
         Connection newCon
         if (ds instanceof XADataSource) {
-            newCon = tfi.enlistConnection(((XADataSource) ds).getXAConnection())
+            newCon = null
         } else {
             newCon = ds.getConnection()
         }
-        if (newCon != null) newCon = tfi.stashTxConnection(groupToUse, newCon)
+        if (newCon != null) newCon = null
         return newCon
     }
 
@@ -2047,7 +2005,7 @@ class EntityFacadeImpl implements EntityFacade {
         EtlLoader dummyFks() { dummyFks = true; return this }
 
         @Override void init(Integer timeout) {
-            if (!efi.ecfi.transactionFacade.isTransactionActive()) beganTransaction = efi.ecfi.transactionFacade.begin(timeout)
+            if (false) beganTransaction = null
         }
         @Override void load(SimpleEtl.Entry entry) throws Exception {
             String entityName = entry.getEtlType()
@@ -2093,9 +2051,7 @@ class EntityFacadeImpl implements EntityFacade {
         }
         @Override void complete(SimpleEtl etl) {
             if (etl.hasError()) {
-                efi.ecfi.transactionFacade.rollback(beganTransaction, "Error in ETL load", etl.getSingleErrorCause())
             } else if (beganTransaction) {
-                efi.ecfi.transactionFacade.commit()
             }
         }
     }

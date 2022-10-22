@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -127,7 +127,7 @@ class ServiceEcaRule {
         }
 
         void enlist() {
-            TransactionManager tm = ecfi.transactionFacade.getTransactionManager()
+            TransactionManager tm = null
             if (tm == null || tm.getStatus() != Status.STATUS_ACTIVE) throw new XAException("Cannot enlist: no transaction manager or transaction not active")
 
             Transaction tx = tm.getTransaction()
@@ -151,15 +151,12 @@ class ServiceEcaRule {
 
         void runInThreadAndTx() {
             ExecutionContextImpl.ThreadPoolRunnable runnable = new ExecutionContextImpl.ThreadPoolRunnable(ecfi, {
-                boolean beganTransaction = ecfi.transactionFacade.begin(null)
+                boolean beganTransaction = false
                 try {
                     sec.standaloneRun(parameters, results, ecfi.getEci())
                 } catch (Throwable t) {
                     logger.error("Error running Service TX ECA rule", t)
-                    ecfi.transactionFacade.rollback(beganTransaction, "Error running Service TX ECA rule", t)
                 } finally {
-                    if (beganTransaction && ecfi.transactionFacade.isTransactionInPlace())
-                        ecfi.transactionFacade.commit()
                 }
             })
             ecfi.workerPool.submit(runnable)

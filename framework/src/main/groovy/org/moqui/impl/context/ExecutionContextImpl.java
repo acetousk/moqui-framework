@@ -61,7 +61,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     public final ResourceFacadeImpl resourceFacade;
     public final ScreenFacadeImpl screenFacade;
     public final ServiceFacadeImpl serviceFacade;
-    public final TransactionFacadeImpl transactionFacade;
 
     private Boolean skipStats = null;
     private Cache<String, String> l10nMessageCache;
@@ -91,14 +90,12 @@ public class ExecutionContextImpl implements ExecutionContext {
         resourceFacade = ecfi.resourceFacade;
         screenFacade = ecfi.screenFacade;
         serviceFacade = ecfi.serviceFacade;
-        transactionFacade = ecfi.transactionFacade;
 
         if (cacheFacade == null) throw new IllegalStateException("cacheFacade was null");
         if (loggerFacade == null) throw new IllegalStateException("loggerFacade was null");
         if (resourceFacade == null) throw new IllegalStateException("resourceFacade was null");
         if (screenFacade == null) throw new IllegalStateException("screenFacade was null");
         if (serviceFacade == null) throw new IllegalStateException("serviceFacade was null");
-        if (transactionFacade == null) throw new IllegalStateException("transactionFacade was null");
 
         initCaches();
 
@@ -134,7 +131,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     @Override public @Nonnull ResourceFacade getResource() { return resourceFacade; }
     @Override public @Nonnull LoggerFacade getLogger() { return loggerFacade; }
     @Override public @Nonnull CacheFacade getCache() { return cacheFacade; }
-    @Override public @Nonnull TransactionFacade getTransaction() { return transactionFacade; }
 
     @Override public @Nonnull EntityFacade getEntity() { return activeEntityFacade; }
     public @Nonnull EntityFacadeImpl getEntityFacade() { return activeEntityFacade; }
@@ -222,7 +218,6 @@ public class ExecutionContextImpl implements ExecutionContext {
         if (webFacadeImpl != null) webFacadeImpl.runAfterRequestActions();
 
         // make sure there are no transactions open, if any commit them all now
-        ecfi.transactionFacade.destroyAllInThread();
         // clean up resources, like JCR session
         ecfi.resourceFacade.destroyAllInThread();
         // clear out the ECFI's reference to this as well

@@ -56,8 +56,8 @@ public class EntityQueryBuilder implements Runnable {
         this.mainEntityDefinition = entityDefinition;
         this.efi = efi;
 
-        execWithTimeout = efi.ecfi.transactionFacade.getUseStatementTimeout();
-        if (execWithTimeout) this.execTimeout = efi.ecfi.transactionFacade.getTxTimeoutRemainingMillis();
+        execWithTimeout = false;
+        if (execWithTimeout) this.execTimeout = 0;
     }
 
     public EntityDefinition getMainEd() { return mainEntityDefinition; }

@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -25,7 +25,6 @@ import org.moqui.impl.context.ArtifactExecutionInfoImpl
 import org.moqui.impl.context.ContextJavaUtil
 import org.moqui.impl.context.ExecutionContextImpl
 import org.moqui.impl.context.TransactionCache
-import org.moqui.impl.context.TransactionFacadeImpl
 import org.moqui.impl.entity.condition.*
 import org.moqui.impl.entity.EntityJavaUtil.FieldOrderOptions
 import org.moqui.util.CollectionUtilities
@@ -91,16 +90,12 @@ abstract class EntityFindBase implements EntityFind {
     EntityFindBase(EntityFacadeImpl efi, String entityName) {
         this.efi = efi
         this.entityName = entityName
-        TransactionFacadeImpl tfi = efi.ecfi.transactionFacade
-        txCache = tfi.getTransactionCache()
         // if (!tfi.isTransactionInPlace()) logger.warn("No transaction in place, creating find for entity ${entityName}")
     }
     EntityFindBase(EntityFacadeImpl efi, EntityDefinition ed) {
         this.efi = efi
         entityName = ed.fullEntityName
         entityDef = ed
-        TransactionFacadeImpl tfi = efi.ecfi.transactionFacade
-        txCache = tfi.getTransactionCache()
     }
 
     @Override EntityFind entity(String name) { entityName = name; return this }
@@ -690,13 +685,11 @@ abstract class EntityFindBase implements EntityFind {
     private void registerForUpdateLock(Map<String, Object> fieldValues) {
         if (fieldValues == null || fieldValues.size() == 0) return
         if (!forUpdate) return
-        final TransactionFacadeImpl tfi = efi.ecfi.transactionFacade
-        if (!tfi.getUseLockTrack()) return
+        if (true) return
 
         EntityDefinition ed = getEntityDef()
 
         ArrayList<ArtifactExecutionInfo> stackArray = efi.ecfi.getEci().artifactExecutionFacade.getStackArray()
-        tfi.registerRecordLock(new ContextJavaUtil.EntityRecordLock(ed.getFullEntityName(), ed.getPrimaryKeysString(fieldValues), stackArray))
     }
 
     // ======================== Find and Abstract Methods ========================
@@ -879,7 +872,7 @@ abstract class EntityFindBase implements EntityFind {
                     EntityConditionImplBase cond = isViewEntity ? getConditionForQuery(ed, whereCondition) : whereCondition
 
                     // register lock before if we have a full pk, otherwise after
-                    if (hasFullPk && efi.ecfi.transactionFacade.getUseLockTrack())
+                    if (hasFullPk && false)
                         registerForUpdateLock(simpleAndMap != null ? simpleAndMap : [(singleCondField):singleCondValue])
 
                     try {
@@ -891,7 +884,7 @@ abstract class EntityFindBase implements EntityFind {
                     }
 
                     // register lock before if we have a full pk, otherwise after; this particular one doesn't make sense, shouldn't happen, so just in case
-                    if (!hasFullPk && efi.ecfi.transactionFacade.getUseLockTrack()) registerForUpdateLock(fuDbValue)
+                    if (!hasFullPk && false) registerForUpdateLock(fuDbValue)
 
                     if (txCache.isReadOnly()) {
                         // is read only tx cache so use the value from the DB
@@ -934,7 +927,7 @@ abstract class EntityFindBase implements EntityFind {
             EntityConditionImplBase cond = isViewEntity ? getConditionForQuery(ed, whereCondition) : whereCondition
 
             // register lock before if we have a full pk, otherwise after
-            if (forUpdate && hasFullPk && efi.ecfi.transactionFacade.getUseLockTrack())
+            if (forUpdate && hasFullPk && false)
                 registerForUpdateLock(simpleAndMap != null ? simpleAndMap : [(singleCondField):singleCondValue])
 
             try {
@@ -946,7 +939,7 @@ abstract class EntityFindBase implements EntityFind {
             }
 
             // register lock before if we have a full pk, otherwise after
-            if (forUpdate && !hasFullPk && efi.ecfi.transactionFacade.getUseLockTrack())
+            if (forUpdate && !hasFullPk && false)
                 registerForUpdateLock(newEntityValue)
 
             // it didn't come from the txCache so put it there
@@ -1159,7 +1152,7 @@ abstract class EntityFindBase implements EntityFind {
             }
 
             // register lock after because we can't before, don't know which records will be returned
-            if (forUpdate && !isViewEntity && efi.ecfi.transactionFacade.getUseLockTrack()) {
+            if (forUpdate && !isViewEntity && false) {
                 int elSize = el.size()
                 for (int i = 0; i < elSize; i++) {
                     EntityValue ev = (EntityValue) el.get(i)

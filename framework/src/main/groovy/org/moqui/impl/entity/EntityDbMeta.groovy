@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -110,7 +110,7 @@ class EntityDbMeta {
         String[] types = ["TABLE", "VIEW", "ALIAS", "SYNONYM"]
         Set<String> existingTableNames = new HashSet<>()
 
-        boolean beganTx = useTxForMetaData ? efi.ecfi.transactionFacade.begin(300) : false
+        boolean beganTx = useTxForMetaData ? false : false
         try {
             Connection con = efi.getConnection(groupName)
 
@@ -214,14 +214,13 @@ class EntityDbMeta {
                 if (con != null) con.close()
             }
         } finally {
-            if (beganTx) efi.ecfi.transactionFacade.commit()
         }
 
         // do second pass to make sure all FKs created
         if (tablesAdded > 0 && shouldCreateFks(efi.ecfi)) {
             logger.info("Tables were created, checking FKs for all entities in group ${groupName}")
 
-            beganTx = useTxForMetaData ? efi.ecfi.transactionFacade.begin(300) : false
+            beganTx = useTxForMetaData ? false : false
             try {
                 Connection con = efi.getConnection(groupName)
 
@@ -370,7 +369,6 @@ class EntityDbMeta {
                     if (con != null) con.close()
                 }
             } finally {
-                if (beganTx) efi.ecfi.transactionFacade.commit()
             }
         }
 
@@ -453,7 +451,7 @@ class EntityDbMeta {
             Connection con = null
             ResultSet tableSet1 = null
             ResultSet tableSet2 = null
-            boolean beganTx = useTxForMetaData ? efi.ecfi.transactionFacade.begin(5) : false
+            boolean beganTx = useTxForMetaData ? false : false
             try {
                 con = efi.getConnection(groupName)
                 DatabaseMetaData dbData = con.getMetaData()
@@ -478,7 +476,6 @@ class EntityDbMeta {
                 if (tableSet1 != null && !tableSet1.isClosed()) tableSet1.close()
                 if (tableSet2 != null && !tableSet2.isClosed()) tableSet2.close()
                 if (con != null) con.close()
-                if (beganTx) efi.ecfi.transactionFacade.commit()
             }
         }
 
@@ -563,7 +560,7 @@ class EntityDbMeta {
         Connection con = null
         ResultSet colSet1 = null
         ResultSet colSet2 = null
-        boolean beganTx = useTxForMetaData ? efi.ecfi.transactionFacade.begin(5) : false
+        boolean beganTx = useTxForMetaData ? false : false
         try {
             con = efi.getConnection(groupName)
             DatabaseMetaData dbData = con.getMetaData()
@@ -620,7 +617,6 @@ class EntityDbMeta {
             if (colSet1 != null && !colSet1.isClosed()) colSet1.close()
             if (colSet2 != null && !colSet2.isClosed()) colSet2.close()
             if (con != null && !con.isClosed()) con.close()
-            if (beganTx) efi.ecfi.transactionFacade.commit()
         }
     }
 
@@ -1185,19 +1181,6 @@ class EntityDbMeta {
         Integer records = null
         try {
             // use a short timeout here just in case this is in the middle of stuff going on with tables locked, may happen a lot for FK ops
-            efi.ecfi.transactionFacade.runRequireNew(10, "Error in DB meta data change", useTxForMetaData, true, {
-                Connection con = null
-                Statement stmt = null
-
-                try {
-                    con = sharedCon != null ? sharedCon : efi.getConnection(groupName)
-                    stmt = con.createStatement()
-                    records = stmt.executeUpdate(sql.toString())
-                } finally {
-                    if (stmt != null) stmt.close()
-                    if (con != null && sharedCon == null) con.close()
-                }
-            })
         } catch (Throwable t) {
             logger.error("SQL Exception while executing the following SQL [${sql.toString()}]: ${t.toString()}")
         } finally {

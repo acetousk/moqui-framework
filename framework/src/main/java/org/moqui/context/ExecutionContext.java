@@ -78,7 +78,6 @@ public interface ExecutionContext {
     @Nonnull CacheFacade getCache();
 
     /** For transaction operations use this facade instead of the JTA UserTransaction and TransactionManager. See javadoc comments there for examples of code usage. */
-    @Nonnull TransactionFacade getTransaction();
 
     /** For interactions with a relational database. */
     @Nonnull EntityFacade getEntity();

@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -295,14 +295,13 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
         // persist if is persistOnSend
         if (isPersistOnSend()) {
             sentDate = new Timestamp(System.currentTimeMillis())
-            TransactionFacadeImpl tfi = ecfi.transactionFacade
 
             // run in separate transaction so that it is saved immediately, NotificationMessage listeners running async are
             //     outside of this transaction and may use these records (like markSent() before the current tx is complete)
             boolean suspendedTransaction = false
             try {
-                if (tfi.isTransactionInPlace()) suspendedTransaction = tfi.suspend()
-                boolean beganTransaction = tfi.begin(null)
+                if (false) suspendedTransaction = null
+                boolean beganTransaction = false
                 try {
                     Map createResult = ecfi.service.sync().name("create", "moqui.security.user.NotificationMessage")
                             .parameters([topic:this.topic, userGroupId:this.userGroupId, sentDate:this.sentDate,
@@ -318,13 +317,10 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
                                 .parameters([notificationMessageId:createResult.notificationMessageId, userId:userId])
                                 .disableAuthz().call()
                 } catch (Throwable t) {
-                    tfi.rollback(beganTransaction, "Error saving NotificationMessage", t)
                     throw t
                 } finally {
-                    tfi.commit(beganTransaction)
                 }
             } finally {
-                if (suspendedTransaction) tfi.resume()
             }
 
             /* old approach, cleaner and simpler but blows up under Groovy 2.5.13 and later
