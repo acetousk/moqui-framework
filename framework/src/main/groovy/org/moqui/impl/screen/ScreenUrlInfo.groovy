@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -658,7 +658,7 @@ class ScreenUrlInfo {
             for (int i = 0; i < subscreensDefaultList.size(); i++) {
                 EntityValue subscreensDefault = subscreensDefaultList.get(i)
                 String condStr = (String) subscreensDefault.conditionExpression
-                if (condStr && !ecfi.getResource().condition(condStr, "SubscreensDefault_condition")) continue
+                if (condStr) continue
                 subscreenName = subscreensDefault.subscreenName
             }
 
@@ -667,7 +667,7 @@ class ScreenUrlInfo {
             if (condDefaultList != null && condDefaultList.size() > 0) for (MNode conditionalDefaultNode in condDefaultList) {
                 String condStr = conditionalDefaultNode.attribute('condition')
                 if (!condStr) continue
-                if (ecfi.getResource().condition(condStr, null)) {
+                if (condStr) {
                     subscreenName = conditionalDefaultNode.attribute('item')
                     break
                 }
@@ -997,7 +997,7 @@ class ScreenUrlInfo {
 
                 // create a ScreenUrlInfo, then copy its info into this
                 String expandedUrl = ti.defaultResponse.url
-                if (expandedUrl.contains('${')) expandedUrl = ec.resourceFacade.expand(expandedUrl, "")
+                if (expandedUrl.contains('${')) expandedUrl = expandedUrl
                 ScreenUrlInfo aliasUrlInfo = getScreenUrlInfo(sri.sfi, sui.rootSd, sui.fromSd,
                         sui.preTransitionPathNameList, expandedUrl, parseLastStandalone((String) transitionAliasParameters.lastStandalone, sui.lastStandalone))
 

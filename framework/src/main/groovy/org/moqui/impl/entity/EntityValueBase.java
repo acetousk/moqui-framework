@@ -241,7 +241,7 @@ public abstract class EntityValueBase implements EntityValue {
                 String pqExpression = pqExprNode.attribute("pq-expression");
                 try {
                     EntityFacadeImpl efi = getEntityFacadeImpl();
-                    return efi.ecfi.resourceFacade.expression(pqExpression, null, valueMapInternal);
+                    return pqExpression;
                 } catch (Throwable t) {
                     throw new EntityException("Error evaluating pq-expression for " + entityName + "." + name, t);
                 }
@@ -541,7 +541,7 @@ public abstract class EntityValueBase implements EntityValue {
         String entityPrefix = null;
         String rawPrefix = ed.entityInfo.sequencePrimaryPrefix;
         if (rawPrefix != null && rawPrefix.length() > 0)
-            entityPrefix = localEfi.ecfi.resourceFacade.expand(rawPrefix, null, valueMapInternal);
+            entityPrefix = rawPrefix;
         String sequenceValue = localEfi.sequencedIdPrimaryEd(ed);
 
         putKnownField(ed.entityInfo.pkFieldInfoArray[0], entityPrefix != null ? entityPrefix + sequenceValue : sequenceValue);
@@ -1419,7 +1419,7 @@ public abstract class EntityValueBase implements EntityValue {
             if (dbValueMap != null) ec.getContext().push(dbValueMap);
             ec.getContext().push(valueMapInternal);
             try {
-                Object newVal = ec.getResource().expression(defaultStr, "");
+                Object newVal = defaultStr;
                 if (newVal != null) valueMapInternal.putByIString(fi.name, newVal, fi.index);
             } finally {
                 ec.getContext().pop();
@@ -1434,7 +1434,7 @@ public abstract class EntityValueBase implements EntityValue {
         String errorMessage = null;
         // TODO: need a different approach for localization, getting from DB may not be reliable after an error and may cause other errors (especially with Postgres and the auto rollback only)
         if (false && !"LocalizedMessage".equals(ed.getEntityName())) {
-            try { errorMessage = ec.resourceFacade.expand(expandMsg, null, errorContext); }
+            try { errorMessage = expandMsg; }
             catch (Throwable t) { logger.trace("Error expanding error message", t); }
         }
         if (errorMessage == null) errorMessage = baseMsg + " " + ed.getEntityName() + " " + getPrimaryKeys();

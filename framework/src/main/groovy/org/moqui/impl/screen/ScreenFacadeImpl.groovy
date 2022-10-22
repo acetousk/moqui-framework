@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -63,12 +63,9 @@ class ScreenFacadeImpl implements ScreenFacade {
         screenLocationCache = ecfi.cacheFacade.getCache("screen.location", String.class, ScreenDefinition.class)
         screenLocationPermCache = ecfi.cacheFacade.getCache("screen.location.perm", String.class, ScreenDefinition.class)
         screenUrlCache = ecfi.cacheFacade.getCache("screen.url", String.class, ScreenUrlInfo.class)
-        screenInfoCache = ecfi.cacheFacade.getCache("screen.info", String.class, List.class)
-        screenInfoRefRevCache = ecfi.cacheFacade.getCache("screen.info.ref.rev", String.class, Set.class)
         screenTemplateModeCache = ecfi.cacheFacade.getCache("screen.template.mode", String.class, Template.class)
         screenTemplateLocationCache = ecfi.cacheFacade.getCache("screen.template.location", String.class, Template.class)
         widgetTemplateLocationCache = ecfi.cacheFacade.getCache("widget.template.location", String.class, MNode.class)
-        screenFindPathCache = ecfi.cacheFacade.getCache("screen.find.path", String.class, ArrayList.class)
         dbFormNodeByIdCache = ecfi.cacheFacade.getCache("screen.form.db.node", String.class, MNode.class)
 
         MNode screenFacadeNode = ecfi.getConfXmlRoot().first("screen-facade")
@@ -135,13 +132,9 @@ class ScreenFacadeImpl implements ScreenFacade {
             //     element; this is faster and more reliable when a screen is not loaded, screen doesn't have to be fully valid
             //     which is important as with the old approach if there was an error parsing or compiling the screen it was a false
             //     negative and the screen source would be sent in response
-            ResourceReference screenRr = ecfi.resourceFacade.getLocationReference(location)
-            MNode screenNode = MNode.parseRootOnly(screenRr)
-            return screenNode != null && "screen".equals(screenNode.getName())
-
             // old approach
-            // ScreenDefinition checkSd = getScreenDefinition(location)
-            // return (checkSd != null)
+             ScreenDefinition checkSd = getScreenDefinition(location)
+             return (checkSd != null)
         } catch (Throwable t) {
             // ignore the error, just checking to see if it is a screen
             if (logger.isInfoEnabled()) logger.info("Error when checking to see if [${location}] is a XML Screen: ${t.toString()}", t)
@@ -161,27 +154,10 @@ class ScreenFacadeImpl implements ScreenFacade {
         ScreenDefinition sd = (ScreenDefinition) screenLocationCache.get(location)
         if (sd != null) return sd
 
-        ResourceReference screenRr = ecfi.resourceFacade.getLocationReference(location)
-
         ScreenDefinition permSd = (ScreenDefinition) screenLocationPermCache.get(location)
         if (permSd != null) {
             // check to see if file has been modified, if we know when it was last modified
             boolean modified = true
-            if (screenRr.supportsLastModified()) {
-                long rrLastModified = screenRr.getLastModified()
-                modified = permSd.screenLoadedTime < rrLastModified
-                // see if any screens it depends on (any extends, etc) have been modified
-                if (!modified) {
-                    for (String dependLocation in permSd.dependsOnScreenLocations) {
-                        ScreenDefinition dependSd = getScreenDefinition(dependLocation)
-                        if (dependSd.sourceLastModified == null) { modified = true; break; }
-                        if (dependSd.sourceLastModified > permSd.screenLoadedTime) {
-                            // logger.info("Screen ${location} depends on ${dependLocation}, modified ${dependSd.sourceLastModified} > ${permSd.screenLoadedTime}")
-                            modified = true; break;
-                        }
-                    }
-                }
-            }
 
             if (modified) {
                 screenLocationPermCache.remove(location)
@@ -197,14 +173,12 @@ class ScreenFacadeImpl implements ScreenFacade {
             }
         }
 
-        MNode screenNode = MNode.parse(screenRr)
+        MNode screenNode = null
         if (screenNode == null) throw new BaseArtifactException("Could not find definition for screen location ${location}")
 
         sd = new ScreenDefinition(this, screenNode, location)
         // logger.warn("========= loaded screen [${location}] supports LM ${screenRr.supportsLastModified()}, LM: ${screenRr.getLastModified()}")
-        if (screenRr.supportsLastModified()) sd.sourceLastModified = screenRr.getLastModified()
         screenLocationCache.put(location, sd)
-        if (screenRr.supportsLastModified()) screenLocationPermCache.put(location, sd)
         return sd
     }
 
@@ -254,8 +228,7 @@ class ScreenFacadeImpl implements ScreenFacade {
 
         Template newTemplate
         try {
-            newTemplate = new Template("moqui.automatic.${renderMode}", new StringReader(rootTemplate),
-                    ecfi.resourceFacade.ftlTemplateRenderer.getFtlConfiguration())
+            newTemplate = new Template("moqui.automatic.${renderMode}", new StringReader(rootTemplate), null)
         } catch (Exception e) {
             throw new BaseArtifactException("Error while initializing Screen Widgets template at [${templateLocation}]", e)
         }
@@ -283,7 +256,7 @@ class ScreenFacadeImpl implements ScreenFacade {
             // this location needs to look like a filename in the runtime directory, otherwise FTL will look for includes under the directory it looks like instead
             String filename = templateLocation.substring(templateLocation.lastIndexOf("/")+1)
             newTemplate = new Template(filename, new StringReader(rootTemplate),
-                    ecfi.resourceFacade.ftlTemplateRenderer.getFtlConfiguration())
+                    null)
         } catch (Exception e) {
             throw new BaseArtifactException("Error while initializing Screen Widgets template at [${templateLocation}]", e)
         }
@@ -302,7 +275,7 @@ class ScreenFacadeImpl implements ScreenFacade {
         MNode templatesNode = (MNode) widgetTemplateLocationCache.get(templateLocation)
         if (templatesNode != null) return templatesNode
 
-        templatesNode = MNode.parse(templateLocation, ecfi.resourceFacade.getLocationStream(templateLocation))
+        templatesNode = null
         widgetTemplateLocationCache.put(templateLocation, templatesNode)
         return templatesNode
     }
@@ -498,7 +471,7 @@ class ScreenFacadeImpl implements ScreenFacade {
             for (ScreenDefinition.ResponseItem ri in ti.conditionalResponseList) {
                 if (ri.urlType && ri.urlType != "transition" && ri.urlType != "screen") continue
                 String expandedUrl = ri.url
-                if (expandedUrl.contains('${')) expandedUrl = ecfi.getResource().expand(expandedUrl, "")
+                if (expandedUrl.contains('${')) expandedUrl = expandedUrl
                 ScreenUrlInfo sui = ScreenUrlInfo.getScreenUrlInfo(ecfi.screenFacade, si.rootInfo.sd,
                         si.sd, si.screenPath, expandedUrl, 0)
                 if (sui.targetScreen == null) continue

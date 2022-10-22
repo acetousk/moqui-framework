@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -69,7 +69,7 @@ class MarkdownTemplateRenderer implements TemplateRenderer {
         if (!hasVersion) {
             if (templateMarkdownLocationCache instanceof MCache) {
                 MCache<String, String> mCache = (MCache) templateMarkdownLocationCache
-                ResourceReference rr = ecfi.resourceFacade.getLocationReference(location)
+                ResourceReference rr = null
                 long lastModified = rr != null ? rr.getLastModified() : 0L
                 mdText = (String) mCache.get(location, lastModified)
             } else {
@@ -82,7 +82,7 @@ class MarkdownTemplateRenderer implements TemplateRenderer {
             }
         }
 
-        String sourceText = ecfi.resourceFacade.getLocationText(location, false)
+        String sourceText = null
         if (sourceText == null || sourceText.isEmpty()) {
             logger.warn("In Markdown template render got no text from location ${location}")
             return

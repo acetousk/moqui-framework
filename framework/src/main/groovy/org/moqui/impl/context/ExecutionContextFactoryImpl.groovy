@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -81,7 +81,7 @@ import java.util.zip.ZipInputStream
 class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     protected final static Logger logger = LoggerFactory.getLogger(ExecutionContextFactoryImpl.class)
     protected final static boolean isTraceEnabled = logger.isTraceEnabled()
-    
+
     private AtomicBoolean destroyed = new AtomicBoolean(false)
 
     public final long initStartTime
@@ -138,7 +138,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     // ======== Permanent Delegated Facades ========
     @SuppressWarnings("GrFinalVariableAccess") public final CacheFacadeImpl cacheFacade
     @SuppressWarnings("GrFinalVariableAccess") public final LoggerFacadeImpl loggerFacade
-    @SuppressWarnings("GrFinalVariableAccess") public final ResourceFacadeImpl resourceFacade
     @SuppressWarnings("GrFinalVariableAccess") public final TransactionFacadeImpl transactionFacade
     @SuppressWarnings("GrFinalVariableAccess") public final EntityFacadeImpl entityFacade
     @SuppressWarnings("GrFinalVariableAccess") public final ElasticFacadeImpl elasticFacade
@@ -222,7 +221,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         logger.info("Cache Facade initialized")
         loggerFacade = new LoggerFacadeImpl(this)
         // logger.info("Logger Facade initialized")
-        resourceFacade = new ResourceFacadeImpl(this)
         logger.info("Resource Facade initialized")
 
         transactionFacade = new TransactionFacadeImpl(this)
@@ -282,7 +280,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         logger.info("Cache Facade initialized")
         loggerFacade = new LoggerFacadeImpl(this)
         // logger.info("LoggerFacadeImpl initialized")
-        resourceFacade = new ResourceFacadeImpl(this)
         logger.info("Resource Facade initialized")
 
         transactionFacade = new TransactionFacadeImpl(this)
@@ -1019,7 +1016,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     }
 
     @Override @Nonnull L10nFacade getL10n() { getEci().l10nFacade }
-    @Override @Nonnull ResourceFacade getResource() { resourceFacade }
     @Override @Nonnull LoggerFacade getLogger() { loggerFacade }
     @Override @Nonnull CacheFacade getCache() { cacheFacade }
     @Override @Nonnull TransactionFacade getTransaction() { transactionFacade }

@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -76,7 +76,7 @@ class ScreenSection {
         ContextStack cs = sri.ec.contextStack
         if (sectionNode.name == "section-iterate") {
             String listName = sectionNode.attribute("list")
-            Object list = sri.ec.resourceFacade.expression(listName, null)
+            Object list = listName
 
             // if nothing to iterate over, all done
             if (!list) {
@@ -90,15 +90,15 @@ class ScreenSection {
             if (paginate) {
                 cs.push()
                 if (list instanceof List) {
-                    List pageList = CollectionUtilities.paginateList((List) list, listName, cs)
+                    List pageList = null
                     listIterator = pageList.iterator()
                 } else {
                     throw new IllegalArgumentException("section-iterate paginate requires a List, found type ${list?.class?.name}")
                 }
             } else {
-                if (list instanceof Iterator) listIterator = (Iterator) list
-                else if (list instanceof Map) listIterator = ((Map) list).entrySet().iterator()
-                else if (list instanceof Iterable) listIterator = ((Iterable) list).iterator()
+                if (list instanceof Iterator) listIterator = null
+                else if (list instanceof Map) listIterator = null
+                else if (list instanceof Iterable) listIterator = null
             }
 
             String sectionEntry = sectionNode.attribute("entry")

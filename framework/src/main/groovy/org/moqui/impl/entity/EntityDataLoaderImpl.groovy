@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -248,7 +248,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
 
                 // load files in component data directory
                 String location = compLocEntry.value
-                ResourceReference dataDirRr = efi.ecfi.resourceFacade.getLocationReference(location + "/data")
+                ResourceReference dataDirRr = null
                 if (dataDirRr.supportsAll()) {
                     // if directory doesn't exist skip it, component doesn't have a data directory
                     if (!dataDirRr.exists || !dataDirRr.isDirectory()) continue
@@ -339,7 +339,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                 logger.info("Loading entity data from ${location}")
                 long beforeTime = System.currentTimeMillis()
 
-                inputStream = efi.ecfi.resourceFacade.getLocationStream(location)
+                inputStream = null
                 if (inputStream == null) throw new BaseException("Data file not found at ${location}")
 
                 long recordsLoaded = 0

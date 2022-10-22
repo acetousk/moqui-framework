@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -186,13 +186,13 @@ try {
 
     // parameter attachments
     if (attachments instanceof List) for (Map attachmentInfo in attachments) {
-        String filename = ec.resourceFacade.expand((String) attachmentInfo.fileName, null)
+        String filename = (String) attachmentInfo.fileName
         if (attachmentInfo.contentText) {
-            String mimeType = (String) attachmentInfo.contentType ?: ec.resourceFacade.getContentType(filename) ?: "text/plain"
+            String mimeType = (String) attachmentInfo.contentType ?: "text/plain"
             DataSource dataSource = new ByteArrayDataSource(attachmentInfo.contentText.toString(), mimeType)
             email.attach(dataSource, filename, "")
         } else if (attachmentInfo.contentBytes) {
-            String mimeType = (String) attachmentInfo.contentType ?: ec.resourceFacade.getContentType(filename) ?: "application/octet-stream"
+            String mimeType = (String) attachmentInfo.contentType ?: "application/octet-stream"
             DataSource dataSource = new ByteArrayDataSource((byte[]) attachmentInfo.contentBytes, mimeType)
             email.attach(dataSource, (String) attachmentInfo.fileName, "")
         } else if (attachmentInfo.screenRenderMode && (attachmentInfo.attachmentLocation || attachmentInfo.screenPath)) {
@@ -212,12 +212,12 @@ try {
     for (EntityValue emailTemplateAttachment in emailTemplateAttachmentList) {
         // check attachmentCondition if there is one
         String attachmentCondition = (String) emailTemplateAttachment.attachmentCondition
-        if (attachmentCondition && !ec.resourceFacade.condition(attachmentCondition, null)) continue
+        if (attachmentCondition && !attachmentCondition) continue
         // if screenRenderMode render attachment, otherwise just get attachment from location
         if (emailTemplateAttachment.screenRenderMode) {
             String forEachIn = (String) emailTemplateAttachment.forEachIn
             if (forEachIn) {
-                Collection forEachCol = (Collection) ec.resourceFacade.expression(forEachIn, null)
+                Collection forEachCol = (Collection) forEachIn
                 if (forEachCol) for (Object forEachEntry in forEachCol) {
                     ec.contextStack.push()
                     try {
@@ -298,7 +298,6 @@ static void renderScreenAttachment(EntityValue emailTemplate, HtmlEmail email, E
             // use ResourceFacade.xslFoTransform() to change to PDF, then attach that
             try {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream()
-                ec.resource.xslFoTransform(new StreamSource(new StringReader(attachmentText)), null, baos, "application/pdf")
                 email.attach(new ByteArrayDataSource(baos.toByteArray(), "application/pdf"), filenameExp, "")
             } catch (Exception e) {
                 logger.warn("Error generating PDF from XSL-FO: ${e.toString()}")

@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -90,7 +90,7 @@ class ScreenTree {
 
             // iterate over the list and add a response node for each entry
             String nodeListName = tsn.treeSubNodeNode.attribute("list") ?: "nodeList"
-            List nodeList = (List) eci.getResource().expression(nodeListName, "")
+            List nodeList = null
             // logger.warn("======= nodeList named [${nodeListName}]: ${nodeList}")
             Iterator i = nodeList?.iterator()
             int index = 0
@@ -109,8 +109,8 @@ class ScreenTree {
                     if (tn.actions != null) tn.actions.run(eci)
 
                     MNode showNode = tn.linkNode != null ? tn.linkNode : tn.labelNode
-                    String id = eci.getResource().expand((String) showNode.attribute("id"), tn.location + ".id")
-                    String text = eci.getResource().expand((String) showNode.attribute("text"), tn.location + ".text")
+                    String id = (String) showNode.attribute("id") + tn.location + ".id"
+                    String text = (String) showNode.attribute("text") + tn.location + ".text"
                     Map aAttrMap = (Map) null
                     if (tn.linkNode != null) {
                         ScreenUrlInfo.UrlInstance urlInstance = ((ScreenRenderImpl) cs.get("sri")).makeUrlByType((String) tn.linkNode.attribute("url"),

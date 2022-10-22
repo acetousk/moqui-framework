@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -58,7 +58,7 @@ class GStringTemplateRenderer implements TemplateRenderer {
         Template theTemplate;
         if (templateGStringLocationCache instanceof MCache) {
             MCache<String, Template> mCache = (MCache) templateGStringLocationCache;
-            ResourceReference rr = ecfi.resourceFacade.getLocationReference(location);
+            ResourceReference rr = null;
             long lastModified = rr != null ? rr.getLastModified() : 0L;
             theTemplate = mCache.get(location, lastModified);
         } else {
@@ -76,7 +76,7 @@ class GStringTemplateRenderer implements TemplateRenderer {
         Template newTemplate = null
         Reader templateReader = null
         try {
-            templateReader = new InputStreamReader(ecfi.resourceFacade.getLocationStream(location))
+            templateReader = new InputStreamReader(null)
             GStringTemplateEngine gste = new GStringTemplateEngine()
             newTemplate = gste.createTemplate(templateReader)
         } catch (Exception e) {

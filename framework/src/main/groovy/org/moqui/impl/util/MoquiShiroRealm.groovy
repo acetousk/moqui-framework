@@ -89,7 +89,7 @@ class MoquiShiroRealm implements Realm, Authorizer {
         }
 
         // no account found?
-        if (newUserAccount == null) throw new UnknownAccountException(eci.resource.expand('No account found for username ${username}','',[username:username]))
+        if (newUserAccount == null) throw new UnknownAccountException('No account found for username ${username} ' + username)
 
         // check for disabled account before checking password (otherwise even after disable could determine if
         //    password is correct or not
@@ -102,22 +102,19 @@ class MoquiShiroRealm implements Realm, Authorizer {
                     // only blow up if the re-enable time is not passed
                     eci.service.sync().name("org.moqui.impl.UserServices.increment#UserAccountFailedLogins")
                             .parameter("userId", newUserAccount.userId).requireNewTransaction(true).call()
-                    throw new ExcessiveAttemptsException(eci.resource.expand('Authenticate failed for user ${newUserAccount.username} because account is disabled and will not be re-enabled until ${reEnableTime} [DISTMP].',
-                            '', [newUserAccount:newUserAccount, reEnableTime:reEnableTime]))
+                    throw new ExcessiveAttemptsException('Authenticate failed for user ${newUserAccount.username} because account is disabled and will not be re-enabled until ${reEnableTime} [DISTMP]. ' + newUserAccount + ' ' + reEnableTime)
                 }
             } else {
                 // account permanently disabled
                 eci.service.sync().name("org.moqui.impl.UserServices.increment#UserAccountFailedLogins")
                         .parameters((Map<String, Object>) [userId:newUserAccount.userId]).requireNewTransaction(true).call()
-                throw new DisabledAccountException(eci.resource.expand('Authenticate failed for user ${newUserAccount.username} because account is disabled and is not schedule to be automatically re-enabled [DISPRM].',
-                        '', [newUserAccount:newUserAccount]))
+                throw new DisabledAccountException('Authenticate failed for user ${newUserAccount.username} because account is disabled and is not schedule to be automatically re-enabled [DISPRM]. ' + newUserAccount)
             }
         }
 
         Timestamp terminateDate = (Timestamp) newUserAccount.getNoCheckSimple("terminateDate")
         if (terminateDate != (Timestamp) null && System.currentTimeMillis() > terminateDate.getTime()) {
-            throw new DisabledAccountException(eci.resource.expand('User account ${newUserAccount.username} was terminated at ${ec.l10n.format(newUserAccount.terminateDate, null)} [TERM].',
-                    '', [newUserAccount:newUserAccount]))
+            throw new DisabledAccountException('User account ${newUserAccount.username} was terminated at ${ec.l10n.format(newUserAccount.terminateDate, null)} [TERM]. ' + newUserAccount)
         }
 
         return newUserAccount
@@ -130,7 +127,7 @@ class MoquiShiroRealm implements Realm, Authorizer {
         // check for require password change
         if ("Y".equals(newUserAccount.getNoCheckSimple("requirePasswordChange"))) {
             // NOTE: don't call incrementUserAccountFailedLogins here (don't need compounding reasons to stop access)
-            throw new PasswordChangeRequiredException(eci.resource.expand('Authenticate failed for user [${newUserAccount.username}] because account requires password change [PWDCHG].','',[newUserAccount:newUserAccount]))
+            throw new PasswordChangeRequiredException('Authenticate failed for user [${newUserAccount.username}] because account requires password change [PWDCHG]. ' + newUserAccount)
         }
         // check time since password was last changed, if it has been too long (user-facade.password.@change-weeks default 12) then fail
         if (newUserAccount.getNoCheckSimple("passwordSetDate") != null) {
@@ -139,8 +136,7 @@ class MoquiShiroRealm implements Realm, Authorizer {
                 int wksSinceChange = ((eci.user.nowTimestamp.time - newUserAccount.getTimestamp("passwordSetDate").time) / (7*24*60*60*1000)).intValue()
                 if (wksSinceChange > changeWeeks) {
                     // NOTE: don't call incrementUserAccountFailedLogins here (don't need compounding reasons to stop access)
-                    throw new ExpiredCredentialsException(eci.resource.expand('Authenticate failed for user ${newUserAccount.username} because password was changed ${wksSinceChange} weeks ago and must be changed every ${changeWeeks} weeks [PWDTIM].',
-                            '', [newUserAccount:newUserAccount, wksSinceChange:wksSinceChange, changeWeeks:changeWeeks]))
+                    throw new ExpiredCredentialsException('Authenticate failed for user ${newUserAccount.username} because password was changed ${wksSinceChange} weeks ago and must be changed every ${changeWeeks} weeks [PWDTIM]. ' + newUserAccount + ' ' + wksSinceChange + ' ' + changeWeeks)
                 }
             }
         }
@@ -151,8 +147,7 @@ class MoquiShiroRealm implements Realm, Authorizer {
                     .parameter("userId", userId).disableAuthz().call()?.secondFactorRequired ?: false
             // if the user requires authentication, throw a SecondFactorRequiredException so that UserFacadeImpl.groovy can catch the error and perform the appropriate action.
             if (secondReqd) {
-                throw new SecondFactorRequiredException(eci.ecfi.resource.expand('Authentication code required for user ${username}',
-                        '',[username:newUserAccount.getNoCheckSimple("username")]))
+                throw new SecondFactorRequiredException('Authentication code required for user ${username} ' + newUserAccount.getNoCheckSimple("username"))
             }
         }
 
@@ -191,8 +186,7 @@ class MoquiShiroRealm implements Realm, Authorizer {
                         }
                     }
                     if (!anyMatches) throw new AccountException(
-                            eci.resource.expand('Authenticate failed for user ${newUserAccount.username} because client IP ${clientIp} is not in allowed list for user or group.',
-                            '', [newUserAccount:newUserAccount, clientIp:clientIp]))
+                            'Authenticate failed for user ${newUserAccount.username} because client IP ${clientIp} is not in allowed list for user or group. ' + newUserAccount + ' ' + clientIp)
                 }
             }
         }
@@ -283,7 +277,7 @@ class MoquiShiroRealm implements Realm, Authorizer {
                     // if failed on password, increment in new transaction to make sure it sticks
                     ecfi.serviceFacade.sync().name("org.moqui.impl.UserServices.increment#UserAccountFailedLogins")
                             .parameters((Map<String, Object>) [userId:newUserAccount.userId]).requireNewTransaction(true).call()
-                    throw new IncorrectCredentialsException(ecfi.resource.expand('Password incorrect for username ${username}','',[username:username]))
+                    throw new IncorrectCredentialsException('Password incorrect for username ${username} ' + username)
                 }
             }
 
@@ -379,7 +373,7 @@ class MoquiShiroRealm implements Realm, Authorizer {
     void checkPermission(PrincipalCollection principalCollection, String permission) {
         String username = (String) principalCollection.primaryPrincipal
         if (UserFacadeImpl.hasPermission(username, permission, null, ecfi.getEci())) {
-            throw new UnauthorizedException(ecfi.resource.expand('User ${username} does not have permission ${permission}','',[username:username,permission:permission]))
+            throw new UnauthorizedException('User ${username} does not have permission ${permission} ' + username + ' ' + permission)
         }
     }
 
@@ -410,20 +404,20 @@ class MoquiShiroRealm implements Realm, Authorizer {
 
     void checkRole(PrincipalCollection principalCollection, String roleName) {
         if (!this.hasRole(principalCollection, roleName))
-            throw new UnauthorizedException(ecfi.resource.expand('User ${principalCollection.primaryPrincipal} is not in role ${roleName}','',[principalCollection:principalCollection,roleName:roleName]))
+            throw new UnauthorizedException('User ${principalCollection.primaryPrincipal} is not in role ${roleName} ' + ' ' + principalCollection + ' ' + roleName)
     }
 
     void checkRoles(PrincipalCollection principalCollection, Collection<String> roleNames) {
         for (String roleName in roleNames) {
             if (!this.hasRole(principalCollection, roleName))
-                throw new UnauthorizedException(ecfi.resource.expand('User ${principalCollection.primaryPrincipal} is not in role ${roleName}','',[principalCollection:principalCollection,roleName:roleName]))
+                throw new UnauthorizedException('User ${principalCollection.primaryPrincipal} is not in role ${roleName} ' + ' ' + principalCollection + ' ' + roleName)
         }
     }
 
     void checkRoles(PrincipalCollection principalCollection, String... roleNames) {
         for (String roleName in roleNames) {
             if (!this.hasRole(principalCollection, roleName))
-                throw new UnauthorizedException(ecfi.resource.expand('User ${principalCollection.primaryPrincipal} is not in role ${roleName}','',[principalCollection:principalCollection,roleName:roleName]))
+                throw new UnauthorizedException('User ${principalCollection.primaryPrincipal} is not in role ${roleName} ' + ' ' + principalCollection + ' ' + roleName)
         }
     }
 }

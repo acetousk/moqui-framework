@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -172,13 +172,13 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
             EntityValue localNotTopic = getNotificationTopic()
             if (localNotTopic != null) {
                 if (type == danger && localNotTopic.errorTitleTemplate) {
-                    titleText = ecfi.resource.expand((String) localNotTopic.errorTitleTemplate, "", getMessageMap(), true)
+                    titleText = (String) localNotTopic.errorTitleTemplate
                 } else if (localNotTopic.titleTemplate) {
-                    titleText = ecfi.resource.expand((String) localNotTopic.titleTemplate, "", getMessageMap(), true)
+                    titleText = (String) localNotTopic.titleTemplate
                 }
             }
             if ((titleText == null || titleText.isEmpty()) && titleTemplate != null && !titleTemplate.isEmpty())
-                titleText = ecfi.resource.expand(titleTemplate, "", getMessageMap(), true)
+                titleText = titleTemplate
         }
         return titleText
     }
@@ -187,11 +187,11 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
     @Override String getLink() {
         if (linkText == null) {
             if (linkTemplate) {
-                linkText = ecfi.resource.expand(linkTemplate, "", getMessageMap(), true)
+                linkText = linkTemplate
             } else {
                 EntityValue localNotTopic = getNotificationTopic()
                 if (localNotTopic != null && localNotTopic.linkTemplate)
-                    linkText = ecfi.resource.expand((String) localNotTopic.linkTemplate, "", getMessageMap(), true)
+                    linkText = (String) localNotTopic.linkTemplate
             }
         }
         return linkText

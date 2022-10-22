@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -337,7 +337,7 @@ class ArtifactExecutionFacadeImpl implements ArtifactExecutionFacade {
                 if (aacv.nameIsPattern && !aeii.getName().matches(aacv.artifactName)) continue
                 // check the filterMap
                 if (aacv.filterMap != null && aeii.parameters != null) {
-                    Map<String, Object> filterMapObj = (Map<String, Object>) eci.getResource().expression(aacv.filterMap, null)
+                    Map<String, Object> filterMapObj = (Map<String, Object>) null
                     boolean allMatches = true
                     for (Map.Entry<String, Object> filterEntry in filterMapObj.entrySet()) {
                         if (filterEntry.getValue() != aeii.parameters.get(filterEntry.getKey())) allMatches = false
@@ -597,8 +597,8 @@ class ArtifactExecutionFacadeImpl implements ArtifactExecutionFacade {
                 //     (fine for filterFindForUser(), cumbersome for other uses of this method)
                 eci.contextStack.push(eci.userFacade.context)
                 try {
-                    if (hasAuthzCond && !eci.resourceFacade.condition(authzApplyCond, null)) continue
-                    if (hasSetCond && !eci.resourceFacade.condition(setApplyCond, null)) continue
+                    if (hasAuthzCond && !authzApplyCond) continue
+                    if (hasSetCond && !setApplyCond) continue
                 } finally {
                     eci.contextStack.pop()
                 }
@@ -685,7 +685,7 @@ class ArtifactExecutionFacadeImpl implements ArtifactExecutionFacade {
                 Map<String, ArrayList<MNode>> memberFieldAliases = authzFilterInfo.memberFieldAliases
 
                 // NOTE: this expression eval must be done for the current context, with eci.userFacade.context added
-                Object filterMapObjEval = eci.resourceFacade.expression((String) entityFilter.getNoCheckSimple('filterMap'), null)
+                Object filterMapObjEval = null
                 Map<String, Object> filterMapObj
                 if (filterMapObjEval instanceof Map) {
                     filterMapObj = filterMapObjEval as Map<String, Object>

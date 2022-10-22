@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -291,7 +291,7 @@ class EntityConditionFactoryImpl implements EntityConditionFactory {
     }
     EntityCondition makeConditionDate(String fromFieldName, String thruFieldName, Timestamp compareStamp, boolean ignoreIfEmpty, String ignore) {
         if (ignoreIfEmpty && (Object) compareStamp == null) return null
-        if (efi.ecfi.resourceFacade.condition(ignore, null)) return null
+        if (ignore) return null
         return new DateCondition(fromFieldName, thruFieldName,
                 (compareStamp != (Object) null) ? compareStamp : efi.ecfi.getEci().userFacade.getNowTimestamp())
     }
@@ -351,14 +351,14 @@ class EntityConditionFactoryImpl implements EntityConditionFactory {
 
     EntityCondition makeActionCondition(String fieldName, String operator, String fromExpr, String value, String toFieldName,
                                         boolean ignoreCase, boolean ignoreIfEmpty, boolean orNull, String ignore) {
-        Object from = fromExpr ? this.efi.ecfi.resourceFacade.expression(fromExpr, "") : null
+        Object from = fromExpr ? fromExpr : null
         return makeActionConditionDirect(fieldName, operator, from, value, toFieldName, ignoreCase, ignoreIfEmpty, orNull, ignore)
     }
     EntityCondition makeActionConditionDirect(String fieldName, String operator, Object fromObj, String value, String toFieldName,
                                               boolean ignoreCase, boolean ignoreIfEmpty, boolean orNull, String ignore) {
         // logger.info("TOREMOVE makeActionCondition(fieldName ${fieldName}, operator ${operator}, fromExpr ${fromExpr}, value ${value}, toFieldName ${toFieldName}, ignoreCase ${ignoreCase}, ignoreIfEmpty ${ignoreIfEmpty}, orNull ${orNull}, ignore ${ignore})")
 
-        if (efi.ecfi.resourceFacade.condition(ignore, null)) return null
+        if (ignore) return null
 
         if (toFieldName != null && toFieldName.length() > 0) {
             EntityCondition ec = makeConditionToField(fieldName, getComparisonOperator(operator), toFieldName)
@@ -407,23 +407,23 @@ class EntityConditionFactoryImpl implements EntityConditionFactory {
             } else if ("date-filter".equals(subCond.nodeName)) {
                 if (!isCached) {
                     Timestamp validDate = subCond.attribute("valid-date") ?
-                            efi.ecfi.resourceFacade.expression(subCond.attribute("valid-date"), null) as Timestamp : null
+                            subCond.attribute("valid-date") as Timestamp : null
                     condList.add(makeConditionDate(subCond.attribute("from-field-name") ?: "fromDate",
                             subCond.attribute("thru-field-name") ?: "thruDate", validDate,
                             'true'.equals(subCond.attribute("ignore-if-empty")), subCond.attribute("ignore") ?: 'false'))
                 }
             } else if ("econdition-object".equals(subCond.nodeName)) {
-                Object curObj = efi.ecfi.resourceFacade.expression(subCond.attribute("field"), null)
+                Object curObj = subCond.attribute("field")
                 if (curObj == null) continue
                 if (curObj instanceof Map) {
-                    Map curMap = (Map) curObj
+                    Map curMap = curObj
                     if (curMap.size() == 0) continue
                     EntityCondition curCond = makeCondition(curMap, ComparisonOperator.EQUALS, JoinOperator.AND)
                     condList.add((EntityConditionImplBase) curCond)
                     continue
                 }
                 if (curObj instanceof EntityConditionImplBase) {
-                    EntityConditionImplBase curCond = (EntityConditionImplBase) curObj
+                    EntityConditionImplBase curCond = null
                     condList.add(curCond)
                     continue
                 }

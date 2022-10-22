@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -371,7 +371,7 @@ abstract class EntityFindBase implements EntityFind {
     EntityFind searchFormInputs(String inputFieldsMapName, Map<String, Object> defaultParameters, String skipFields,
                                 String defaultOrderBy, boolean alwaysPaginate) {
         ExecutionContextImpl ec = efi.ecfi.getEci()
-        Map<String, Object> inf = inputFieldsMapName ? (Map<String, Object>) ec.resource.expression(inputFieldsMapName, "") : ec.context
+        Map<String, Object> inf = inputFieldsMapName ? (Map<String, Object>) null : ec.context
         return searchFormMap(inf, defaultParameters, skipFields, defaultOrderBy, alwaysPaginate)
     }
 
@@ -680,7 +680,7 @@ abstract class EntityFindBase implements EntityFind {
         String errorMessage = null
         // TODO: need a different approach for localization, getting from DB may not be reliable after an error and may cause other errors (especially with Postgres and the auto rollback only)
         if (false && !"LocalizedMessage".equals(ed.getEntityName())) {
-            try { errorMessage = ec.resourceFacade.expand(expandMsg, null, errorContext) }
+            try { errorMessage = expandMsg }
             catch (Throwable t) { logger.trace("Error expanding error message", t) }
         }
         if (errorMessage == null) errorMessage = baseMsg + " " + ed.getEntityName() + " by " + cond

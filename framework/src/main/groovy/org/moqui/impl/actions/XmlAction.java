@@ -52,7 +52,7 @@ public class XmlAction {
         if (xmlText != null && !xmlText.isEmpty()) {
             xmlNode = MNode.parseText(location, xmlText);
         } else {
-            xmlNode = MNode.parseText(location, ecfi.resourceFacade.getLocationText(location, false));
+            xmlNode = MNode.parseText(location, location);
         }
     }
 
@@ -115,7 +115,7 @@ public class XmlAction {
             root.put("xmlActionsRoot", xmlNode);
 
             Writer outWriter = new StringWriter();
-            Environment env = ecfi.resourceFacade.getXmlActionsScriptRunner().getXmlActionsTemplate().createProcessingEnvironment(root, outWriter);
+            Environment env = null;
             env.process();
 
             groovyString = outWriter.toString();

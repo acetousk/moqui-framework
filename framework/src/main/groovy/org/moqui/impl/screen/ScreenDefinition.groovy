@@ -20,7 +20,6 @@ import org.moqui.BaseArtifactException
 import org.moqui.BaseException
 import org.moqui.context.ArtifactExecutionInfo
 import org.moqui.context.ExecutionContext
-import org.moqui.context.ResourceFacade
 import org.moqui.impl.context.ContextJavaUtil
 import org.moqui.impl.entity.EntityDefinition
 import org.moqui.impl.service.ServiceDefinition
@@ -96,24 +95,13 @@ class ScreenDefinition {
         // search components for screen-extend files
         ArrayList<MNode> screenExtendNodeList = new ArrayList<>()
         for (String componentLoc in sfi.ecfi.getComponentBaseLocations().values()) {
-            ResourceReference screenExtendRr = sfi.ecfi.resourceFacade.getLocationReference(componentLoc + "/screen-extend")
-            if (!screenExtendRr.supportsExists()) {
+            if (true) {
                 logger.warn("For screen-extend skipping component that does not support exists check: ${componentLoc}")
                 continue
             }
             // continue to next component if screen-extend directory does not exist (quit early)
-            if (!screenExtendRr.exists) continue
 
             // try the after '/screen/' path after the full path so that different screens with the same after-screen path can be distinguished
-            ResourceReference matchingRr = screenExtendRr.findChildFile(locPath)
-            if (!matchingRr.exists && locPathAfterScreen != null)
-                matchingRr = screenExtendRr.findChildFile(locPathAfterScreen)
-            // still found nothing? move along
-            if (!matchingRr.exists) continue
-
-            logger.info("Found screen-extend at ${matchingRr.location} for screen at ${location}")
-            MNode screenExtendNode = MNode.parse(matchingRr)
-            screenExtendNodeList.add(screenExtendNode)
         }
         // merge/etc screen-extend nodes from files
         Map<String, ArrayList<MNode>> extendDescendantsMap = new HashMap<>()
@@ -345,8 +333,6 @@ class ScreenDefinition {
         boolean isDynamic = (location != null && location.contains('${')) || (sectionName != null && sectionName.contains('${'))
         String cacheName = null
         if (isDynamic) {
-            location = sfi.ecfi.resourceFacade.expandNoL10n(location, null)
-            sectionName = sfi.ecfi.resourceFacade.expandNoL10n(sectionName, null)
             // get fullName for sectionByName cache before checking location for # so that matches what ScreenRenderImpl.renderSectionInclude() does
             cacheName = location + "#" + sectionName
         }
@@ -392,37 +378,13 @@ class ScreenDefinition {
     void populateSubscreens() {
         // start with file/directory structure
         String cleanLocationBase = location.substring(0, location.lastIndexOf("."))
-        ResourceReference locationRef = sfi.ecfi.resourceFacade.getLocationReference(location)
-        if (logger.traceEnabled) logger.trace("Finding subscreens for screen at [${locationRef}]")
-        if (locationRef.supportsAll()) {
-            String subscreensDirStr = locationRef.location
-            subscreensDirStr = subscreensDirStr.substring(0, subscreensDirStr.lastIndexOf("."))
-
-            ResourceReference subscreensDirRef = sfi.ecfi.resourceFacade.getLocationReference(subscreensDirStr)
-            if (subscreensDirRef.exists && subscreensDirRef.isDirectory()) {
-                if (logger.traceEnabled) logger.trace("Looking for subscreens in directory [${subscreensDirRef}]")
-                for (ResourceReference subscreenRef in subscreensDirRef.directoryEntries) {
-                    if (!subscreenRef.isFile() || !subscreenRef.location.endsWith(".xml")) continue
-                    MNode subscreenRoot = MNode.parse(subscreenRef)
-                    if (subscreenRoot.name == "screen") {
-                        String ssName = subscreenRef.getFileName()
-                        ssName = ssName.substring(0, ssName.lastIndexOf("."))
-                        String cleanLocation = cleanLocationBase + "/" + subscreenRef.getFileName()
-                        SubscreensItem si = new SubscreensItem(ssName, cleanLocation, subscreenRoot, this)
-                        subscreensByName.put(si.name, si)
-                        if (logger.traceEnabled) logger.trace("Added file subscreen [${si.name}] at [${si.location}] to screen [${locationRef}]")
-                    }
-                }
-            }
-        } else {
-            logger.info("Not getting subscreens by file/directory structure for screen [${location}] because it is not a location that supports directories")
-        }
+        logger.info("Not getting subscreens by file/directory structure for screen [${location}] because it is not a location that supports directories")
 
         // override dir structure with subscreens.subscreens-item elements
         if (screenNode.hasChild("subscreens")) for (MNode subscreensItem in screenNode.first("subscreens").children("subscreens-item")) {
             SubscreensItem si = new SubscreensItem(subscreensItem, this)
             subscreensByName.put(si.name, si)
-            if (logger.traceEnabled) logger.trace("Added Screen XML defined subscreen [${si.name}] at [${si.location}] to screen [${locationRef}]")
+            if (logger.traceEnabled) logger.trace("Added Screen XML defined subscreen [${si.name}] at [${si.location}] to screen [...]")
         }
 
         // override dir structure and screen.subscreens.subscreens-item elements with Moqui Conf XML screen-facade.screen.subscreens-item elements
@@ -432,7 +394,7 @@ class ScreenDefinition {
             for (MNode subscreensItem in confScreenNode.children("subscreens-item")) {
                 SubscreensItem si = new SubscreensItem(subscreensItem, this)
                 subscreensByName.put(si.name, si)
-                if (logger.traceEnabled) logger.trace("Added Moqui Conf XML defined subscreen [${si.name}] at [${si.location}] to screen [${locationRef}]")
+                if (logger.traceEnabled) logger.trace("Added Moqui Conf XML defined subscreen [${si.name}] at [${si.location}] to screen [...]")
             }
             if (confScreenNode.attribute("default-subscreen"))
                 defaultSubscreensItem = confScreenNode.attribute("default-subscreen")
@@ -448,7 +410,7 @@ class ScreenDefinition {
             SubscreensItem si = new SubscreensItem(subscreensItem, this)
             subscreensByName.put(si.name, si)
             if ("Y".equals(subscreensItem.makeDefault)) defaultSubscreensItem = si.name
-            if (logger.traceEnabled) logger.trace("Added database subscreen [${si.name}] at [${si.location}] to screen [${locationRef}]")
+            if (logger.traceEnabled) logger.trace("Added database subscreen [${si.name}] at [${si.location}] to screen [...]")
         }
     }
 
@@ -715,13 +677,7 @@ class ScreenDefinition {
         ResourceReference contentRef = subContentRefByPath.get(pathName)
         if (contentRef != null) return contentRef
 
-        ResourceReference lastScreenRef = sfi.ecfi.resourceFacade.getLocationReference(location)
-        if (lastScreenRef.supportsAll()) {
-            // NOTE: this caches internally so consider getting rid of subContentRefByPath
-            contentRef = lastScreenRef.findChildFile(pathName)
-        } else {
-            logger.info("Not looking for sub-content [${pathName}] under screen [${location}] because screen location does not support exists, isFile, etc")
-        }
+        logger.info("Not looking for sub-content [${pathName}] under screen [${location}] because screen location does not support exists, isFile, etc")
 
         if (contentRef != null) subContentRefByPath.put(pathName, contentRef)
         return contentRef
@@ -947,7 +903,7 @@ class ScreenDefinition {
 
 
                 if (!checkCondition(ec)) {
-                    sri.ec.message.addError(ec.resource.expand('Condition failed for transition [${location}], not running actions or redirecting','',[location:location]))
+                    sri.ec.message.addError('Condition failed for transition [${location}], not running actions or redirecting ' + location)
                     if (errorResponse) return errorResponse
                     return defaultResponse
                 }
@@ -1161,7 +1117,6 @@ class ScreenDefinition {
             }
 
             String location = screenDocument.getNoCheckSimple("docLocation")
-            eci.resourceFacade.template(location, sri.response.getWriter())
 
             return defaultResponse
         }
@@ -1208,7 +1163,7 @@ class ScreenDefinition {
         boolean checkCondition(ExecutionContextImpl ec) { return condition ? condition.checkCondition(ec) : true }
 
         String getType() { return type }
-        String getUrl() { return parentScreen.sfi.ecfi.resourceFacade.expandNoL10n(url, "") }
+        String getUrl() { return url }
         String getUrlType() { return urlType }
         boolean getSaveCurrentScreen() { return saveCurrentScreen }
         boolean getSaveParameters() { return saveParameters }
@@ -1274,8 +1229,7 @@ class ScreenDefinition {
 
         String getDefaultTitle() {
             ExecutionContextFactoryImpl ecfi = parentScreen.sfi.ecfi
-            ResourceReference screenRr = ecfi.resourceFacade.getLocationReference(location)
-            MNode screenNode = MNode.parseRootOnly(screenRr)
+            MNode screenNode = MNode.parseRootOnly(null)
             return getPrettyMenuName(screenNode?.attribute("default-menu-title"), location, ecfi)
         }
 
@@ -1311,9 +1265,7 @@ class ScreenDefinition {
                 if (indexComp != 0) return indexComp
             }
             // if index is the same or both null, order by localized title
-            ResourceFacade rf = ssi1.parentScreen.sfi.ecfi.resourceFacade
-            return rf.expand(ssi1.menuTitle,'',null,true).toUpperCase().compareTo(
-                   rf.expand(ssi2.menuTitle,'',null,true).toUpperCase())
+            return null
         }
     }
 }

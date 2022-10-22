@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -69,7 +69,7 @@ public class RemoteJsonRpcServiceRunner implements ServiceRunner {
             // logger.warn("========== JSON-RPC response: ${jsonResponse}")
             jsonObj = slurper.parseText(jsonResponse)
         } catch (Throwable t) {
-            String errMsg = ec.resource.expand('Error parsing JSON-RPC response for service [${serviceName ?: method}]: ${t.toString()}','',[serviceName:serviceName, method:method, t:t])
+            String errMsg = 'Error parsing JSON-RPC response for service [${serviceName ?: method}]: ${t.toString()} ' + serviceName + ' ' + method + ' ' + t
             logger.error(errMsg, t)
             ec.message.addError(errMsg)
             return null
@@ -79,7 +79,7 @@ public class RemoteJsonRpcServiceRunner implements ServiceRunner {
             Map responseMap = (Map) jsonObj
             if (responseMap.error) {
                 logger.error("JSON-RPC service [${serviceName ?: method}] returned an error: ${responseMap.error}")
-                ec.message.addError((String) ((Map) responseMap.error)?.message ?: ec.resource.expand('JSON-RPC error with no message, code [${responseMap.error?.code}]','',[responseMap:responseMap]))
+                ec.message.addError((String) ((Map) responseMap.error)?.message ?: 'JSON-RPC error with no message, code [${responseMap.error?.code}] ' + ' ' + responseMap)
                 return null
             } else {
                 Object jr = responseMap.result
@@ -90,7 +90,7 @@ public class RemoteJsonRpcServiceRunner implements ServiceRunner {
                 }
             }
         } else {
-            String errMsg = ec.resource.expand('JSON-RPC response was not a object/Map for service [${serviceName ?: method}]: ${jsonObj}','',[serviceName:serviceName,method:method,jsonObj:jsonObj])
+            String errMsg = 'JSON-RPC response was not a object/Map for service [${serviceName ?: method}]: ${jsonObj} ' + ' ' + serviceName + ' ' + method + ' ' + jsonObj
             logger.error(errMsg)
             ec.message.addError(errMsg)
             return null

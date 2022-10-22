@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -293,7 +293,7 @@ class WebFacadeImpl implements WebFacade {
         }
         // append target screen name
         if (targetMenuName.contains('${')) {
-            nameBuilder.append(eci.getResource().expand(targetMenuName, targetScreen.getLocation()))
+            nameBuilder.append(targetMenuName)
         } else {
             nameBuilder.append(targetMenuName)
             // append parameter values
@@ -804,7 +804,7 @@ class WebFacadeImpl implements WebFacade {
     @Override void sendResourceResponse(String location) { sendResourceResponseInternal(location, false, eci, response) }
     @Override void sendResourceResponse(String location, boolean inline) { sendResourceResponseInternal(location, inline, eci, response) }
     static void sendResourceResponseInternal(String location, boolean inline, ExecutionContextImpl eci, HttpServletResponse response) {
-        ResourceReference rr = eci.resource.getLocationReference(location)
+        ResourceReference rr = null
         if (rr == null || (rr.supportsExists() && !rr.getExists())) {
             logger.warn("Sending not found response, resource not found at: ${location}")
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Resource not found at ${location}")

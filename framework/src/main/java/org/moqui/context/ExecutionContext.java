@@ -69,7 +69,6 @@ public interface ExecutionContext {
     @Nonnull L10nFacade getL10n();
 
     /** For accessing resources by location string (http://, jar://, component://, content://, classpath://, etc). */
-    @Nonnull ResourceFacade getResource();
 
     /** For trace, error, etc logging to the console, files, etc. */
     @Nonnull LoggerFacade getLogger();

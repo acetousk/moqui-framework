@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -52,7 +52,7 @@ class EntityDataDocument {
                              Timestamp fromUpdateStamp, Timestamp thruUpdatedStamp, boolean prettyPrint) {
         File outFile = new File(filename)
         if (!outFile.createNewFile()) {
-            efi.ecfi.getEci().message.addError(efi.ecfi.resource.expand('File ${filename} already exists.','',[filename:filename]))
+            efi.ecfi.getEci().message.addError('File ${filename} already exists. ' + filename)
             return 0
         }
 
@@ -62,7 +62,7 @@ class EntityDataDocument {
         int valuesWritten = writeDocumentsToWriter(pw, dataDocumentIds, condition, fromUpdateStamp, thruUpdatedStamp, prettyPrint)
         pw.write("{}\n]\n")
         pw.close()
-        efi.ecfi.getEci().message.addMessage(efi.ecfi.resource.expand('Wrote ${valuesWritten} documents to file ${filename}','',[valuesWritten:valuesWritten,filename:filename]))
+        efi.ecfi.getEci().message.addMessage('Wrote ${valuesWritten} documents to file ${filename} ' + valuesWritten + ' ' + filename)
         return valuesWritten
     }
     int writeDocumentsToDirectory(String dirname, List<String> dataDocumentIds, EntityCondition condition,
@@ -70,7 +70,7 @@ class EntityDataDocument {
         File outDir = new File(dirname)
         if (!outDir.exists()) outDir.mkdir()
         if (!outDir.isDirectory()) {
-            efi.ecfi.getEci().message.addError(efi.ecfi.resource.expand('Path ${dirname} is not a directory.','',[dirname:dirname]))
+            efi.ecfi.getEci().message.addError('Path ${dirname} is not a directory. ' + dirname)
             return 0
         }
 
@@ -80,7 +80,7 @@ class EntityDataDocument {
             String filename = "${dirname}/${dataDocumentId}.json"
             File outFile = new File(filename)
             if (outFile.exists()) {
-                efi.ecfi.getEci().message.addError(efi.ecfi.resource.expand('File ${filename} already exists, skipping document ${dataDocumentId}.','',[filename:filename,dataDocumentId:dataDocumentId]))
+                efi.ecfi.getEci().message.addError('File ${filename} already exists, skipping document ${dataDocumentId}. ' + filename + ' ' + dataDocumentId)
                 continue
             }
             outFile.createNewFile()
@@ -90,7 +90,7 @@ class EntityDataDocument {
             valuesWritten += writeDocumentsToWriter(pw, [dataDocumentId], condition, fromUpdateStamp, thruUpdatedStamp, prettyPrint)
             pw.write("{}\n]\n")
             pw.close()
-            efi.ecfi.getEci().message.addMessage(efi.ecfi.resource.expand('Wrote ${valuesWritten} records to file ${filename}','',[valuesWritten:valuesWritten, filename:filename]))
+            efi.ecfi.getEci().message.addMessage('Wrote ${valuesWritten} records to file ${filename} ' + valuesWritten + ' ' + filename)
         }
 
         return valuesWritten
@@ -577,7 +577,7 @@ class EntityDataDocument {
                         evalMap = curDocMap
                     }
                     try {
-                        Object curVal = efi.ecfi.resourceFacade.expression(fieldEntryKey, null, evalMap)
+                        Object curVal = fieldEntryKey
                         if (curVal != null) {
                             ArrayList<String> fieldAliasList = (ArrayList<String>) fieldEntryValue
                             for (int i = 0; i < fieldAliasList.size(); i++) {

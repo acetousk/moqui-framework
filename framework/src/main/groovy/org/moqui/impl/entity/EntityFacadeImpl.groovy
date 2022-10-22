@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -461,7 +461,7 @@ class EntityFacadeImpl implements EntityFacade {
 
         // loop through all of the entity-facade.load-entity nodes, check each for "<entities>" root element
         for (MNode loadEntity in getEntityFacadeNode().children("load-entity")) {
-            entityRrList.add(this.ecfi.resourceFacade.getLocationReference((String) loadEntity.attribute("location")))
+            entityRrList.add(null)
         }
 
         return entityRrList
@@ -480,7 +480,7 @@ class EntityFacadeImpl implements EntityFacade {
 
         // loop through components look for XML files in the entity directory, check each for "<entities>" root element
         for (String location in componentBaseLocations) {
-            ResourceReference entityDirRr = ecfi.resourceFacade.getLocationReference(location + "/entity")
+            ResourceReference entityDirRr = null
             if (entityDirRr.supportsAll()) {
                 // if directory doesn't exist skip it, component doesn't have an entity directory
                 if (!entityDirRr.exists || !entityDirRr.isDirectory()) continue
@@ -726,7 +726,7 @@ class EntityFacadeImpl implements EntityFacade {
         MNode entityNode = null
         List<MNode> extendEntityNodes = new ArrayList<MNode>()
         for (String location in entityLocationList) {
-            MNode entityRoot = getEntityFileRoot(this.ecfi.resourceFacade.getLocationReference(location))
+            MNode entityRoot = getEntityFileRoot(null)
             // filter by package if specified, otherwise grab whatever
             List<MNode> packageChildren = entityRoot.children
                     .findAll({ (it.attribute("entity-name") == entityName || it.attribute("short-alias") == entityName) &&
@@ -747,7 +747,7 @@ class EntityFacadeImpl implements EntityFacade {
             entityName = entityNode.attribute("entity-name")
             packageName = entityNode.attribute("package") ?: entityNode.attribute("package-name")
             for (String location in entityLocationList) {
-                MNode entityRoot = getEntityFileRoot(this.ecfi.resourceFacade.getLocationReference(location))
+                MNode entityRoot = getEntityFileRoot(null)
                 List<MNode> packageChildren = entityRoot.children
                         .findAll({ it.attribute("entity-name") == entityName &&
                             (packageName ? (it.attribute("package") == packageName || it.attribute("package-name") == packageName) : true) })
@@ -1259,7 +1259,7 @@ class EntityFacadeImpl implements EntityFacade {
         if (!xaDsClassName) throw new IllegalArgumentException("Could database conf ${confName} has no default-xa-ds-class attribute")
         XADataSource xaDs = (XADataSource) ecfi.classLoader.loadClass(xaDsClassName).newInstance()
         for (Map.Entry<String, String> attrEntry in xaPropsNode.attributes.entrySet()) {
-            String propValue = ecfi.resourceFacade.expand(attrEntry.value, "", confMap)
+            String propValue = attrEntry.value
             try {
                 xaDs.putAt(attrEntry.key, propValue)
             } catch (GroovyCastException e) {
@@ -1399,7 +1399,7 @@ class EntityFacadeImpl implements EntityFacade {
     @Override
     EntityFind find(MNode node) {
         String entityName = node.attribute("entity-name")
-        if (entityName != null && entityName.contains("\${")) entityName = ecfi.resourceFacade.expand(entityName, null)
+        if (entityName != null && entityName.contains("\${")) entityName = entityName
         // don't check entityName empty, getEntityDefinition() does it
         EntityDefinition ed = getEntityDefinition(entityName)
         if (ed == null) throw new EntityException("No entity found with name ${entityName}")
@@ -1427,22 +1427,22 @@ class EntityFacadeImpl implements EntityFacade {
         for (MNode sf in node.children("select-field")) {
             String fieldToSelect = sf.attribute("field-name")
             if (fieldToSelect == null || fieldToSelect.isEmpty()) continue
-            if (fieldToSelect.contains('${')) fieldToSelect = ecfi.resourceFacade.expandNoL10n(fieldToSelect, null)
+            if (fieldToSelect.contains('${')) fieldToSelect = fieldToSelect
             ef.selectField(fieldToSelect)
         }
         for (MNode ob in node.children("order-by")) ef.orderBy(ob.attribute("field-name"))
 
         if (node.hasChild("search-form-inputs")) {
             MNode sfiNode = node.first("search-form-inputs")
-            String requireParameters = ecfi.resourceFacade.expand(sfiNode.attribute("require-parameters"), null)
+            String requireParameters = sfiNode.attribute("require-parameters")
             if ("true".equals(requireParameters)) ef.requireSearchFormParameters(true)
 
             boolean paginate = !"false".equals(sfiNode.attribute("paginate"))
             MNode defaultParametersNode = sfiNode.first("default-parameters")
             String inputFieldsMapName = sfiNode.attribute("input-fields-map")
 
-            Map<String, Object> inf = inputFieldsMapName ? (Map<String, Object>) ecfi.resourceFacade.expression(inputFieldsMapName, "") : ecfi.getEci().context
-            ef.searchFormMap(inf, defaultParametersNode?.attributes?.collectEntries {[it.key, ecfi.resourceFacade.expandNoL10n(it.value, "")]} as Map<String, Object>, sfiNode.attribute("skip-fields"), sfiNode.attribute("default-order-by"), paginate)
+            Map<String, Object> inf = inputFieldsMapName ? (Map<String, Object>) null : ecfi.getEci().context
+            ef.searchFormMap(inf, defaultParametersNode?.attributes?.collectEntries {[it.key, it.value]} as Map<String, Object>, sfiNode.attribute("skip-fields"), sfiNode.attribute("default-order-by"), paginate)
         }
 
         // logger.warn("=== shouldCache ${this.entityName} ${shouldCache()}, limit=${this.limit}, offset=${this.offset}, useCache=${this.useCache}, getEntityDef().getUseCache()=${this.getEntityDef().getUseCache()}")

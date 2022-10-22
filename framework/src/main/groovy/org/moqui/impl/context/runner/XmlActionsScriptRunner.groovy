@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -57,7 +57,7 @@ class XmlActionsScriptRunner implements ScriptRunner {
     protected synchronized XmlAction loadXmlAction(String location) {
         XmlAction xa = (XmlAction) scriptXmlActionLocationCache.get(location)
         if (xa == null) {
-            xa = new XmlAction(ecfi, ecfi.resourceFacade.getLocationText(location, false), location)
+            xa = new XmlAction(ecfi, "", location)
             scriptXmlActionLocationCache.put(location, xa)
         }
         return xa
@@ -74,9 +74,9 @@ class XmlActionsScriptRunner implements ScriptRunner {
         Template newTemplate = null
         Reader templateReader = null
         try {
-            templateReader = new InputStreamReader(ecfi.resourceFacade.getLocationStream(templateLocation))
+            templateReader = new InputStreamReader(null)
             newTemplate = new Template(templateLocation, templateReader,
-                    ecfi.resourceFacade.ftlTemplateRenderer.getFtlConfiguration())
+                    null)
         } catch (Exception e) {
             logger.error("Error while initializing XMLActions template at [${templateLocation}]", e)
         } finally {

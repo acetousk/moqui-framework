@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -1031,7 +1031,7 @@ class EntityDefinition {
             String fromFieldName = dateFilter.attribute("from-field-name") ?: "fromDate"
             String thruFieldName = dateFilter.attribute("thru-field-name") ?: "thruDate"
 
-            Timestamp validDate = dateFilter.attribute("valid-date") ? efi.ecfi.resourceFacade.expand(dateFilter.attribute("valid-date"), "") as Timestamp : null
+            Timestamp validDate = dateFilter.attribute("valid-date") ? dateFilter.attribute("valid-date") as Timestamp : null
             if (validDate == (Timestamp) null) validDate = efi.ecfi.getEci().userFacade.getNowTimestamp()
 
             String entityAliasAttr = dateFilter.attribute("entity-alias")
@@ -1112,7 +1112,7 @@ class EntityDefinition {
                 // NOTE: may need to convert value from String to object for field
                 String condValue = econdition.attribute("value") ?: null
                 // NOTE: only expand if contains "${", expanding normal strings does l10n and messes up key values; hopefully this won't result in a similar issue
-                if (condValue && condValue.contains("\${")) condValue = efi.ecfi.resourceFacade.expand(condValue, "") as String
+                if (condValue && condValue.contains("\${")) condValue = condValue as String
                 Object condValueObj = condEd.convertFieldString(field.fieldName, condValue, eci);
                 cond = new FieldValueCondition(field, EntityConditionFactoryImpl.getComparisonOperator(econdition.attribute("operator")), condValueObj)
             }

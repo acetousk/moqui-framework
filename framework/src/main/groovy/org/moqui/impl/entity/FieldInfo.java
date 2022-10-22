@@ -161,7 +161,7 @@ public class FieldInfo {
     /** Full column name for complex finds on view entities; plain entity column names are never expanded */
     public String getFullColumnName() {
         if (fullColumnNameInternal != null) return fullColumnNameInternal;
-        return ed.efi.ecfi.resourceFacade.expand(expandColumnName, "", null, false);
+        return expandColumnName;
     }
 
     static BigDecimal safeStripZeroes(BigDecimal input) {

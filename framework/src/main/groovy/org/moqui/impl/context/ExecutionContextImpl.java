@@ -58,7 +58,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     // local references to ECFI fields
     public final CacheFacadeImpl cacheFacade;
     public final LoggerFacadeImpl loggerFacade;
-    public final ResourceFacadeImpl resourceFacade;
     public final ScreenFacadeImpl screenFacade;
     public final ServiceFacadeImpl serviceFacade;
     public final TransactionFacadeImpl transactionFacade;
@@ -88,14 +87,12 @@ public class ExecutionContextImpl implements ExecutionContext {
 
         cacheFacade = ecfi.cacheFacade;
         loggerFacade = ecfi.loggerFacade;
-        resourceFacade = ecfi.resourceFacade;
         screenFacade = ecfi.screenFacade;
         serviceFacade = ecfi.serviceFacade;
         transactionFacade = ecfi.transactionFacade;
 
         if (cacheFacade == null) throw new IllegalStateException("cacheFacade was null");
         if (loggerFacade == null) throw new IllegalStateException("loggerFacade was null");
-        if (resourceFacade == null) throw new IllegalStateException("resourceFacade was null");
         if (screenFacade == null) throw new IllegalStateException("screenFacade was null");
         if (serviceFacade == null) throw new IllegalStateException("serviceFacade was null");
         if (transactionFacade == null) throw new IllegalStateException("transactionFacade was null");
@@ -131,7 +128,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     @Override public @Nonnull MessageFacade getMessage() { return messageFacade; }
     @Override public @Nonnull ArtifactExecutionFacade getArtifactExecution() { return artifactExecutionFacade; }
     @Override public @Nonnull L10nFacade getL10n() { return l10nFacade; }
-    @Override public @Nonnull ResourceFacade getResource() { return resourceFacade; }
     @Override public @Nonnull LoggerFacade getLogger() { return loggerFacade; }
     @Override public @Nonnull CacheFacade getCache() { return cacheFacade; }
     @Override public @Nonnull TransactionFacade getTransaction() { return transactionFacade; }
@@ -201,7 +197,7 @@ public class ExecutionContextImpl implements ExecutionContext {
         String skipStatsCond = ecfi.skipStatsCond;
         Map<String, Object> skipParms = new HashMap<>();
         if (webFacade != null) skipParms.put("pathInfo", webFacade.getPathInfo());
-        skipStats = (skipStatsCond != null && !skipStatsCond.isEmpty()) && ecfi.resourceFacade.condition(skipStatsCond, null, skipParms);
+        skipStats = (skipStatsCond != null && !skipStatsCond.isEmpty()) && false;
         return skipStats;
     }
 
@@ -224,7 +220,6 @@ public class ExecutionContextImpl implements ExecutionContext {
         // make sure there are no transactions open, if any commit them all now
         ecfi.transactionFacade.destroyAllInThread();
         // clean up resources, like JCR session
-        ecfi.resourceFacade.destroyAllInThread();
         // clear out the ECFI's reference to this as well
         ecfi.activeContext.remove();
         ecfi.activeContextMap.remove(Thread.currentThread().getId());

@@ -100,7 +100,7 @@ class ScreenForm {
         // if there is an extends, put that in first (everything else overrides it)
         if (baseFormNode.attribute("extends")) {
             String extendsForm = baseFormNode.attribute("extends")
-            if (isDynamic) extendsForm = ecfi.resourceFacade.expand(extendsForm, "")
+            if (isDynamic) extendsForm = extendsForm
 
             MNode formNode
             if (extendsForm.contains("#")) {
@@ -155,7 +155,7 @@ class ScreenForm {
                 }
 
                 if (isDynamic) {
-                    serviceName = ecfi.resourceFacade.expandNoL10n(serviceName, null)
+                    serviceName = serviceName
                     // NOTE: because this is a GString expand if value not found will evaluate to 'null'
                     if (!serviceName || "null".equals(serviceName)) serviceName = ecfi.getEci().contextStack.getByString("formLocationExtension")
                 }
@@ -179,7 +179,7 @@ class ScreenForm {
                 Boolean addAutoColumns = !"false".equals(formSubNode.attribute("auto-columns"))
 
                 if (isDynamic) {
-                    entityName = ecfi.resourceFacade.expandNoL10n(entityName, null)
+                    entityName = entityName
                     // NOTE: because this is a GString expand if value not found will evaluate to 'null'
                     if (!entityName || "null".equals(entityName)) entityName = ecfi.getEci().contextStack.getByString("formLocationExtension")
                 }
@@ -283,13 +283,13 @@ class ScreenForm {
                 // try getting service name from auto-fields-service
                 MNode autoFieldsServiceNode = internalFormNode.first("auto-fields-service")
                 if (autoFieldsServiceNode != null)
-                    locationExtension = ecfi.resourceFacade.expandNoL10n(autoFieldsServiceNode.attribute("service-name"), null)
+                    locationExtension = autoFieldsServiceNode.attribute("service-name")
             }
             if (!locationExtension) {
                 // try getting entity name from auto-fields-entity
                 MNode autoFieldsServiceNode = internalFormNode.first("auto-fields-entity")
                 if (autoFieldsServiceNode != null)
-                    locationExtension = ecfi.resourceFacade.expandNoL10n(autoFieldsServiceNode.attribute("entity-name"), null)
+                    locationExtension = autoFieldsServiceNode.attribute("entity-name")
             }
             if (locationExtension) fullLocation = fullLocation + '#' + locationExtension
         }
@@ -1034,7 +1034,7 @@ class ScreenForm {
 
     protected void addAutoWidgetServiceNode(MNode baseFormNode, MNode fieldNode, MNode fieldSubNode, MNode widgetNode) {
         String serviceName = widgetNode.attribute("service-name")
-        if (isDynamic) serviceName = ecfi.resourceFacade.expand(serviceName, "")
+        if (isDynamic) serviceName = serviceName
         ServiceDefinition serviceDef = ecfi.serviceFacade.getServiceDefinition(serviceName)
         if (serviceDef != null) {
             addAutoServiceField(serviceDef, widgetNode.attribute("parameter-name") ?: fieldNode.attribute("name"),
@@ -1068,7 +1068,7 @@ class ScreenForm {
 
     protected void addAutoWidgetEntityNode(MNode baseFormNode, MNode fieldNode, MNode fieldSubNode, MNode widgetNode) {
         String entityName = widgetNode.attribute("entity-name")
-        if (isDynamic) entityName = ecfi.resourceFacade.expand(entityName, "")
+        if (isDynamic) entityName = entityName
         EntityDefinition ed = null
         try {
             ed = ecfi.entityFacade.getEntityDefinition(entityName)
@@ -1201,7 +1201,7 @@ class ScreenForm {
                         MNode df = (MNode) dateFilterList.get(k)
                         EntityCondition dateEc = ec.entity.conditionFactory.makeConditionDate(df.attribute("from-field-name") ?: "fromDate",
                                 df.attribute("thru-field-name") ?: "thruDate",
-                                (df.attribute("valid-date") ? ec.resource.expression(df.attribute("valid-date"), null) as Timestamp : ec.user.nowTimestamp))
+                                (df.attribute("valid-date") ? df.attribute("valid-date") as Timestamp : ec.user.nowTimestamp))
                         // logger.warn("TOREMOVE getFieldOptions cache=${ef.getUseCache()}, dateEc=${dateEc} list before=${eli}")
                         eli = eli.filterByCondition(dateEc, true)
                     }
@@ -1213,15 +1213,15 @@ class ScreenForm {
                     addFieldOption(options, fieldNode, childNode, ev, ec)
                 }
             } else if ("list-options".equals(childNode.name)) {
-                Object listObject = ec.resource.expression(childNode.attribute('list'), null)
+                Object listObject = childNode.attribute('list')
                 if (listObject instanceof EntityListIterator) {
                     EntityListIterator eli
                     try {
-                        eli = (EntityListIterator) listObject
+                        eli = null
                         EntityValue ev
-                        while ((ev = eli.next()) != null) addFieldOption(options, fieldNode, childNode, ev, ec)
+//                        while ((ev = eli.next()) != null) addFieldOption(options, fieldNode, childNode, ev, ec)
                     } finally {
-                        eli.close()
+//                        eli.close()
                     }
                 } else {
                     String keyAttr = childNode.attribute("key")
@@ -1241,9 +1241,9 @@ class ScreenForm {
                 }
             } else if ("option".equals(childNode.name)) {
                 String key = childNode.attribute('key')
-                if (key != null && key.contains('${')) key = ec.resource.expandNoL10n(key, null)
+                if (key != null && key.contains('${')) key = key
                 String text = childNode.attribute('text')
-                if (text != null) text = ec.resource.expand(text, null)
+                if (text != null) text = text
                 options.put(key, text ?: ec.l10n.localize(key))
             }
         }
@@ -1262,7 +1262,7 @@ class ScreenForm {
             String key = null
             String keyAttr = childNode.attribute('key')
             if (keyAttr != null && keyAttr.length() > 0) {
-                key = ec.resource.expandNoL10n(keyAttr, null)
+                key = keyAttr
                 // we just did a string expand, if it evaluates to a literal "null" then there was no value
                 if (key == "null") key = null
             } else if (listOptionEvb != null) {
@@ -1281,7 +1281,7 @@ class ScreenForm {
                     options.put(key, ec.l10n.localize(key))
                 }
             } else {
-                String value = ec.resource.expand(text, null)
+                String value = text
                 if ("null".equals(value)) value = ec.l10n.localize(key)
                 options.put(key, value)
             }
@@ -1410,15 +1410,13 @@ class ScreenForm {
                             if (af == null) logger.error("Ignoring aggregate ${aggregate} on field ${fieldName} in form ${formNode.attribute('name')}, not a valid function, group-by, or sub-list")
                         }
 
-                        aggregateFieldMap.put(fieldName, new AggregateField(fieldName, af, isGroupBy, isSubList, showTotal,
-                                ecfi.resourceFacade.getGroovyClass(fieldNode.attribute("from"))))
+                        aggregateFieldMap.put(fieldName, new AggregateField(fieldName, af, isGroupBy, isSubList, showTotal, null))
                         if (isGroupBy) {
                             if (aggregateGroupFieldList == null) aggregateGroupFieldList = new ArrayList<>()
                             aggregateGroupFieldList.add(fieldName)
                         }
                     } else {
-                        aggregateFieldMap.put(fieldName, new AggregateField(fieldName, null, false, false, showTotal,
-                                ecfi.resourceFacade.getGroovyClass(fieldNode.attribute("from"))))
+                        aggregateFieldMap.put(fieldName, new AggregateField(fieldName, null, false, false, showTotal, null))
                     }
                 }
             }
@@ -1441,8 +1439,7 @@ class ScreenForm {
                 AggregateField aggField = (AggregateField) aggregateFieldMap.get(fieldName)
                 if (aggField == null) {
                     MNode fieldNode = fieldNodeMap.get(fieldName)
-                    aggField = new AggregateField(fieldName, null, false, false, showTotalFields?.get(fieldName),
-                            ecfi.resourceFacade.getGroovyClass(fieldNode.attribute("from")))
+                    aggField = new AggregateField(fieldName, null, false, false, showTotalFields?.get(fieldName), null)
                 }
                 aggregateFields[i] = aggField
             }
@@ -1667,7 +1664,7 @@ class ScreenForm {
         boolean isListFieldHiddenAttr(MNode fieldNode) {
             String hideAttr = fieldNode.attribute("hide")
             if (hideAttr != null && hideAttr.length() > 0) {
-                return ecfi.getEci().resource.condition(hideAttr, "")
+                return hideAttr
             }
             return false
         }
@@ -2075,7 +2072,7 @@ class ScreenForm {
                 if (useCache) for (MNode df in entityFindNode.children("date-filter")) {
                     Timestamp validDate = (Timestamp) null
                     String validDateAttr = df.attribute("valid-date")
-                    if (validDateAttr != null && !validDateAttr.isEmpty()) validDate = ecfi.resourceFacade.expression(validDateAttr, "") as Timestamp
+                    if (validDateAttr != null && !validDateAttr.isEmpty()) validDate = validDateAttr as Timestamp
                     efList.filterByDate(df.attribute("from-field-name") ?: "fromDate", df.attribute("thru-field-name") ?: "thruDate",
                             validDate, "true".equals(df.attribute("ignore-if-empty")))
                 }
@@ -2121,7 +2118,7 @@ class ScreenForm {
 
                 listObject = efList
             } else {
-                listObject = ecfi.resourceFacade.expression(listName, "")
+                listObject = listName
             }
 
             // NOTE: always call AggregationUtil.aggregateList, passing aggregateList to tell it to do sub-lists or not

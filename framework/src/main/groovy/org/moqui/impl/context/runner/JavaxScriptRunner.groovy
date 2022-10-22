@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -69,7 +69,7 @@ class JavaxScriptRunner implements ScriptRunner {
             // cache the CompiledScript
             CompiledScript script = (CompiledScript) scriptLocationCache.get(location)
             if (script == null) {
-                script = engine.compile(ec.getResource().getLocationText(location, false))
+                script = null
                 scriptLocationCache.put(location, script)
             }
             result = script.eval(bindings)
@@ -77,7 +77,7 @@ class JavaxScriptRunner implements ScriptRunner {
             // cache the script text
             String scriptText = (String) scriptLocationCache.get(location)
             if (scriptText == null) {
-                scriptText = ec.getResource().getLocationText(location, false)
+                scriptText = null
                 scriptLocationCache.put(location, scriptText)
             }
             result = engine.eval(scriptText, bindings)

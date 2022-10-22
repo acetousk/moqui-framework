@@ -14,7 +14,6 @@
 package org.moqui.impl.screen
 
 import freemarker.template.Template
-import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
 import org.moqui.BaseArtifactException
@@ -33,7 +32,7 @@ import org.moqui.impl.context.ArtifactExecutionInfoImpl
 import org.moqui.impl.context.ContextJavaUtil
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
-import org.moqui.impl.context.ResourceFacadeImpl
+
 import org.moqui.impl.context.WebFacadeImpl
 import org.moqui.impl.entity.EntityDefinition
 import org.moqui.impl.entity.EntityValueBase
@@ -614,12 +613,12 @@ class ScreenRenderImpl implements ScreenRender {
             long resourceStartTime = System.currentTimeMillis()
             long startTimeNanos = System.nanoTime()
 
-            TemplateRenderer tr = sfi.ecfi.resourceFacade.getTemplateRendererByLocation(fileResourceRef.location)
+            TemplateRenderer tr = null
 
             // use the fileName to determine the content/mime type
             String fileName = fileResourceRef.fileName
             // strip template extension(s) to avoid problems with trying to find content types based on them
-            String fileContentType = sfi.ecfi.resourceFacade.getContentType(tr != null ? tr.stripTemplateExtension(fileName) : fileName)
+            String fileContentType = null
 
             boolean isBinary = tr == null && ResourceReference.isBinaryContentType(fileContentType)
             // if (isTraceEnabled) logger.trace("Content type for screen sub-content filename [${fileName}] is [${fileContentType}], default [${this.outputContentType}], is binary? ${isBinary}")
@@ -681,7 +680,7 @@ class ScreenRenderImpl implements ScreenRender {
                         }
                     }
                     // no renderer found, just grab the text (cached) and throw it to the writer
-                    String text = sfi.ecfi.resourceFacade.getLocationText(fileResourceRef.location, true)
+                    String text = null
                     if (text != null && text.length() > 0) {
                         // NOTE: String.length not correct for byte length
                         String charset = response?.getCharacterEncoding() ?: "UTF-8"
@@ -911,7 +910,7 @@ class ScreenRenderImpl implements ScreenRender {
                             if (!pi.required) continue
                             Object parmValue = ec.context.getByString(pi.name)
                             if (ObjectUtilities.isEmpty(parmValue)) {
-                                ec.message.addError(ec.resource.expand("Required parameter missing (${pi.name})","",[pi:pi]))
+                                ec.message.addError("Required parameter missing (${pi.name}) " + pi)
                                 logger.warn("Tried to render screen [${sd.getLocation()}] without required parameter [${pi.name}], error message added and adding to stop list to not render")
                                 stopRenderScreenLocations.add(sd.getLocation())
                             }
@@ -1110,7 +1109,6 @@ class ScreenRenderImpl implements ScreenRender {
         if (!getActiveScreenHasNext()) {
             if (screenUrlInfo.fileResourceRef != null) {
                 // NOTE: don't set this.outputContentType, when including in a screen the screen determines the type
-                sfi.ecfi.resourceFacade.template(screenUrlInfo.fileResourceRef.location, writer)
                 return ""
             } else {
                 // HTML encode by default, not ideal for non-html/xml/etc output but important for XSS protection
@@ -1196,8 +1194,8 @@ class ScreenRenderImpl implements ScreenRender {
         boolean isDynamic = (sectionLocation != null && sectionLocation.contains('${')) || (sectionName != null && sectionName.contains('${'))
         if (isDynamic) {
             ScreenDefinition sd = getActiveScreenDef()
-            sectionLocation = sfi.ecfi.resourceFacade.expandNoL10n(sectionLocation, null)
-            sectionName = sfi.ecfi.resourceFacade.expandNoL10n(sectionName, null)
+            sectionLocation = sectionLocation
+            sectionName = sectionName
             String cacheName = sectionLocation + "#" + sectionName
             if (sd.sectionByName.get(cacheName) == null) sd.pullSectionInclude(sectionIncludeNode)
             // logger.warn("sd.sectionByName ${sd.sectionByName}")
@@ -1275,7 +1273,6 @@ class ScreenRenderImpl implements ScreenRender {
             cs.push()
             try {
                 cs.put("sri", this)
-                ec.resourceFacade.template(location, writer, isTemplateStr)
             } finally {
                 cs.pop()
             }
@@ -1283,7 +1280,7 @@ class ScreenRenderImpl implements ScreenRender {
             // NOTE: this returns a String so that it can be used in an FTL interpolation, but it always writes to the writer
             return ""
         } else {
-            return sfi.ecfi.resourceFacade.getLocationText(location, true) ?: ""
+            return location
         }
     }
 
@@ -1311,7 +1308,7 @@ class ScreenRenderImpl implements ScreenRender {
     }
 
     ScreenUrlInfo buildUrlInfo(String subscreenPathOrig) {
-        String subscreenPath = subscreenPathOrig?.contains("\${") ? ec.resource.expand(subscreenPathOrig, "") : subscreenPathOrig
+        String subscreenPath = subscreenPathOrig?.contains("\${") ? subscreenPathOrig : subscreenPathOrig
 
         List<String> pathList = getActiveScreenPath()
         StringBuilder keyBuilder = new StringBuilder()
@@ -1335,12 +1332,12 @@ class ScreenRenderImpl implements ScreenRender {
         return buildUrlInfo(subscreenPath).getInstance(this, null)
     }
     UrlInstance buildUrl(ScreenDefinition fromSd, ArrayList<String> fromPathList, String subscreenPathOrig) {
-        String subscreenPath = subscreenPathOrig?.contains("\${") ? ec.resource.expand(subscreenPathOrig, "") : subscreenPathOrig
+        String subscreenPath = subscreenPathOrig?.contains("\${") ? subscreenPathOrig : subscreenPathOrig
         ScreenUrlInfo ui = ScreenUrlInfo.getScreenUrlInfo(this, fromSd, fromPathList, subscreenPath, 0)
         return ui.getInstance(this, null)
     }
     UrlInstance buildUrlFromTarget(String subscreenPathOrig) {
-        String subscreenPath = subscreenPathOrig?.contains("\${") ? ec.resource.expand(subscreenPathOrig, "") : subscreenPathOrig
+        String subscreenPath = subscreenPathOrig?.contains("\${") ? subscreenPathOrig : subscreenPathOrig
         ScreenUrlInfo ui = ScreenUrlInfo.getScreenUrlInfo(this, screenUrlInfo.targetScreen, screenUrlInfo.preTransitionPathNameList, subscreenPath, 0)
         return ui.getInstance(this, null)
     }
@@ -1349,7 +1346,7 @@ class ScreenRenderImpl implements ScreenRender {
         Boolean expandTransitionUrl = expandTransitionUrlString != null ? "true".equals(expandTransitionUrlString) : null
         /* TODO handle urlType=content: A content location (without the content://). URL will be one that can access that content. */
         ScreenUrlInfo suInfo
-        String urlTypeExpanded = ec.resource.expand(urlType, "")
+        String urlTypeExpanded = null
         switch (urlTypeExpanded) {
             // for transition we want a URL relative to the current screen, so just pass that to buildUrl
             case "transition": suInfo = buildUrlInfo(origUrl); break
@@ -1357,7 +1354,7 @@ class ScreenRenderImpl implements ScreenRender {
             case "content": throw new BaseArtifactException("The url-type of content is not yet supported"); break
             case "plain":
             default:
-                String url = ec.resource.expand(origUrl, "")
+                String url = origUrl
                 suInfo = ScreenUrlInfo.getScreenUrlInfo(this, url)
                 break
         }
@@ -1367,7 +1364,7 @@ class ScreenRenderImpl implements ScreenRender {
         if (parameterParentNode != null) {
             String parameterMapStr = (String) parameterParentNode.attribute("parameter-map")
             if (parameterMapStr != null && !parameterMapStr.isEmpty()) {
-                Map ctxParameterMap = (Map) ec.resource.expression(parameterMapStr, "")
+                Map ctxParameterMap = null
                 if (ctxParameterMap) urli.addParameters(ctxParameterMap)
             }
             ArrayList<MNode> parameterNodes = parameterParentNode.children("parameter")
@@ -1386,18 +1383,14 @@ class ScreenRenderImpl implements ScreenRender {
 
     Object getContextValue(String from, String value) {
         if (value) {
-            return ec.resource.expand(value, getActiveScreenDef().location, (Map) ec.contextStack.get("_formMap"))
+            return value
         } else if (from) {
-            return ec.resource.expression(from, getActiveScreenDef().location, (Map) ec.contextStack.get("_formMap"))
+            return from
         } else {
             return ""
         }
     }
     String setInContext(MNode setNode) {
-        ((ResourceFacadeImpl) ec.resource).setInContext(setNode.attribute("field"),
-                setNode.attribute("from"), setNode.attribute("value"),
-                setNode.attribute("default-value"), setNode.attribute("type"),
-                setNode.attribute("set-if-empty"))
         return ""
     }
     String pushContext() { ec.contextStack.push(); return "" }
@@ -1407,7 +1400,7 @@ class ScreenRenderImpl implements ScreenRender {
     String pushSingleFormMapContext(String mapExpr) {
         ContextStack cs = ec.contextStack
         Map valueMap = null
-        if (mapExpr != null && !mapExpr.isEmpty()) valueMap = (Map) ec.resourceFacade.expression(mapExpr, null)
+        if (mapExpr != null && !mapExpr.isEmpty()) valueMap = null
         if (valueMap instanceof EntityValue) valueMap = ((EntityValue) valueMap).getMap()
         if (valueMap == null) valueMap = new HashMap()
 
@@ -1494,7 +1487,7 @@ class ScreenRenderImpl implements ScreenRender {
         // NOTE: defaultValue is handled below so that for a plain string it is not run through expand
         Object obj = getFieldValue(fieldNodeWrapper, "")
         if (ObjectUtilities.isEmpty(obj) && defaultValue != null && defaultValue.length() > 0)
-            return ec.resourceFacade.expandNoL10n(defaultValue, "")
+            return defaultValue
         return ObjectUtilities.toPlainString(obj)
     }
     String getNamedValuePlain(String fieldName, MNode formNode) {
@@ -1502,7 +1495,7 @@ class ScreenRenderImpl implements ScreenRender {
         if ("form-single".equals(formNode.name)) {
             String mapAttr = formNode.attribute("map")
             String mapName = mapAttr != null && mapAttr.length() > 0 ? mapAttr : "fieldValues"
-            Map valueMap = (Map) ec.resource.expression(mapName, "")
+            Map valueMap = null
 
             if (valueMap != null) {
                 try {
@@ -1539,11 +1532,11 @@ class ScreenRenderImpl implements ScreenRender {
             // NOTE: field.@from attribute is handled for form-list in pre-processing done by AggregationUtil
             String fromAttr = fieldNode.attribute("from")
             if (fromAttr == null || fromAttr.isEmpty()) fromAttr = fieldNode.attribute("entry-name")
-            if (fromAttr != null && fromAttr.length() > 0) return ec.resourceFacade.expression(fromAttr, null)
+            if (fromAttr != null && fromAttr.length() > 0) return fromAttr
 
             String mapAttr = formNode.attribute("map")
             String mapName = mapAttr != null && mapAttr.length() > 0 ? mapAttr : "fieldValues"
-            Map valueMap = (Map) ec.resourceFacade.expression(mapName, "")
+            Map valueMap = null
 
             if (valueMap != null) {
                 try {
@@ -1569,7 +1562,7 @@ class ScreenRenderImpl implements ScreenRender {
             return value
         }
 
-        String defaultStr = ec.resourceFacade.expandNoL10n(defaultValue, null)
+        String defaultStr = defaultValue
         if (defaultStr != null && defaultStr.length() > 0) return defaultStr
         return value
     }
@@ -1600,7 +1593,7 @@ class ScreenRenderImpl implements ScreenRender {
             // push onto the context and then expand the text
             ec.context.push(ev.getMap())
             try {
-                value = ec.resource.expand(text, null)
+                value = text
             } finally {
                 ec.context.pop()
             }
@@ -1614,7 +1607,7 @@ class ScreenRenderImpl implements ScreenRender {
     protected String getDefaultText(MNode widgetNode) {
         String defaultText = widgetNode.attribute("default-text")
         if (defaultText != null && defaultText.length() > 0) {
-            return ec.resource.expand(defaultText, null)
+            return defaultText
         } else {
             return ""
         }
@@ -1740,7 +1733,7 @@ class ScreenRenderImpl implements ScreenRender {
                 }
                 // logger.warn("condition ${condition}, eval: ${ec.resourceFacade.condition(condition, null)}")
                 try {
-                    if (ec.resourceFacade.condition(condition, null)) {
+                    if (condition) {
                         activeSubNode = condFieldNode
                         // use first conditional-field with passing condition
                         break
@@ -1776,7 +1769,7 @@ class ScreenRenderImpl implements ScreenRender {
 
             String valuePlainString = getFieldValuePlainString(fieldNode, "")
             if (valuePlainString == null || valuePlainString.isEmpty())
-                valuePlainString = ec.resourceFacade.expandNoL10n(widgetNode.attribute("no-current-selected-key"), null)
+                valuePlainString = widgetNode.attribute("no-current-selected-key")
             if (valuePlainString != null && !valuePlainString.isEmpty() && valuePlainString.charAt(0) == ('[' as char))
                 valuePlainString = valuePlainString.substring(1, valuePlainString.length() - 1).replaceAll(" ", "")
             String[] currentValueArr = valuePlainString != null && !valuePlainString.isEmpty() ? valuePlainString.split(",") : null
@@ -1795,16 +1788,16 @@ class ScreenRenderImpl implements ScreenRender {
                     String textMapAttr = widgetNode.attribute("text-map")
                     Map textMap = (Map) null
                     if (textMapAttr != null && !textMapAttr.isEmpty())
-                        textMap = (Map) ec.resourceFacade.expression(textMapAttr, null)
+                        textMap = null
                     if (textMap != null && textMap.size() > 0) {
-                        fieldValue = ec.resourceFacade.expand(textAttr, null, textMap)
+                        fieldValue = textAttr
                     } else {
-                        fieldValue = ec.resourceFacade.expand(textAttr, null)
+                        fieldValue = textAttr
                     }
                     if (currencyAttr != null && !currencyAttr.isEmpty())
-                        fieldValue = ec.l10nFacade.formatCurrency(fieldValue, ec.resourceFacade.expression(currencyAttr, null) as String)
+                        fieldValue = ec.l10nFacade.formatCurrency(fieldValue, currencyAttr as String)
                 } else if (currencyAttr != null && !currencyAttr.isEmpty()) {
-                    fieldValue = ec.l10nFacade.formatCurrency(getFieldValue(fieldNode, ""), ec.resourceFacade.expression(currencyAttr, null) as String)
+                    fieldValue = ec.l10nFacade.formatCurrency(getFieldValue(fieldNode, ""), currencyAttr as String)
                 } else {
                     fieldValue = getFieldValueString(widgetNode)
                 }
@@ -1812,20 +1805,20 @@ class ScreenRenderImpl implements ScreenRender {
 
                 // TODO: handle dynamic-transition attribute for initial value, and dynamic on client side too
             } else if ("drop-down".equals(widgetName)) {
-                boolean allowMultiple = "true".equals(ec.resourceFacade.expandNoL10n(widgetNode.attribute("allow-multiple"), null))
+                boolean allowMultiple = "true".equals(widgetNode.attribute("allow-multiple"))
                 if (allowMultiple) {
                     fieldValues.put(fieldName, currentValueArr != null ? new ArrayList(Arrays.asList(currentValueArr)) : null)
                     fieldValues.put(fieldName + "_op", "in")
                 } else {
                     fieldValues.put(fieldName, currentValueArr != null && currentValueArr.length > 0 ? currentValueArr[0] : null)
                 }
-                if (ec.resourceFacade.expandNoL10n(widgetNode.attribute("show-not"), "") == "true") {
+                if (widgetNode.attribute("show-not") == "true") {
                     fieldValues.put(fieldName + "_not", ec.contextStack.getByString(fieldName + "_not") ?: "N")
                 }
             } else if ("text-line".equals(widgetName)) {
                 fieldValues.put(fieldName, getFieldValueString(widgetNode))
             } else if ("check".equals(widgetName)) {
-                if ("true".equals(ec.resourceFacade.expandNoL10n(widgetNode.attribute("all-checked"), null))) {
+                if ("true".equals(widgetNode.attribute("all-checked"))) {
                     // get all options and add ArrayList
                     Set<String> fieldOptionKeys = getFieldOptions(widgetNode).keySet()
                     fieldValues.put(fieldName, new ArrayList(fieldOptionKeys))
@@ -2087,7 +2080,7 @@ class ScreenRenderImpl implements ScreenRender {
         // get specified parameters
         String parameterMapStr = (String) parameterParentNode.attribute("parameter-map")
         if (parameterMapStr != null && !parameterMapStr.isEmpty()) {
-            Map ctxParameterMap = (Map) ec.resource.expression(parameterMapStr, "")
+            Map ctxParameterMap = null
             if (ctxParameterMap != null) parameters.putAll(ctxParameterMap)
         }
         ArrayList<MNode> parameterNodes = parameterParentNode.children("parameter")
@@ -2326,7 +2319,7 @@ class ScreenRenderImpl implements ScreenRender {
                     image = buildUrl(image).url
 
                 boolean active = (nextItem == subscreensItem.name)
-                Map itemMap = [name:subscreensItem.name, title:ec.resource.expand(subscreensItem.menuTitle, ""),
+                Map itemMap = [name:subscreensItem.name, title:subscreensItem.menuTitle,
                                path:screenPath, pathWithParams:pathWithParams, image:image, imageType:imageType]
                 if (active) itemMap.active = true
                 if (screenUrlInstance.disableLink) itemMap.disableLink = true
@@ -2366,7 +2359,7 @@ class ScreenRenderImpl implements ScreenRender {
 
         SubscreensItem lastSsi = curScreen.getSubscreensItem(lastPathItem)
         String lastTitle = lastSsi?.menuTitle ?: fullUrlInfo.targetScreen.getDefaultMenuName()
-        if (lastTitle.contains('${')) lastTitle = ec.resourceFacade.expand(lastTitle, "")
+        if (lastTitle.contains('${')) lastTitle = lastTitle
         List<Map<String, Object>> screenDocList = fullUrlInfo.targetScreen.getScreenDocumentInfoList()
 
         // look for form-list with saved find on target screen, if so look for saved finds available to user to display in menu
