@@ -192,15 +192,7 @@
             -->
 
             <!-- ElasticSearch Request Log Filter (log requests directly to ElasticSearch) -->
-            <filter name="ElasticRequestLogFilter" class="org.moqui.impl.webapp.ElasticRequestLogFilter" async-supported="true">
-                <url-pattern>/*</url-pattern>
-                <dispatcher>REQUEST</dispatcher>
-            </filter>
             <!-- ElasticSearch and Kibana auth filters, see below for proxy servlets on the same url-pattern -->
-            <filter name="ElasticAuthFilter" class="org.moqui.impl.webapp.MoquiAuthFilter" async-supported="true">
-                <init-param name="permission" value="ElasticRemote"/>
-                <url-pattern>/elastic/*</url-pattern>
-            </filter>
             <filter name="KibanaAuthFilter" class="org.moqui.impl.webapp.MoquiAuthFilter" async-supported="true">
                 <init-param name="permission" value="KibanaRemote"/>
                 <url-pattern>/kibana/*</url-pattern>

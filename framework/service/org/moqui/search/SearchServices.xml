@@ -161,7 +161,6 @@ along with this software (see the LICENSE.md file). If not, see
             /* useful docs for query API: https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-body.html */
 
             import org.moqui.context.ExecutionContext
-            import org.moqui.impl.context.ElasticFacadeImpl
 
             import java.math.RoundingMode
 
@@ -205,7 +204,7 @@ along with this software (see the LICENSE.md file). If not, see
                 for (Map.Entry nestedEntry in nestedQueryMap.entrySet()) {
                     // NOTE: could be filter() instead of must()...
                     String nestedPath = nestedEntry.key as String
-                    def nestedQuery = (nestedEntry.value instanceof CharSequence) ? ElasticFacadeImpl.jsonToObject(nestedEntry.value.toString()) : nestedEntry.value
+                    def nestedQuery = (nestedEntry.value instanceof CharSequence) ? nestedEntry.value.toString() : nestedEntry.value
                     if (nestedPath) {
                         mustList.add([nested: [path: nestedPath, query: nestedQuery, score_mode: "avg"]])
                         // ec.logger.warn("${nestedPath}: ${nestedQuery}")
@@ -241,7 +240,7 @@ along with this software (see the LICENSE.md file). If not, see
 
             // if documentType use instead of indexName to get only specific indexes (split on comma, ddIdToEsIndex, join with comma)
             String index = indexName
-            if (documentType) index = ((String) documentType).split(",").collect({ ElasticFacadeImpl.ddIdToEsIndex(it) }).join(",")
+            if (documentType) index = ((String) documentType).split(",").collect({ null }).join(",")
 
             // validate the query
             // TODO: consider pulling error message from ElasticSearch, but they are pretty ugly
@@ -270,7 +269,7 @@ along with this software (see the LICENSE.md file). If not, see
                 // as of ES 7.0 _type defaults to _doc and may go away entirely in 8.0, so default to _index with underscore to camel case conversion
                 String _type = (String) hit._type
                 if (!_type || "_doc".equals(_type)) {
-                    document._type = ElasticFacadeImpl.esIndexToDdId(_index)
+                    document._type = null
                 } else {
                     document._type = _type
                 }
@@ -322,12 +321,11 @@ along with this software (see the LICENSE.md file). If not, see
         </in-parameters>
         <actions><script><![CDATA[
             import org.moqui.context.ExecutionContext
-            import org.moqui.impl.context.ElasticFacadeImpl
             ExecutionContext ec = context.ec
 
             // if documentType use instead of indexName to get only specific indexes (split on comma, ddIdToEsIndex, join with comma)
             String index = indexName
-            if (dataDocumentId) index = ((String) dataDocumentId).split(",").collect({ ElasticFacadeImpl.ddIdToEsIndex(it) }).join(",")
+            if (dataDocumentId) index = ((String) dataDocumentId).split(",").collect({ null }).join(",")
 
             def elasticClient = ec.factory.elastic.getClient((String) clusterName)
             if (elasticClient == null) {
