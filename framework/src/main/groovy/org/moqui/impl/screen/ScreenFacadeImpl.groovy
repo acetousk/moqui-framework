@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -60,16 +60,16 @@ class ScreenFacadeImpl implements ScreenFacade {
 
     ScreenFacadeImpl(ExecutionContextFactoryImpl ecfi) {
         this.ecfi = ecfi
-        screenLocationCache = ecfi.cacheFacade.getCache("screen.location", String.class, ScreenDefinition.class)
-        screenLocationPermCache = ecfi.cacheFacade.getCache("screen.location.perm", String.class, ScreenDefinition.class)
-        screenUrlCache = ecfi.cacheFacade.getCache("screen.url", String.class, ScreenUrlInfo.class)
-        screenInfoCache = ecfi.cacheFacade.getCache("screen.info", String.class, List.class)
-        screenInfoRefRevCache = ecfi.cacheFacade.getCache("screen.info.ref.rev", String.class, Set.class)
-        screenTemplateModeCache = ecfi.cacheFacade.getCache("screen.template.mode", String.class, Template.class)
-        screenTemplateLocationCache = ecfi.cacheFacade.getCache("screen.template.location", String.class, Template.class)
-        widgetTemplateLocationCache = ecfi.cacheFacade.getCache("widget.template.location", String.class, MNode.class)
-        screenFindPathCache = ecfi.cacheFacade.getCache("screen.find.path", String.class, ArrayList.class)
-        dbFormNodeByIdCache = ecfi.cacheFacade.getCache("screen.form.db.node", String.class, MNode.class)
+        screenLocationCache = null
+        screenLocationPermCache = null
+        screenUrlCache = null
+        screenInfoCache = null
+        screenInfoRefRevCache = null
+        screenTemplateModeCache = null
+        screenTemplateLocationCache = null
+        widgetTemplateLocationCache = null
+        screenFindPathCache = null
+        dbFormNodeByIdCache = null
 
         MNode screenFacadeNode = ecfi.getConfXmlRoot().first("screen-facade")
         ArrayList<MNode> stoNodes = screenFacadeNode.children("screen-text-output")

@@ -56,7 +56,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     public final L10nFacadeImpl l10nFacade;
 
     // local references to ECFI fields
-    public final CacheFacadeImpl cacheFacade;
     public final LoggerFacadeImpl loggerFacade;
     public final ResourceFacadeImpl resourceFacade;
     public final ScreenFacadeImpl screenFacade;
@@ -86,14 +85,12 @@ public class ExecutionContextImpl implements ExecutionContext {
         artifactExecutionFacade = new ArtifactExecutionFacadeImpl(this);
         l10nFacade = new L10nFacadeImpl(this);
 
-        cacheFacade = ecfi.cacheFacade;
         loggerFacade = ecfi.loggerFacade;
         resourceFacade = ecfi.resourceFacade;
         screenFacade = ecfi.screenFacade;
         serviceFacade = ecfi.serviceFacade;
         transactionFacade = ecfi.transactionFacade;
 
-        if (cacheFacade == null) throw new IllegalStateException("cacheFacade was null");
         if (loggerFacade == null) throw new IllegalStateException("loggerFacade was null");
         if (resourceFacade == null) throw new IllegalStateException("resourceFacade was null");
         if (screenFacade == null) throw new IllegalStateException("screenFacade was null");
@@ -107,8 +104,6 @@ public class ExecutionContextImpl implements ExecutionContext {
 
     @SuppressWarnings("unchecked")
     private void initCaches() {
-        tarpitHitCache = cacheFacade.getCache("artifact.tarpit.hits");
-        l10nMessageCache = cacheFacade.getCache("l10n.message");
     }
     Cache<String, String> getL10nMessageCache() { return l10nMessageCache; }
     public Cache<String, ArrayList> getTarpitHitCache() { return tarpitHitCache; }
@@ -133,7 +128,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     @Override public @Nonnull L10nFacade getL10n() { return l10nFacade; }
     @Override public @Nonnull ResourceFacade getResource() { return resourceFacade; }
     @Override public @Nonnull LoggerFacade getLogger() { return loggerFacade; }
-    @Override public @Nonnull CacheFacade getCache() { return cacheFacade; }
     @Override public @Nonnull TransactionFacade getTransaction() { return transactionFacade; }
 
     @Override public @Nonnull EntityFacade getEntity() { return activeEntityFacade; }

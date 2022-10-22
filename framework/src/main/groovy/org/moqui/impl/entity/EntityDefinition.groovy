@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -1148,33 +1148,33 @@ class EntityDefinition {
     Cache<EntityCondition, Long> internalCacheCount = null
 
     Cache<EntityCondition, EntityValueBase> getCacheOne(EntityCache ec) {
-        if (internalCacheOne == null) internalCacheOne = ec.cfi.getCache(ec.oneKeyBase.concat(fullEntityName))
+        if (internalCacheOne == null) internalCacheOne = null
         return internalCacheOne
     }
     Cache<EntityCondition, Set<EntityCondition>> getCacheOneRa(EntityCache ec) {
-        if (internalCacheOneRa == null) internalCacheOneRa = ec.cfi.getCache(ec.oneRaKeyBase.concat(fullEntityName))
+        if (internalCacheOneRa == null) internalCacheOneRa = null
         return internalCacheOneRa
     }
     Cache<EntityCondition, Set<EntityCache.ViewRaKey>> getCacheOneViewRa(EntityCache ec) {
-        if (getCacheOneViewRa == null) getCacheOneViewRa = ec.cfi.getCache(ec.oneViewRaKeyBase.concat(fullEntityName))
+        if (getCacheOneViewRa == null) getCacheOneViewRa = null
         return getCacheOneViewRa
     }
 
     Cache<EntityCondition, EntityListImpl> getCacheList(EntityCache ec) {
-        if (internalCacheList == null) internalCacheList = ec.cfi.getCache(ec.listKeyBase.concat(fullEntityName))
+        if (internalCacheList == null) internalCacheList = null
         return internalCacheList
     }
     Cache<EntityCondition, Set<EntityCondition>> getCacheListRa(EntityCache ec) {
-        if (internalCacheListRa == null) internalCacheListRa = ec.cfi.getCache(ec.listRaKeyBase.concat(fullEntityName))
+        if (internalCacheListRa == null) internalCacheListRa = null
         return internalCacheListRa
     }
     Cache<EntityCondition, Set<EntityCache.ViewRaKey>> getCacheListViewRa(EntityCache ec) {
-        if (internalCacheListViewRa == null) internalCacheListViewRa = ec.cfi.getCache(ec.listViewRaKeyBase.concat(fullEntityName))
+        if (internalCacheListViewRa == null) internalCacheListViewRa = null
         return internalCacheListViewRa
     }
 
     Cache<EntityCondition, Long> getCacheCount(EntityCache ec) {
-        if (internalCacheCount == null) internalCacheCount = ec.cfi.getCache(ec.countKeyBase.concat(fullEntityName))
+        if (internalCacheCount == null) internalCacheCount = null
         return internalCacheCount
     }
 

@@ -75,7 +75,6 @@ public interface ExecutionContext {
     @Nonnull LoggerFacade getLogger();
 
     /** For managing and accessing caches. */
-    @Nonnull CacheFacade getCache();
 
     /** For transaction operations use this facade instead of the JTA UserTransaction and TransactionManager. See javadoc comments there for examples of code usage. */
     @Nonnull TransactionFacade getTransaction();
