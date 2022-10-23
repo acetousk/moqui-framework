@@ -15,7 +15,6 @@ package org.moqui.context;
 
 import groovy.lang.GroovyClassLoader;
 import org.moqui.entity.EntityFacade;
-import org.moqui.service.ServiceFacade;
 
 import javax.annotation.Nonnull;
 import javax.servlet.ServletContext;
@@ -70,7 +69,6 @@ public interface ExecutionContextFactory {
     /** For interactions with ElasticSearch using the built in HTTP REST client. */
 
     /** For calling services (local or remote, sync or async or scheduled). */
-    @Nonnull ServiceFacade getService();
 
     /** For rendering screens for general use (mostly for things other than web pages or web page snippets). */
 

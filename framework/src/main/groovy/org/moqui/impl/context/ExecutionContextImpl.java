@@ -20,8 +20,6 @@ import org.moqui.entity.EntityFind;
 import org.moqui.entity.EntityList;
 import org.moqui.entity.EntityValue;
 import org.moqui.impl.entity.EntityFacadeImpl;
-import org.moqui.impl.service.ServiceFacadeImpl;
-import org.moqui.service.ServiceFacade;
 import org.moqui.util.ContextBinding;
 import org.moqui.util.ContextStack;
 import org.slf4j.Logger;
@@ -47,7 +45,6 @@ public class ExecutionContextImpl implements ExecutionContext {
 
     // local references to ECFI fields
     public final LoggerFacadeImpl loggerFacade;
-    public final ServiceFacadeImpl serviceFacade;
     public final TransactionFacadeImpl transactionFacade;
 
     private Boolean skipStats = null;
@@ -70,11 +67,9 @@ public class ExecutionContextImpl implements ExecutionContext {
         activeEntityFacade = ecfi.entityFacade;
 
         loggerFacade = ecfi.loggerFacade;
-        serviceFacade = ecfi.serviceFacade;
         transactionFacade = ecfi.transactionFacade;
 
         if (loggerFacade == null) throw new IllegalStateException("loggerFacade was null");
-        if (serviceFacade == null) throw new IllegalStateException("serviceFacade was null");
         if (transactionFacade == null) throw new IllegalStateException("transactionFacade was null");
 
         initCaches();
@@ -104,8 +99,6 @@ public class ExecutionContextImpl implements ExecutionContext {
 
     @Override public @Nonnull EntityFacade getEntity() { return activeEntityFacade; }
     public @Nonnull EntityFacadeImpl getEntityFacade() { return activeEntityFacade; }
-
-    @Override public @Nonnull ServiceFacade getService() { return serviceFacade; }
 
     @Override
     public void initWebFacade(@Nonnull String webappMoquiName, @Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response) {

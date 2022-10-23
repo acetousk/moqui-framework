@@ -125,7 +125,6 @@ class SubEthaSmtpToolFactory implements ToolFactory<SMTPServer> {
         @Override
         void done() {
             // run EMECA rules
-            toolFactory.ecfi.serviceFacade.runEmecaRules(mimeMessage, EMAIL_SERVER_ID)
             // always save EmailMessage record? better to let an EMECA rule do it...
             // logger.warn("Got email: ${mimeMessage.getSubject()} from ${from} recipients ${recipientList}\n${EmailEcaRule.makeBodyPartList(mimeMessage)}")
         }

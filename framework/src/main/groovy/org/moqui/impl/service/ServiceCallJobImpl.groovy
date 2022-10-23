@@ -46,18 +46,15 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
     private boolean clearLock = false
     private boolean localOnly = false
 
-    ServiceCallJobImpl(String jobName, ServiceFacadeImpl sfi) {
-        super(sfi)
-        ExecutionContextImpl eci = sfi.ecfi.getEci()
+    ServiceCallJobImpl(String jobName) {
 
         // get ServiceJob, make sure exists
         this.jobName = jobName
-        serviceJob = eci.entityFacade.fastFindOne("moqui.service.job.ServiceJob", true, true, jobName)
+        serviceJob = null
         if (serviceJob == null) throw new BaseArtifactException("No ServiceJob record found for jobName ${jobName}")
 
         // set ServiceJobParameter values
-        EntityList serviceJobParameters = eci.entity.find("moqui.service.job.ServiceJobParameter")
-                .condition("jobName", jobName).useCache(true).disableAuthz().list()
+        EntityList serviceJobParameters = null
         for (EntityValue serviceJobParameter in serviceJobParameters)
             parameters.put((String) serviceJobParameter.parameterName, serviceJobParameter.parameterValue)
 
@@ -75,7 +72,7 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
 
     @Override
     String run() throws ServiceException {
-        ExecutionContextFactoryImpl ecfi = sfi.ecfi
+        ExecutionContextFactoryImpl ecfi = null
         ExecutionContextImpl eci = ecfi.getEci()
         validateCall(eci)
 
@@ -83,9 +80,7 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
         if (withJobRunId == null) {
             // create the ServiceJobRun record
             String parametersString = JsonOutput.toJson(parameters)
-            Map jobRunResult = ecfi.service.sync().name("create", "moqui.service.job.ServiceJobRun")
-                    .parameters([jobName:jobName, userId:null, parameters:parametersString] as Map<String, Object>)
-                    .disableAuthz().requireNewTransaction(true).call()
+            Map jobRunResult = null
             jobRunId = jobRunResult.jobRunId
         } else {
             jobRunId = withJobRunId
@@ -93,10 +88,10 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
 
         // run it
         ServiceJobCallable callable = new ServiceJobCallable(eci, serviceJob, jobRunId, lastRunTime, clearLock, parameters)
-        if (sfi.distributedExecutorService == null || localOnly || "Y".equals(serviceJob.localOnly)) {
-            runFuture = sfi.jobWorkerPool.submit(callable)
+        if (localOnly || "Y".equals(serviceJob.localOnly)) {
+            runFuture = null
         } else {
-            runFuture = sfi.distributedExecutorService.submit(callable)
+            runFuture = null
         }
 
         return jobRunId
@@ -231,8 +226,7 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
                 // NOTE: authz is disabled because authz is checked before queueing
                 Map<String, Object> results = new HashMap<>()
                 try {
-                    results = ecfi.serviceFacade.sync().name(serviceName).parameters(parameters)
-                            .transactionTimeout(transactionTimeout).disableAuthz().call()
+                    results = null
                 } catch (Throwable t) {
                     logger.error("Error in service job call", t)
                 }
@@ -255,9 +249,7 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
 
                 // clear the ServiceJobRunLock if there is one
                 if (clearLock) {
-                    ServiceCallSync scs = ecfi.serviceFacade.sync().name("update", "moqui.service.job.ServiceJobRunLock")
-                            .parameter("jobName", jobName).parameter("jobRunId", null)
-                            .disableAuthz()
+                    ServiceCallSync scs = null
                     // if there was an error set lastRunTime to previous
                     scs.call()
                 }

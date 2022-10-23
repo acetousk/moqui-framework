@@ -758,8 +758,6 @@ class EntityDataFeed {
                                 //     so user/etc are not inherited here
                                 String serviceName = (String) dataFeedAndDocument.feedReceiveServiceName ?: 'org.moqui.search.SearchServices.index#DataDocuments'
                                 try {
-                                    ecfi.serviceFacade.sync().name(serviceName).parameters([dataFeedId:dataFeedAndDocument.dataFeedId,
-                                            feedStamp:feedStamp, documentList:documents]).call()
                                 } catch (Throwable t) {
                                     logger.error("Error calling DataFeed ${dataFeedAndDocument.dataFeedId} service ${serviceName}", t)
                                 }
@@ -815,9 +813,6 @@ class EntityDataFeed {
                         String serviceName = (String) dataFeedAndDocument.feedDeleteServiceName ?: 'org.moqui.search.SearchServices.delete#DataDocument'
                         try {
                             if (servicesCalled.contains(serviceName)) continue
-                            ecfi.serviceFacade.sync().name(serviceName)
-                                    .parameters([dataFeedId:dataFeedAndDocument.dataFeedId, feedStamp:feedStamp,
-                                            dataDocumentId:dataDocumentId, documentId:documentId]).call()
                             servicesCalled.add(serviceName)
                         } catch (Throwable t) {
                             logger.error("Error calling DataFeed ${dataFeedAndDocument.dataFeedId} delete service ${serviceName} for entity ${entityName} PK ${deleteEv.getPrimaryKeys()}", t)

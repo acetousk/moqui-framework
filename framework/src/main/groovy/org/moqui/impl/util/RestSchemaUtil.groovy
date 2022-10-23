@@ -509,7 +509,7 @@ class RestSchemaUtil {
         String entityName = parmNode.attribute("entity-name")
         String fieldName = parmNode.attribute("field-name")
         if (entityName && fieldName) {
-            EntityDefinition ed = sd.sfi.ecfi.entityFacade.getEntityDefinition(entityName)
+            EntityDefinition ed = null
             if (ed == null) throw new ServiceException("Entity ${entityName} not found, from parameter ${parmNode.attribute('name')} of service ${sd.serviceName}")
             FieldInfo fi = ed.getFieldInfo(fieldName)
             if (fi == null) throw new ServiceException("Field ${fieldName} not found for entity ${entityName}, from parameter ${parmNode.attribute('name')} of service ${sd.serviceName}")
@@ -804,7 +804,7 @@ class RestSchemaUtil {
             filenameBase.append(pathName).append('.')
         }
 
-        Map swaggerMap = eci.serviceFacade.restApi.getSwaggerMap(rootPathList, ["scheme"], "hostName", basePath)
+        Map swaggerMap = null
         if (outputType == "application/json") {
             JsonBuilder jb = new JsonBuilder()
             jb.call(swaggerMap)
@@ -828,7 +828,7 @@ class RestSchemaUtil {
         String rootResourceName = extraPathNameList.get(0)
         if (rootResourceName.endsWith(".raml")) rootResourceName = rootResourceName.substring(0, rootResourceName.length() - 5)
 
-        Map swaggerMap = eci.serviceFacade.restApi.getRamlMap(rootResourceName, linkPrefix)
+        Map swaggerMap = null
         DumperOptions options = new DumperOptions()
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK)
         // default: options.setDefaultScalarStyle(DumperOptions.ScalarStyle.PLAIN)

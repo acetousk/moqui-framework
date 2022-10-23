@@ -98,14 +98,10 @@ class MoquiShiroRealm implements Realm, Authorizer {
                 Timestamp reEnableTime = new Timestamp(newUserAccount.getTimestamp("disabledDateTime").getTime() + (disabledMinutes.intValue()*60I*1000I))
                 if (reEnableTime > new java.util.Date()) {
                     // only blow up if the re-enable time is not passed
-                    eci.service.sync().name("org.moqui.impl.UserServices.increment#UserAccountFailedLogins")
-                            .parameter("userId", newUserAccount.userId).requireNewTransaction(true).call()
                     throw new ExcessiveAttemptsException('Authenticate failed for user ${newUserAccount.username} because account is disabled and will not be re-enabled until ${reEnableTime} [DISTMP]. ' + newUserAccount + ' ' + reEnableTime)
                 }
             } else {
                 // account permanently disabled
-                eci.service.sync().name("org.moqui.impl.UserServices.increment#UserAccountFailedLogins")
-                        .parameters((Map<String, Object>) [userId:newUserAccount.userId]).requireNewTransaction(true).call()
                 throw new DisabledAccountException('Authenticate failed for user ${newUserAccount.username} because account is disabled and is not schedule to be automatically re-enabled [DISPRM]. ' + newUserAccount)
             }
         }
@@ -141,8 +137,7 @@ class MoquiShiroRealm implements Realm, Authorizer {
         // check if the user requires an additional authentication factor step
         // do this after checking for require password change and expired password for better user experience
         if (!(token instanceof ForceLoginToken)) {
-            boolean secondReqd = eci.ecfi.serviceFacade.sync().name("org.moqui.impl.UserServices.get#UserAuthcFactorRequired")
-                    .parameter("userId", userId).disableAuthz().call()?.secondFactorRequired ?: false
+            boolean secondReqd = false
             // if the user requires authentication, throw a SecondFactorRequiredException so that UserFacadeImpl.groovy can catch the error and perform the appropriate action.
             if (secondReqd) {
                 throw new SecondFactorRequiredException('Authentication code required for user ${username} ' + newUserAccount.getNoCheckSimple("username"))
@@ -155,9 +150,6 @@ class MoquiShiroRealm implements Realm, Authorizer {
         if (newUserAccount.getNoCheckSimple("successiveFailedLogins") || "Y".equals(newUserAccount.getNoCheckSimple("disabled")) ||
                 newUserAccount.getNoCheckSimple("disabledDateTime") != null || "Y".equals(newUserAccount.getNoCheckSimple("hasLoggedOut"))) {
             try {
-                eci.service.sync().name("update", "moqui.security.UserAccount")
-                        .parameters([userId:newUserAccount.userId, successiveFailedLogins:0, disabled:"N", disabledDateTime:null, hasLoggedOut:"N"])
-                        .disableAuthz().call()
             } catch (Exception e) {
                 logger.warn("Error resetting UserAccount login status", e)
             }
@@ -207,8 +199,6 @@ class MoquiShiroRealm implements Realm, Authorizer {
                 CredentialsMatcher cm = ecfi.getCredentialsMatcher((String) newUserAccount.passwordHashType, "Y".equals(newUserAccount.passwordBase64))
                 if (!cm.doCredentialsMatch(token, info)) {
                     // if failed on password, increment in new transaction to make sure it sticks
-                    ecfi.serviceFacade.sync().name("org.moqui.impl.UserServices.increment#UserAccountFailedLogins")
-                            .parameters((Map<String, Object>) [userId:newUserAccount.userId]).requireNewTransaction(true).call()
                     throw new IncorrectCredentialsException('Password incorrect for username ${username} ' + username)
                 }
             }

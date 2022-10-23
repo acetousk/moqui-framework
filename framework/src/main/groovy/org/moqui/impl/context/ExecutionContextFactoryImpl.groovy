@@ -39,8 +39,6 @@ import org.moqui.resource.UrlResourceReference
 import org.moqui.impl.context.ContextJavaUtil.CustomScheduledExecutor
 import org.moqui.impl.context.ContextJavaUtil.ScheduledRunnableInfo
 import org.moqui.impl.entity.EntityFacadeImpl
-import org.moqui.impl.service.ServiceFacadeImpl
-import org.moqui.service.ServiceFacade
 import org.moqui.util.MNode
 import org.moqui.resource.ResourceReference
 import org.moqui.util.ObjectUtilities
@@ -122,7 +120,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     @SuppressWarnings("GrFinalVariableAccess") public final LoggerFacadeImpl loggerFacade
     @SuppressWarnings("GrFinalVariableAccess") public final TransactionFacadeImpl transactionFacade
     @SuppressWarnings("GrFinalVariableAccess") public final EntityFacadeImpl entityFacade
-    @SuppressWarnings("GrFinalVariableAccess") public final ServiceFacadeImpl serviceFacade
 
     /** The main worker pool for services, running async closures and runnables, etc */
     @SuppressWarnings("GrFinalVariableAccess") public final ThreadPoolExecutor workerPool
@@ -205,8 +202,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         logger.info("Transaction Facade initialized")
         entityFacade = new EntityFacadeImpl(this)
         logger.info("Entity Facade initialized")
-        serviceFacade = new ServiceFacadeImpl(this)
-        logger.info("Service Facade initialized")
 
         postFacadeInit()
 
@@ -259,8 +254,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         logger.info("Transaction Facade initialized")
         entityFacade = new EntityFacadeImpl(this)
         logger.info("Entity Facade initialized")
-        serviceFacade = new ServiceFacadeImpl(this)
-        logger.info("Service Facade initialized")
 
         postFacadeInit()
 
@@ -432,16 +425,14 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
                 workQueue, new ContextJavaUtil.WorkerThreadFactory())
     }
     boolean waitWorkerPoolEmpty(int retryLimit) {
-        ThreadPoolExecutor jobWorkerPool = serviceFacade.jobWorkerPool
         int count = 0
-        logger.warn("Wait for workerPool and jobWorkerPool empty: worker queue size ${workerPool.getQueue().size()} active ${workerPool.getActiveCount()}; service job queue size ${jobWorkerPool.getQueue().size()} active ${jobWorkerPool.getActiveCount()}")
-        while (count < retryLimit && (workerPool.getQueue().size() > 0 || workerPool.getActiveCount() > 0 ||
-                jobWorkerPool.getQueue().size() > 0 || jobWorkerPool.getActiveCount() > 0)) {
+        logger.warn("Wait for workerPool and jobWorkerPool empty: worker queue size ${workerPool.getQueue().size()} active ${workerPool.getActiveCount()}; service job queue size ... active ...")
+        while (count < retryLimit && (workerPool.getQueue().size() > 0 || workerPool.getActiveCount() > 0)) {
             Thread.sleep(100)
             count++
         }
         int afterSize = workerPool.getQueue().size() + workerPool.getActiveCount()
-        int jobAfterSize = jobWorkerPool.getQueue().size() + jobWorkerPool.getActiveCount()
+        int jobAfterSize = 0
         if (afterSize > 0 || jobAfterSize > 0) logger.warn("After ${retryLimit} 100ms waits worker pool size is ${afterSize} and service job pool size is ${jobAfterSize}")
         return afterSize == 0 && jobAfterSize == 0
     }
@@ -536,7 +527,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
 
     private void postFacadeInit() {
         entityFacade.postFacadeInit()
-        serviceFacade.postFacadeInit()
 
         // Warm cache on start if configured to do so
         if (confXmlRoot.first("cache-list").attribute("warm-on-start") != "false") warmCache()
@@ -569,7 +559,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
 
     void warmCache() {
         this.entityFacade.warmCache()
-        this.serviceFacade.warmCache()
     }
 
     /** Setup the cached ClassLoader, this should init in the main thread so we can set it properly */
@@ -755,7 +744,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         */
 
         // this destroy order is important as some use others so must be destroyed first
-        if (this.serviceFacade != null) this.serviceFacade.destroy()
         if (this.entityFacade != null) this.entityFacade.destroy()
         if (this.transactionFacade != null) this.transactionFacade.destroy()
         logger.info("Facades destroyed")
@@ -916,7 +904,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     @Override @Nonnull LoggerFacade getLogger() { loggerFacade }
     @Override @Nonnull TransactionFacade getTransaction() { transactionFacade }
     @Override @Nonnull EntityFacade getEntity() { entityFacade }
-    @Override @Nonnull ServiceFacade getService() { serviceFacade }
 
     @Override @Nonnull ClassLoader getClassLoader() { moquiClassLoader }
     @Override @Nonnull GroovyClassLoader getGroovyClassLoader() { groovyClassLoader }

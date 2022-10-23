@@ -22,8 +22,8 @@ import org.moqui.Moqui
 
 @Suite
 @SelectClasses([ EntityCrud.class, EntityFindTests.class, EntityNoSqlCrud.class,
-        MessageFacadeTests.class, ServiceCrudImplicit.class,
-        ServiceFacadeTests.class, SubSelectTests.class, TransactionFacadeTests.class,
+        MessageFacadeTests.class ServiceCrudImplicit.class,
+        SubSelectTests.class, TransactionFacadeTests.class,
         SystemScreenRenderTests.class, ToolsRestApiTests.class, ToolsScreenRenderTests.class])
 class MoquiSuite {
     @AfterAll

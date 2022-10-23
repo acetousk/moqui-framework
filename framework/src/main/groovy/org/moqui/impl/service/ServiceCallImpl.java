@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ServiceCallImpl implements ServiceCall {
-    protected final ServiceFacadeImpl sfi;
     protected String path = null;
     protected String verb = null;
     protected String noun = null;
@@ -31,31 +30,22 @@ public class ServiceCallImpl implements ServiceCall {
     protected String serviceNameNoHash = null;
     protected Map<String, Object> parameters = new HashMap<>();
 
-    public ServiceCallImpl(ServiceFacadeImpl sfi) { this.sfi = sfi; }
-
     protected void serviceNameInternal(String serviceName) {
         if (serviceName == null || serviceName.isEmpty()) throw new ServiceException("Service name cannot be empty");
-        sd = sfi.getServiceDefinition(serviceName);
-        if (sd != null) {
-            path = sd.verb;
-            verb = sd.verb;
-            noun = sd.verb;
-            this.serviceName = sd.serviceName;
-            serviceNameNoHash = sd.serviceNameNoHash;
+        path = ServiceDefinition.getPathFromName(serviceName);
+        verb = ServiceDefinition.getVerbFromName(serviceName);
+        noun = ServiceDefinition.getNounFromName(serviceName);
+        // if the service is not found must be an entity auto, but if there is a path then error
+        if (path == null || path.isEmpty()) {
+            noSd = true;
         } else {
-            path = ServiceDefinition.getPathFromName(serviceName);
-            verb = ServiceDefinition.getVerbFromName(serviceName);
-            noun = ServiceDefinition.getNounFromName(serviceName);
-            // if the service is not found must be an entity auto, but if there is a path then error
-            if (path == null || path.isEmpty()) {
-                noSd = true;
-            } else {
-                throw new ServiceException("Service not found with name " + serviceName);
-            }
-            this.serviceName = serviceName;
-            serviceNameNoHash = serviceName.replace("#", "");
+            throw new ServiceException("Service not found with name " + serviceName);
         }
+        this.serviceName = serviceName;
+        serviceNameNoHash = serviceName.replace("#", "");
     }
+
+    public ServiceCallImpl() {  }
 
     protected void serviceNameInternal(String path, String verb, String noun) {
         if (path == null || path.isEmpty()) {
@@ -73,7 +63,7 @@ public class ServiceCallImpl implements ServiceCall {
         if (noSd) {
             serviceNameNoHash = serviceName.replace("#", "");
         } else {
-            sd = sfi.getServiceDefinition(serviceName);
+            sd = null;
             if (sd == null) throw new ServiceException("Service not found with name " + serviceName + " (path: " + path + ", verb: " + verb + ", noun: " + noun + ")");
             serviceNameNoHash = sd.serviceNameNoHash;
         }
@@ -100,21 +90,9 @@ public class ServiceCallImpl implements ServiceCall {
 
     public void validateCall(ExecutionContextImpl eci) {
         // Before scheduling the service check a few basic things so they show up sooner than later:
-        ServiceDefinition sd = sfi.getServiceDefinition(getServiceName());
+        ServiceDefinition sd = null;
         if (sd == null && !isEntityAutoPattern())
             throw new ServiceException("Could not find service with name [" + getServiceName() + "]");
-
-        if (sd != null) {
-            String serviceType = sd.serviceType;
-            if (serviceType == null || serviceType.isEmpty()) serviceType = "inline";
-            if ("interface".equals(serviceType)) throw new ServiceException("Cannot run interface service [" + getServiceName() + "]");
-            ServiceRunner sr = sfi.getServiceRunner(serviceType);
-            if (sr == null) throw new ServiceException("Could not find service runner for type [" + serviceType + "] for service [" + getServiceName() + "]");
-            // validation
-            parameters = sd.convertValidateCleanParameters(parameters, eci);
-            // if error(s) in parameters, return now with no results
-        }
-
 
         // always do an authz before scheduling the job
         // pop immediately, just did the push to to an authz

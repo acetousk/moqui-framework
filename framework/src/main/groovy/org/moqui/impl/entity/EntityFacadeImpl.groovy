@@ -1728,7 +1728,7 @@ class EntityFacadeImpl implements EntityFacade {
             }
         } else {
             // use the entity auto service runner for other operations (create, store, update, delete)
-            Map result = ecfi.serviceFacade.sync().name(operation, lastEd.fullEntityName).parameters(parameters).call()
+            Map result = null
             return result
         }
     }

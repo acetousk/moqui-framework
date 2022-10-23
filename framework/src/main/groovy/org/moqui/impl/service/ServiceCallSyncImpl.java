@@ -35,7 +35,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
     private boolean rememberParameters = true;
     protected boolean disableAuthz = false;
 
-    public ServiceCallSyncImpl(ServiceFacadeImpl sfi) { super(sfi); }
+    public ServiceCallSyncImpl() {  }
 
     @Override public ServiceCallSync name(String serviceName) { serviceNameInternal(serviceName); return this; }
     @Override public ServiceCallSync name(String v, String n) { serviceNameInternal(null, v, n); return this; }
@@ -57,7 +57,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
 
     @Override
     public Map<String, Object> call() {
-        ExecutionContextFactoryImpl ecfi = sfi.ecfi;
+        ExecutionContextFactoryImpl ecfi = null;
         ExecutionContextImpl eci = ecfi.getEci();
 
         try {
@@ -148,11 +148,10 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         }
 
         final String serviceType = sd != null ? sd.serviceType : "entity-implicit";
-        ArrayList<ServiceEcaRule> secaRules = sfi.secaRules(serviceNameNoHash);
+        ArrayList<ServiceEcaRule> secaRules = null;
         boolean hasSecaRules = secaRules != null && secaRules.size() > 0;
 
         // in-parameter validation
-        if (hasSecaRules) ServiceFacadeImpl.runSecaRules(serviceNameNoHash, currentParameters, null, "pre-validate", secaRules, eci);
         if (sd != null) {
             currentParameters = sd.convertValidateCleanParameters(currentParameters, eci);
             if (softValidate) {
@@ -173,16 +172,10 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         }
 
         if (sd == null) {
-            if (sfi.isEntityAutoPattern(path, verb, noun)) {
-                try {
-                    return runImplicitEntityAuto(currentParameters, secaRules, eci);
-                } finally {
-                }
-            } else {
-                logger.info("No service with name " + serviceName + ", isEntityAutoPattern=" + isEntityAutoPattern() +
-                        ", path=" + path + ", verb=" + verb + ", noun=" + noun + ", noun is entity? " + eci.getEntityFacade().isEntityDefined(noun));
-                throw new ServiceException("Could not find service with name " + serviceName);
-            }
+            logger.info("No service with name " + serviceName + ", isEntityAutoPattern=" + isEntityAutoPattern() +
+                    ", path=" + path + ", verb=" + verb + ", noun=" + noun + ", noun is entity? " + eci.getEntityFacade().isEntityDefined(noun));
+            if (ignorePreviousError) eci.messageFacade.popErrors();
+            throw new ServiceException("Could not find service with name " + serviceName);
         }
 
         if ("interface".equals(serviceType)) {
@@ -195,7 +188,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         }
 
         // pre authentication and authorization SECA rules
-        if (hasSecaRules) ServiceFacadeImpl.runSecaRules(serviceNameNoHash, currentParameters, null, "pre-auth", secaRules, eci);
 
         // push service call artifact execution, checks authz too
         // NOTE: don't require authz if the service def doesn't authenticate
@@ -246,7 +238,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
             }
 
             try {
-                if (hasSecaRules) ServiceFacadeImpl.runSecaRules(serviceNameNoHash, currentParameters, null, "pre-service", secaRules, eci);
                 if (traceEnabled) logger.trace("Calling service " + serviceName + " pre-call input: " + currentParameters);
 
                 // if error(s) in pre-service or anything else before actual run then return now with no results
@@ -255,21 +246,17 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                     // run the service through the ServiceRunner
                     result = serviceRunner.runService(sd, currentParameters);
                 } finally {
-                    if (hasSecaRules) sfi.registerTxSecaRules(serviceNameNoHash, currentParameters, result, secaRules);
                 }
                 // logger.warn("Called " + serviceName + " has error message " + eci.messageFacade.hasError() + " began TX " + beganTransaction + " TX status " + tf.getStatusString());
 
                 // post-service SECA rules
-                if (hasSecaRules) ServiceFacadeImpl.runSecaRules(serviceNameNoHash, currentParameters, result, "post-service", secaRules, eci);
                 // registered callbacks, no Throwable
-                sfi.callRegisteredCallbacks(serviceName, currentParameters, result);
                 // if we got any errors added to the message list in the service, rollback for that too
 
                 if (traceEnabled) logger.trace("Calling service " + serviceName + " result: " + result);
             } catch (Throwable t) {
                 BaseException.filterStackTrace(t);
                 // registered callbacks with Throwable
-                sfi.callRegisteredCallbacksThrowable(serviceName, currentParameters, t);
                 // rollback the transaction
                 tf.rollback(beganTransaction, "Error running service " + serviceName + " (Throwable)", t);
                 transactionStatus = tf.getStatus();
@@ -305,8 +292,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                     }
 
                 }
-
-                if (hasSecaRules) ServiceFacadeImpl.runSecaRules(serviceNameNoHash, currentParameters, result, "post-commit", secaRules, eci);
             }
 
             return result;
@@ -470,8 +455,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         // done in calling method: sfi.runSecaRules(serviceName, currentParameters, null, "pre-auth")
 
         boolean hasSecaRules = secaRules != null && secaRules.size() > 0;
-        if (hasSecaRules)
-            ServiceFacadeImpl.runSecaRules(serviceNameNoHash, currentParameters, null, "pre-validate", secaRules, eci);
 
         // start with the settings for the default: use-or-begin
         boolean pauseResumeIfNeeded = false;
@@ -490,8 +473,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
             // alternative to use read only TX cache by default, not functional yet: tf.initTransactionCache(useTransactionCache == null || !useTransactionCache);
 
             try {
-                if (hasSecaRules) ServiceFacadeImpl.runSecaRules(serviceNameNoHash, currentParameters, null, "pre-service", secaRules, eci);
-
                 // if error(s) in pre-service or anything else before actual run then return now with no results
 
                 try {
@@ -508,10 +489,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
 
                     // NOTE: no need to throw exception for other verbs, checked in advance when looking for valid service name by entity auto pattern
                 } finally {
-                    if (hasSecaRules) sfi.registerTxSecaRules(serviceNameNoHash, currentParameters, result, secaRules);
                 }
-
-                if (hasSecaRules) ServiceFacadeImpl.runSecaRules(serviceNameNoHash, currentParameters, result, "post-service", secaRules, eci);
             } catch (Throwable t) {
                 logger.error("Error running service " + serviceName, t);
                 tf.rollback(beganTransaction, "Error running service " + serviceName + " (Throwable)", t);
@@ -531,8 +509,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                         parent = parent.getCause();
                     }
                 }
-
-                if (hasSecaRules) ServiceFacadeImpl.runSecaRules(serviceNameNoHash, currentParameters, result, "post-commit", secaRules, eci);
             }
         } finally {
             if (suspendedTransaction) tf.resume();

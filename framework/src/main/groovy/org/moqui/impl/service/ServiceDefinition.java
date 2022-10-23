@@ -39,7 +39,6 @@ public class ServiceDefinition {
     private static final EmailValidator emailValidator = EmailValidator.getInstance();
     private static final UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_ALL_SCHEMES);
 
-    public final ServiceFacadeImpl sfi;
     public final MNode serviceNode;
 
     private final LinkedHashMap<String, ParameterInfo> inParameterInfoMap = new LinkedHashMap<>();
@@ -76,8 +75,7 @@ public class ServiceDefinition {
     public final String semaphore, semaphoreName, semaphoreParameter;
     public final long semaphoreIgnoreMillis, semaphoreSleepTime, semaphoreTimeoutTime;
 
-    public ServiceDefinition(ServiceFacadeImpl sfi, String path, MNode sn) {
-        this.sfi = sfi;
+    public ServiceDefinition(String path, MNode sn) {
         this.serviceNode = sn.deepCopy(null);
         this.path = path;
         this.verb = serviceNode.attribute("verb");
@@ -100,7 +98,7 @@ public class ServiceDefinition {
             final String implServiceName = implementsNode.attribute("service");
             String implRequired = implementsNode.attribute("required");// no default here, only used if has a value
             if (implRequired != null && implRequired.isEmpty()) implRequired = null;
-            ServiceDefinition sd = sfi.getServiceDefinition(implServiceName);
+            ServiceDefinition sd = null;
             if (sd == null) throw new ServiceException("Service " + implServiceName +
                     " not found, specified in service.implements in service " + serviceName);
 
@@ -132,8 +130,6 @@ public class ServiceDefinition {
         // expand auto-parameters and merge parameter in in-parameters and out-parameters
         // if noun is a valid entity name set it on parameters with valid field names on it
         EntityDefinition ed = null;
-        if (sfi.ecfi.entityFacade.isEntityDefined(this.noun))
-            ed = sfi.ecfi.entityFacade.getEntityDefinition(this.noun);
         if (serviceNode.hasChild("in-parameters")) {
             for (MNode paramNode : serviceNode.first("in-parameters").getChildren()) {
                 if ("auto-parameters".equals(paramNode.getName())) {
@@ -164,7 +160,7 @@ public class ServiceDefinition {
 
         // if this is an inline service, get that now
         if (serviceNode.hasChild("actions")) {
-            xmlAction = new XmlAction(sfi.ecfi, serviceNode.first("actions"), serviceName);
+            xmlAction = new XmlAction(null, serviceNode.first("actions"), serviceName);
         } else {
             xmlAction = null;
         }
@@ -173,7 +169,7 @@ public class ServiceDefinition {
         authenticate = authenticateAttr != null && !authenticateAttr.isEmpty() ? authenticateAttr : "true";
         final String typeAttr = serviceNode.attribute("type");
         serviceType = typeAttr != null && !typeAttr.isEmpty() ? typeAttr : "inline";
-        serviceRunner = sfi.getServiceRunner(serviceType);
+        serviceRunner = null;
 
         String transactionAttr = serviceNode.attribute("transaction");
         txIgnore = "ignore".equals(transactionAttr);
@@ -238,7 +234,7 @@ public class ServiceDefinition {
         if (entityName == null || entityName.isEmpty()) entityName = noun;
         if (entityName == null || entityName.isEmpty()) throw new ServiceException("Error in auto-parameters in service " +
                 serviceName + ", no auto-parameters.@entity-name and no service.@noun for a default");
-        EntityDefinition ed = sfi.ecfi.entityFacade.getEntityDefinition(entityName);
+        EntityDefinition ed = null;
         if (ed == null) throw new ServiceException("Error in auto-parameters in service " + serviceName + ", the entity-name or noun [" + entityName + "] is not a valid entity name");
 
         Set<String> fieldsToExclude = new HashSet<>();
@@ -256,7 +252,7 @@ public class ServiceDefinition {
         for (String fieldName : ed.getFieldNames("all".equals(includeStr) || "pk".equals(includeStr), "all".equals(includeStr) || "nonpk".equals(includeStr))) {
             if (fieldsToExclude.contains(fieldName)) continue;
 
-            String javaType = sfi.ecfi.entityFacade.getFieldJavaType(ed.getFieldInfo(fieldName).type, ed);
+            String javaType = null;
             Map<String, String> map = new LinkedHashMap<>(5);
             map.put("type", javaType);
             map.put("required", requiredStr);

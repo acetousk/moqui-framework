@@ -323,8 +323,6 @@ class EntityDataDocument {
                         postProcessDocMapList(documentMapList, ddi)
 
                         // call the feed receive service
-                        efi.ecfi.serviceFacade.sync().name(feedReceiveServiceName).parameter("documentList", documentMapList)
-                                .noRememberParameters().call()
                         // stop if there was an error
 
                         documentMapMap = hasAllPrimaryPks ? new LinkedHashMap<String, Map>(batchSize + 10) : null
@@ -342,7 +340,6 @@ class EntityDataDocument {
             if (documentMapList != null && documentMapList.size() > 0) {
                 postProcessDocMapList(documentMapList, ddi)
                 // call the feed receive service
-                efi.ecfi.serviceFacade.sync().name(feedReceiveServiceName).parameter("documentList", documentMapList).call()
             }
         } finally {
             mainEli.close()
@@ -443,8 +440,7 @@ class EntityDataDocument {
             // call the manualDataServiceName service for each document
             if (manualDataServiceName != null && !manualDataServiceName.isEmpty()) {
                 // logger.warn("Calling ${manualDataServiceName} with doc: ${docMap}")
-                Map result = efi.ecfi.serviceFacade.sync().name(manualDataServiceName)
-                        .parameter("dataDocumentId", ddi.dataDocumentId).parameter("document", docMap).call()
+                Map result = null
                 if (result == null) {
                     logger.error("Error calling manual data service for ${ddi.dataDocumentId}, document may be missing data:")
                 } else {

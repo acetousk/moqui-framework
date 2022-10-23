@@ -47,7 +47,7 @@ public class ServiceJsonRpcDispatcher {
 
         String errorMessage = null
         Integer errorCode = null
-        ServiceDefinition sd = method ? eci.serviceFacade.getServiceDefinition(method) : null
+        ServiceDefinition sd = method ? null : null
          if (!method) {
             errorMessage = "No method specified"
             errorCode = INVALID_REQUEST
@@ -66,7 +66,7 @@ public class ServiceJsonRpcDispatcher {
         Map result = null
         if (errorMessage == null) {
             try {
-                result = eci.service.sync().name(sd.serviceName).parameters((Map) paramsObj).call()
+                result = null
             } catch (Exception e) {
                 logger.error("Error calling service ${sd.serviceName} from JSON-RPC request: ${e.toString()}", e)
                 errorMessage = e.getMessage()

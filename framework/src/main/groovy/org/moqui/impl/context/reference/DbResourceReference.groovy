@@ -170,17 +170,10 @@ class DbResourceReference extends BaseResourceReference {
                 makeNextVersion(dbrf, fileObj)
             } else {
                 // now write the DbResource and DbResourceFile records
-                Map createDbrResult = ecf.service.sync().name("create", "moqui.resource.DbResource")
-                        .parameters([parentResourceId:parentResourceId, filename:filename, isFile:"Y"]).call()
+                Map createDbrResult = null
                 resourceId = createDbrResult.resourceId
                 String versionName = "01"
-                ecf.service.sync().name("create", "moqui.resource.DbResourceFile")
-                        .parameters([resourceId:resourceId, mimeType:getContentType(), versionName:versionName,
-                                     rootVersionName:versionName, fileData:fileObj]).call()
                 ExecutionContextImpl eci = ecf.getEci()
-                ecf.service.sync().name("create", "moqui.resource.DbResourceFileHistory")
-                        .parameters([resourceId:resourceId, versionDate:new java.util.Date(), userId:null,
-                                     isDiff:"N"]).call() // NOTE: no fileData, for non-diff only past versions
             }
         }
     }
@@ -195,10 +188,7 @@ class DbResourceReference extends BaseResourceReference {
             }
         }
         ExecutionContextImpl eci = ecf.getEci()
-        Map createOut = ecf.service.sync().name("create", "moqui.resource.DbResourceFileHistory")
-                .parameters([resourceId:resourceId, previousVersionName:currentVersionName,
-                             versionDate:new java.util.Date(), userId:null,
-                             isDiff:"N"]).call()  // NOTE: no fileData, for non-diff only past versions
+        Map createOut = null // NOTE: no fileData, for non-diff only past versions
         String newVersionName = createOut.versionName
         if (!dbrf.rootVersionName) dbrf.rootVersionName = currentVersionName ?: newVersionName
         dbrf.versionName = newVersionName
@@ -225,8 +215,7 @@ class DbResourceReference extends BaseResourceReference {
                                 .condition("parentResourceId", parentResourceId).condition("filename", filename)
                                 .useCache(false).disableAuthz().list().getFirst()
                         if (directoryValue == null) {
-                            Map createResult = ecf.service.sync().name("create", "moqui.resource.DbResource")
-                                    .parameters([parentResourceId:parentResourceId, filename:filename, isFile:"N"]).call()
+                            Map createResult = null
                             parentResourceId = createResult.resourceId
                             // logger.warn("=============== put text to ${location}, created dir ${filename}")
                         }

@@ -90,7 +90,7 @@ class ScheduledJobRunner implements Runnable {
         // Get ExecutionContext, just for disable authz
         ExecutionContextImpl eci = ecfi.getEci()
         EntityFacadeImpl efi = ecfi.entityFacade
-        ThreadPoolExecutor jobWorkerPool = ecfi.serviceFacade.jobWorkerPool
+        ThreadPoolExecutor jobWorkerPool = null
         try {
             // make sure no transaction is in place, shouldn't be any so try to commit if there is one
             if (ecfi.transactionFacade.isTransactionInPlace()) {
@@ -130,9 +130,6 @@ class ScheduledJobRunner implements Runnable {
                     long runCount = efi.find("moqui.service.job.ServiceJobRun").condition("jobName", jobName).useCache(false).count()
                     if (runCount >= repeatCount) {
                         // pause the job and set thruDate for faster future filtering
-                        ecfi.service.sync().name("update", "moqui.service.job.ServiceJob")
-                                .parameters([jobName: jobName, paused:'Y', thruDate:nowTimestamp] as Map<String, Object>)
-                                .disableAuthz().call()
                         continue
                     }
                 }
@@ -228,7 +225,7 @@ class ScheduledJobRunner implements Runnable {
                 }
 
                 // at this point jobRunId and serviceJobRunLock should not be null
-                ServiceCallJobImpl serviceCallJob = new ServiceCallJobImpl(jobName, ecfi.serviceFacade)
+                ServiceCallJobImpl serviceCallJob = null
                 // use the job run we created
                 serviceCallJob.withJobRunId(jobRunId)
                 serviceCallJob.withLastRunTime(lastRunTime)
