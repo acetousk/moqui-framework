@@ -366,7 +366,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         if (ignoreTransaction) beginTransactionIfNeeded = false;
         if (requireNewTransaction) pauseResumeIfNeeded = true;
 
-        TransactionFacadeImpl tf = eci.transactionFacade;
         boolean suspendedTransaction = false;
         Map<String, Object> result = new HashMap<>();
         try {
