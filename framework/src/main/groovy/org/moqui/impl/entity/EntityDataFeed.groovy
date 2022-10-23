@@ -47,7 +47,7 @@ class EntityDataFeed {
 
     EntityDataFeed(EntityFacadeImpl efi) {
         this.efi = efi
-        dataFeedEntityInfo = efi.ecfi.cacheFacade.getLocalCache("entity.data.feed.info")
+        dataFeedEntityInfo = null
     }
 
     EntityFacadeImpl getEfi() { return efi }

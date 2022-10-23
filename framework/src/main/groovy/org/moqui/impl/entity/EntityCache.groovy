@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -19,7 +19,7 @@ import javax.cache.Cache
 import org.moqui.entity.EntityCondition
 import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
-import org.moqui.impl.context.CacheFacadeImpl
+
 import org.moqui.util.MNode
 import org.moqui.util.SimpleTopic
 import org.slf4j.Logger
@@ -33,7 +33,6 @@ class EntityCache {
     protected final static Logger logger = LoggerFactory.getLogger(EntityCache.class)
 
     protected final EntityFacadeImpl efi
-    final CacheFacadeImpl cfi
 
     static final String oneKeyBase = "entity.record.one."
     static final String oneRaKeyBase = "entity.record.one_ra."
@@ -52,9 +51,7 @@ class EntityCache {
 
     EntityCache(EntityFacadeImpl efi) {
         this.efi = efi
-        this.cfi = efi.ecfi.cacheFacade
 
-        oneBfCache = cfi.getCache("entity.record.one_bf")
 
         MNode entityFacadeNode = efi.getEntityFacadeNode()
         distributedCacheInvalidate = entityFacadeNode.attribute("distributed-cache-invalidate") == "true" && entityFacadeNode.attribute("dci-topic-factory")
@@ -171,7 +168,7 @@ class EntityCache {
             EntityCondition pkCondition = null
 
             // NOTE: use to check if caches exist ONLY, don't use to actually get cache
-            ConcurrentMap<String, Cache> localCacheMap = cfi.localCacheMap
+            ConcurrentMap<String, Cache> localCacheMap = null
 
             // clear one cache
             String oneKey = oneKeyBase.concat(fullEntityName)

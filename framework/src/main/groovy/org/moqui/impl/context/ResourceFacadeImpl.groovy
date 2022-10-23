@@ -87,9 +87,9 @@ class ResourceFacadeImpl implements ResourceFacade {
         xmlActionsScriptRunner = new XmlActionsScriptRunner()
         xmlActionsScriptRunner.init(ecfi)
 
-        textLocationCache = ecfi.cacheFacade.getCache("resource.text.location", String.class, String.class)
+        textLocationCache = null
         // a plain HashMap is faster and just fine here: scriptGroovyExpressionCache = ecfi.cacheFacade.getCache("resource.groovy.expression")
-        resourceReferenceByLocation = ecfi.cacheFacade.getCache("resource.reference.location", String.class, ResourceReference.class)
+        resourceReferenceByLocation = null
 
         MNode resourceFacadeNode = ecfi.confXmlRoot.first("resource-facade")
 
@@ -415,7 +415,7 @@ class ResourceFacadeImpl implements ResourceFacade {
             // see if the extension is known
             ScriptEngine engine = scriptEngineManager.getEngineByExtension(extension)
             if (engine == null) throw new BaseArtifactException("Cannot run script [${location}], unknown extension (not in Moqui Conf file, and unkown to Java ScriptEngineManager).")
-            return JavaxScriptRunner.bindAndRun(location, ec, engine, ecfi.cacheFacade.getCache("resource.script${extension}.location"))
+            return JavaxScriptRunner.bindAndRun(location, ec, engine, null)
         }
     }
     @Override Object script(String location, String method, Map additionalContext) {

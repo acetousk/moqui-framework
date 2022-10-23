@@ -46,7 +46,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     private EntityFacadeImpl activeEntityFacade;
 
     // local references to ECFI fields
-    public final CacheFacadeImpl cacheFacade;
     public final LoggerFacadeImpl loggerFacade;
     public final ResourceFacadeImpl resourceFacade;
     public final ServiceFacadeImpl serviceFacade;
@@ -71,13 +70,11 @@ public class ExecutionContextImpl implements ExecutionContext {
 
         activeEntityFacade = ecfi.entityFacade;
 
-        cacheFacade = ecfi.cacheFacade;
         loggerFacade = ecfi.loggerFacade;
         resourceFacade = ecfi.resourceFacade;
         serviceFacade = ecfi.serviceFacade;
         transactionFacade = ecfi.transactionFacade;
 
-        if (cacheFacade == null) throw new IllegalStateException("cacheFacade was null");
         if (loggerFacade == null) throw new IllegalStateException("loggerFacade was null");
         if (resourceFacade == null) throw new IllegalStateException("resourceFacade was null");
         if (serviceFacade == null) throw new IllegalStateException("serviceFacade was null");
@@ -90,8 +87,6 @@ public class ExecutionContextImpl implements ExecutionContext {
 
     @SuppressWarnings("unchecked")
     private void initCaches() {
-        tarpitHitCache = cacheFacade.getCache("artifact.tarpit.hits");
-        l10nMessageCache = cacheFacade.getCache("l10n.message");
     }
     Cache<String, String> getL10nMessageCache() { return l10nMessageCache; }
     public Cache<String, ArrayList> getTarpitHitCache() { return tarpitHitCache; }
@@ -109,7 +104,6 @@ public class ExecutionContextImpl implements ExecutionContext {
 
     @Override public @Nonnull ResourceFacade getResource() { return resourceFacade; }
     @Override public @Nonnull LoggerFacade getLogger() { return loggerFacade; }
-    @Override public @Nonnull CacheFacade getCache() { return cacheFacade; }
     @Override public @Nonnull TransactionFacade getTransaction() { return transactionFacade; }
 
     @Override public @Nonnull EntityFacade getEntity() { return activeEntityFacade; }

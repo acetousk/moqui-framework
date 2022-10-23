@@ -47,7 +47,7 @@ class RestApi {
 
     RestApi(ExecutionContextFactoryImpl ecfi) {
         this.ecfi = ecfi
-        rootResourceCache = ecfi.cacheFacade.getLocalCache("service.rest.api")
+        rootResourceCache = null
         loadRootResourceNode(null)
     }
 

@@ -120,7 +120,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     protected ArrayList<LogEventSubscriber> logEventSubscribers = new ArrayList<>()
 
     // ======== Permanent Delegated Facades ========
-    @SuppressWarnings("GrFinalVariableAccess") public final CacheFacadeImpl cacheFacade
     @SuppressWarnings("GrFinalVariableAccess") public final LoggerFacadeImpl loggerFacade
     @SuppressWarnings("GrFinalVariableAccess") public final ResourceFacadeImpl resourceFacade
     @SuppressWarnings("GrFinalVariableAccess") public final TransactionFacadeImpl transactionFacade
@@ -200,8 +199,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         preFacadeInit()
 
         // this init order is important as some facades will use others
-        cacheFacade = new CacheFacadeImpl(this)
-        logger.info("Cache Facade initialized")
         loggerFacade = new LoggerFacadeImpl(this)
         // logger.info("Logger Facade initialized")
         resourceFacade = new ResourceFacadeImpl(this)
@@ -257,8 +254,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         preFacadeInit()
 
         // this init order is important as some facades will use others
-        cacheFacade = new CacheFacadeImpl(this)
-        logger.info("Cache Facade initialized")
         loggerFacade = new LoggerFacadeImpl(this)
         // logger.info("LoggerFacadeImpl initialized")
         resourceFacade = new ResourceFacadeImpl(this)
@@ -767,7 +762,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         if (this.serviceFacade != null) this.serviceFacade.destroy()
         if (this.entityFacade != null) this.entityFacade.destroy()
         if (this.transactionFacade != null) this.transactionFacade.destroy()
-        if (this.cacheFacade != null) this.cacheFacade.destroy()
         logger.info("Facades destroyed")
         System.out.println("Facades destroyed")
 
@@ -925,7 +919,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
 
     @Override @Nonnull ResourceFacade getResource() { resourceFacade }
     @Override @Nonnull LoggerFacade getLogger() { loggerFacade }
-    @Override @Nonnull CacheFacade getCache() { cacheFacade }
     @Override @Nonnull TransactionFacade getTransaction() { transactionFacade }
     @Override @Nonnull EntityFacade getEntity() { entityFacade }
     @Override @Nonnull ServiceFacade getService() { serviceFacade }

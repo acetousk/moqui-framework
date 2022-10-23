@@ -58,7 +58,7 @@ class MarkdownTemplateRenderer implements TemplateRenderer {
 
     TemplateRenderer init(ExecutionContextFactory ecf) {
         this.ecfi = (ExecutionContextFactoryImpl) ecf
-        this.templateMarkdownLocationCache = ecfi.cacheFacade.getCache("resource.markdown.location")
+        this.templateMarkdownLocationCache = null
         return this
     }
 

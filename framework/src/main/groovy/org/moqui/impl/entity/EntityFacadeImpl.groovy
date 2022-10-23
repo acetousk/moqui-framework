@@ -137,10 +137,10 @@ class EntityFacadeImpl implements EntityFacade {
         databaseLocale = theLocale ?: Locale.getDefault()
 
         // init entity meta-data
-        entityDefinitionCache = ecfi.cacheFacade.getCache("entity.definition")
-        entityLocationSingleCache = ecfi.cacheFacade.getCache("entity.location")
+        entityDefinitionCache = null
+        entityLocationSingleCache = null
         // NOTE: don't try to load entity locations before constructor is complete; this.loadAllEntityLocations()
-        entitySequenceBankCache = ecfi.cacheFacade.getCache("entity.sequence.bank")
+        entitySequenceBankCache = null
 
         // init connection pool (DataSource) for each group
         initAllDatasources()
