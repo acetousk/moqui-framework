@@ -71,7 +71,7 @@ public class FieldInfo {
                 EntityJavaUtil.camelCaseToUnderscored(name);
         // column name: see if there is a name-replace
         String groupName = ed.getEntityGroupName();
-        MNode databaseNode = ed.efi.getDatabaseNode(groupName);
+        MNode databaseNode = null;
         ArrayList<MNode> nameReplaceNodes = databaseNode.children("name-replace");
         for (int i = 0; i < nameReplaceNodes.size(); i++) {
             MNode nameReplaceNode = nameReplaceNodes.get(i);
@@ -92,9 +92,9 @@ public class FieldInfo {
         }
         type = typeAttr;
         if (type != null && type.length() > 0) {
-            String fieldJavaType = ed.efi.getFieldJavaType(type, ed);
+            String fieldJavaType = "";
             javaType = fieldJavaType != null ? fieldJavaType : "String";
-            typeValue = EntityFacadeImpl.getJavaTypeInt(javaType);
+            typeValue = 0;
             isTextVeryLong = "text-very-long".equals(type);
         } else {
             throw new EntityException("No type specified or found for field " + name + " on entity " + entityName);
@@ -161,7 +161,7 @@ public class FieldInfo {
     /** Full column name for complex finds on view entities; plain entity column names are never expanded */
     public String getFullColumnName() {
         if (fullColumnNameInternal != null) return fullColumnNameInternal;
-        return ed.efi.ecfi.resourceFacade.expand(expandColumnName, "", null, false);
+        return null;
     }
 
     static BigDecimal safeStripZeroes(BigDecimal input) {
@@ -258,7 +258,7 @@ public class FieldInfo {
                 case 8:
                 case 9:
                     if (value instanceof BigDecimal) value = safeStripZeroes((BigDecimal) value);
-                    L10nFacadeImpl l10n = ed.efi.ecfi.getEci().l10nFacade;
+                    L10nFacadeImpl l10n = null;
                     outValue = l10n.format(value, null);
                     break;
                 case 10: outValue = value.toString(); break;
@@ -284,7 +284,7 @@ public class FieldInfo {
         return outValue;
     }
 
-    void getResultSetValue(ResultSet rs, int index, LiteStringMap<Object> valueMap, EntityFacadeImpl efi) throws EntityException {
+    void getResultSetValue(ResultSet rs, int index, LiteStringMap<Object> valueMap) throws EntityException {
         if (typeValue == -1) throw new EntityException("No typeValue found for " + entityName + "." + name);
 
         Object value = null;
@@ -325,12 +325,12 @@ public class FieldInfo {
                 break;
             case 2:
                 try {
-                    value = rs.getTimestamp(index, efi.getCalendarForTzLc());
+                    value = rs.getTimestamp(index);
                 } catch (SQLException e) {
                     if (logger.isTraceEnabled()) logger.trace("Ignoring SQLException for getTimestamp(), leaving null (found this in MySQL with a date/time value of [0000-00-00 00:00:00]): " + e.toString());
                 }
                 break;
-            case 3: value = rs.getTime(index, efi.getCalendarForTzLc()); break;
+            case 3: value = rs.getTime(index); break;
             // for Date don't pass 2nd param efi.getCalendarForTzLc(), causes issues when Java TZ different from DB TZ
             // when the JDBC driver converts a string to a Date it uses the TZ from the Calendar but we want the Java default TZ
             case 4: value = rs.getDate(index); break;
@@ -400,7 +400,7 @@ public class FieldInfo {
             if (typeValue != 1) throw new EntityException("The encrypt attribute was set to true on non-String field " + name + " of entity " + entityName);
             String original = value.toString();
             try {
-                value = EntityJavaUtil.enDeCrypt(original, false, efi);
+                value = EntityJavaUtil.enDeCrypt(original, false);
             } catch (Exception e) {
                 logger.error("Error decrypting field [" + name + "] of entity [" + entityName + "]", e);
                 // NOTE DEJ 20200310 instead of using encrypted value return very clear fake placeholder; this is a bad design
@@ -416,7 +416,7 @@ public class FieldInfo {
 
     private static final boolean checkPreparedStatementValueType = false;
     public void setPreparedStatementValue(PreparedStatement ps, int index, Object value,
-                                          EntityDefinition ed, EntityFacadeImpl efi) throws EntityException {
+                                          EntityDefinition ed) throws EntityException {
         int localTypeValue = typeValue;
         if (value != null) {
             if (checkPreparedStatementValueType && !ObjectUtilities.isInstanceOf(value, javaType)) {
@@ -435,7 +435,7 @@ public class FieldInfo {
                         "indicate an error in the configuration or in the class, and may result " +
                         "in an SQL-Java data conversion error. Will use the real field type: " +
                         fieldClassName + ", not the definition.");
-                localTypeValue = EntityFacadeImpl.getJavaTypeInt(fieldClassName);
+                localTypeValue = 0;
             }
 
             // if field is to be encrypted, do it now
@@ -445,13 +445,13 @@ public class FieldInfo {
                 if (decryptFailedMagicString.equals(original)) {
                     throw new EntityException("To prevent data loss, not allowing decrypt failed placeholder for field " + name + " of entity " + entityName);
                 }
-                value = EntityJavaUtil.enDeCrypt(original, true, efi);
+                value = EntityJavaUtil.enDeCrypt(original, true);
             }
         }
 
         boolean useBinaryTypeForBlob = false;
         if (localTypeValue == 11 || localTypeValue == 12) {
-            useBinaryTypeForBlob = ("true".equals(efi.getDatabaseNode(ed.getEntityGroupName()).attribute("use-binary-type-for-blob")));
+            useBinaryTypeForBlob = false;
         }
         // if a count function used set as Long (type 6)
         if (ed.isViewEntity) {
@@ -460,7 +460,7 @@ public class FieldInfo {
         }
 
         try {
-            setPreparedStatementValue(ps, index, value, localTypeValue, useBinaryTypeForBlob, efi);
+            setPreparedStatementValue(ps, index, value, localTypeValue, useBinaryTypeForBlob);
         } catch (EntityException e) {
             throw e;
         } catch (Exception e) {
@@ -469,7 +469,7 @@ public class FieldInfo {
     }
 
     private void setPreparedStatementValue(PreparedStatement ps, int index, Object value, int localTypeValue,
-                                                 boolean useBinaryTypeForBlob, EntityFacadeImpl efi) throws EntityException {
+                                                 boolean useBinaryTypeForBlob) throws EntityException {
         try {
             // allow setting, and searching for, String values for all types; JDBC driver should handle this okay
             if (value instanceof CharSequence) {
@@ -481,13 +481,13 @@ public class FieldInfo {
                     if (value != null) {
                         Class valClass = value.getClass();
                         if (valClass == Timestamp.class) {
-                            ps.setTimestamp(index, (Timestamp) value, efi.getCalendarForTzLc());
+                            ps.setTimestamp(index, (Timestamp) value, null);
                         } else if (valClass == java.sql.Date.class) {
-                            ps.setDate(index, (java.sql.Date) value, efi.getCalendarForTzLc());
+                            ps.setDate(index, (java.sql.Date) value, null);
                         } else if (valClass == java.util.Date.class) {
-                            ps.setTimestamp(index, new Timestamp(((java.util.Date) value).getTime()), efi.getCalendarForTzLc());
+                            ps.setTimestamp(index, new Timestamp(((java.util.Date) value).getTime()), null);
                         } else if (valClass == Long.class) {
-                            ps.setTimestamp(index, new Timestamp((Long) value), efi.getCalendarForTzLc());
+                            ps.setTimestamp(index, new Timestamp((Long) value), null);
                         } else {
                             throw new EntityException("Class " + valClass.getName() + " not allowed for date-time (Timestamp) fields, for field " + entityName + "." + name);
                         }
@@ -500,7 +500,7 @@ public class FieldInfo {
                 case 3:
                     Time tm = (Time) value;
                     // logger.warn("=================== setting time tm=${tm} tm long=${tm.getTime()}, cal=${cal}")
-                    if (value != null) { ps.setTime(index, tm, efi.getCalendarForTzLc()); }
+                    if (value != null) { ps.setTime(index, tm, null); }
                     else { ps.setNull(index, Types.TIME); }
                     break;
                 case 4:
@@ -512,11 +512,11 @@ public class FieldInfo {
                             ps.setDate(index, dt);
                             // NOTE: don't pass Calendar, Date was likely generated in Java TZ and that's what we want, if DB TZ is different we don't want it to use that
                         } else if (valClass == Timestamp.class) {
-                            ps.setDate(index, new java.sql.Date(((Timestamp) value).getTime()), efi.getCalendarForTzLc());
+                            ps.setDate(index, new java.sql.Date(((Timestamp) value).getTime()), null);
                         } else if (valClass == java.util.Date.class) {
-                            ps.setDate(index, new java.sql.Date(((java.util.Date) value).getTime()), efi.getCalendarForTzLc());
+                            ps.setDate(index, new java.sql.Date(((java.util.Date) value).getTime()), null);
                         } else if (valClass == Long.class) {
-                            ps.setDate(index, new java.sql.Date((Long) value), efi.getCalendarForTzLc());
+                            ps.setDate(index, new java.sql.Date((Long) value), null);
                         } else {
                             throw new EntityException("Class " + valClass.getName() + " not allowed for date fields, for field " + entityName + "." + name);
                         }

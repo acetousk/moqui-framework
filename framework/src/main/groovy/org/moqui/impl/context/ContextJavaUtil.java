@@ -194,7 +194,7 @@ public class ContextJavaUtil {
         }
 
         EntityValue makeAhbValue(ExecutionContextFactoryImpl ecfi, Timestamp binEndDateTime) {
-            EntityValueBase ahb = (EntityValueBase) ecfi.entityFacade.makeValue("moqui.server.ArtifactHitBin");
+            EntityValueBase ahb = null;
             ahb.put("artifactType", statsInfo.artifactTypeEnum.name());
             ahb.put("artifactSubType", statsInfo.artifactSubType);
             ahb.put("artifactName", statsInfo.artifactName);
@@ -253,7 +253,7 @@ public class ContextJavaUtil {
             }
         }
         EntityValue makeAhiValue(ExecutionContextFactoryImpl ecfi) {
-            EntityValueBase ahp = (EntityValueBase) ecfi.entityFacade.makeValue("moqui.server.ArtifactHit");
+            EntityValueBase ahp = null;
             ahp.put("visitId", visitId);
             ahp.put("userId", userId);
             ahp.put("isSlowHit", isSlowHit ? 'Y' : 'N');

@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -26,7 +26,6 @@ import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
 import org.moqui.impl.context.ExecutionContextFactoryImpl
 import org.moqui.impl.context.ExecutionContextImpl
-import org.moqui.impl.entity.EntityFacadeImpl
 import org.moqui.util.MNode
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -90,7 +89,6 @@ class ScheduledJobRunner implements Runnable {
         // Get ExecutionContext, just for disable authz
         ExecutionContextImpl eci = ecfi.getEci()
         eci.artifactExecution.disableAuthz()
-        EntityFacadeImpl efi = ecfi.entityFacade
         ThreadPoolExecutor jobWorkerPool = ecfi.serviceFacade.jobWorkerPool
         try {
             // make sure no transaction is in place, shouldn't be any so try to commit if there is one
@@ -113,9 +111,7 @@ class ScheduledJobRunner implements Runnable {
             }
 
             // find scheduled jobs
-            EntityList serviceJobList = efi.find("moqui.service.job.ServiceJob").useCache(false)
-                    .condition("cronExpression", EntityCondition.ComparisonOperator.NOT_EQUAL, null)
-                    .orderBy("priority").orderBy("jobName").list()
+            EntityList serviceJobList = null
             serviceJobList.filterByDate("fromDate", "thruDate", nowTimestamp)
             int serviceJobListSize = serviceJobList.size()
             for (int i = 0; i < serviceJobListSize; i++) {
@@ -128,7 +124,7 @@ class ScheduledJobRunner implements Runnable {
                 }
                 if (serviceJob.repeatCount != null) {
                     long repeatCount = ((Long) serviceJob.repeatCount).longValue()
-                    long runCount = efi.find("moqui.service.job.ServiceJobRun").condition("jobName", jobName).useCache(false).count()
+                    long runCount = 0L
                     if (runCount >= repeatCount) {
                         // pause the job and set thruDate for faster future filtering
                         ecfi.service.sync().name("update", "moqui.service.job.ServiceJob")
@@ -147,12 +143,11 @@ class ScheduledJobRunner implements Runnable {
                 // now we need to run in a transaction; note that this is running in a executor service thread, no tx should ever be in place
                 boolean beganTransaction = ecfi.transaction.begin(null)
                 try {
-                    serviceJobRunLock = efi.find("moqui.service.job.ServiceJobRunLock")
-                            .condition("jobName", jobName).forUpdate(true).one()
-                    lastRunTime = (Timestamp) serviceJobRunLock?.lastRunTime
+                    serviceJobRunLock = null
+                    lastRunTime = null
                     ZonedDateTime lastRunDt = (lastRunTime != (Timestamp) null) ?
-                            ZonedDateTime.ofInstant(Instant.ofEpochMilli(lastRunTime.getTime()), now.getZone()) : null
-                    if (serviceJobRunLock != null && serviceJobRunLock.jobRunId != null && lastRunDt != null) {
+                            ZonedDateTime.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis()), now.getZone()) : null
+                    if (serviceJobRunLock != null && false && lastRunDt != null) {
                         // for failure with no lock reset: run recovery, based on expireLockTime (default to 1440 minutes)
                         Long expireLockTime = (Long) serviceJob.expireLockTime
                         if (expireLockTime == null) expireLockTime = 1440L
@@ -160,10 +155,9 @@ class ScheduledJobRunner implements Runnable {
                         if (lastRunDt.isBefore(lockCheckTime)) {
                             // recover failed job without lock reset, run it if schedule says to
                             logger.warn("Lock expired: found lock for job ${jobName} from ${lastRunDt}, more than ${expireLockTime} minutes old, ignoring lock")
-                            serviceJobRunLock.set("jobRunId", null).update()
                         } else {
                             // normal lock, skip this job
-                            logger.info("Lock found for job ${jobName} from ${lastRunDt} run ID ${serviceJobRunLock.jobRunId}, not running")
+                            logger.info("Lock found for job ${jobName} from ${lastRunDt} run ID ..., not running")
                             continue
                         }
                     }
@@ -178,8 +172,7 @@ class ScheduledJobRunner implements Runnable {
                     }
 
                     // if the last run had an error check the minRetryTime, don't run if hasn't been long enough
-                    EntityValue lastJobRun = efi.find("moqui.service.job.ServiceJobRun").condition("jobName", jobName)
-                            .orderBy("-startTime").limit(1).useCache(false).list().getFirst()
+                    EntityValue lastJobRun = null
                     if (lastJobRun != null && "Y".equals(lastJobRun.hasError)) {
                         Timestamp lastErrorTime = (Timestamp) lastJobRun.endTime ?: (Timestamp) lastJobRun.startTime
                         if (lastErrorTime != (Timestamp) null) {
@@ -201,15 +194,12 @@ class ScheduledJobRunner implements Runnable {
                     }
 
                     // create a job run and lock it
-                    serviceJobRun = efi.makeValue("moqui.service.job.ServiceJobRun")
-                            .set("jobName", jobName).setSequencedIdPrimary().create()
-                    jobRunId = (String) serviceJobRun.getNoCheckSimple("jobRunId")
+                    serviceJobRun = null
+                    jobRunId = null
 
                     if (serviceJobRunLock == null) {
-                        serviceJobRunLock = efi.makeValue("moqui.service.job.ServiceJobRunLock").set("jobName", jobName)
-                                .set("jobRunId", jobRunId).set("lastRunTime", nowTimestamp).create()
+                        serviceJobRunLock = null
                     } else {
-                        serviceJobRunLock.set("jobRunId", jobRunId).set("lastRunTime", nowTimestamp).update()
                     }
 
                     logger.info("Running job ${jobName} run ${jobRunId} (last run ${lastRunTime}, schedule ${lastSchedule})")

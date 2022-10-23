@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -653,8 +653,7 @@ class ScreenUrlInfo {
             String subscreenName = null
 
             // check SubscreensDefault records
-            EntityList subscreensDefaultList = ecfi.entity.find("moqui.screen.SubscreensDefault")
-                    .condition("screenLocation", lastSd.location).useCache(true).disableAuthz().list()
+            EntityList subscreensDefaultList = null
             for (int i = 0; i < subscreensDefaultList.size(); i++) {
                 EntityValue subscreensDefault = subscreensDefaultList.get(i)
                 String condStr = (String) subscreensDefault.conditionExpression
@@ -818,8 +817,7 @@ class ScreenUrlInfo {
             aliasPath = newPath.toString()
         }
         // logger.warn("Looking for path alias with screenPath ${screenPath} fromPathList ${fromPathList} aliasPath ${aliasPath}")
-        EntityList screenPathAliasList = sfi.ecfi.entityFacade.find("moqui.screen.ScreenPathAlias")
-                .condition("aliasPath", aliasPath).disableAuthz().useCache(true).list()
+        EntityList screenPathAliasList = null
         // logger.warn("Looking for path alias with aliasPath ${aliasPath} screenPathAliasList ${screenPathAliasList}")
         // keep this as light weight as possible, only filter and sort if needed
         if (screenPathAliasList.size() > 0) {
@@ -1085,7 +1083,7 @@ class ScreenUrlInfo {
                         String verb = targetServiceName.substring(0, targetServiceName.indexOf("#"))
                         if (verb == "create" || verb == "update" || verb == "delete" || verb == "store") {
                             String en = targetServiceName.substring(targetServiceName.indexOf("#") + 1)
-                            EntityDefinition ed = ec.entityFacade.getEntityDefinition(en)
+                            EntityDefinition ed = null
                             if (ed != null) {
                                 for (String fn in ed.getPkFieldNames()) {
                                     Object value = csMap.get(fn)

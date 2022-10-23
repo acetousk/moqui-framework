@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -46,9 +46,7 @@ class EntityDbMeta {
 
     protected HashMap<String, Boolean> runtimeAddMissingMap = new HashMap<>()
 
-    protected EntityFacadeImpl efi
-
-    EntityDbMeta(EntityFacadeImpl efi) { this.efi = efi }
+    EntityDbMeta() {  }
 
     static boolean shouldCreateFks(ExecutionContextFactoryImpl ecfi) {
         if (ecfi.getEci().artifactExecutionFacade.entityFkCreateDisabled()) return false
@@ -65,8 +63,8 @@ class EntityDbMeta {
         String groupName = entityInfo.groupName
         Boolean runtimeAddMissing = (Boolean) runtimeAddMissingMap.get(groupName)
         if (runtimeAddMissing == null) {
-            MNode datasourceNode = efi.getDatasourceNode(groupName)
-            MNode dbNode = efi.getDatabaseNode(groupName)
+            MNode datasourceNode = null
+            MNode dbNode = null
             String ramAttr = datasourceNode?.attribute("runtime-add-missing")
             runtimeAddMissing = ramAttr ? !"false".equals(ramAttr) : !"false".equals(dbNode.attribute("default-runtime-add-missing"))
             runtimeAddMissingMap.put(groupName, runtimeAddMissing)
@@ -76,7 +74,7 @@ class EntityDbMeta {
         if (entityInfo.isView) {
             boolean tableCreated = false
             for (MNode memberEntityNode in ed.entityNode.children("member-entity")) {
-                EntityDefinition med = efi.getEntityDefinition(memberEntityNode.attribute("entity-name"))
+                EntityDefinition med = null
                 if (checkTableRuntime(med)) tableCreated = true
             }
             return tableCreated
@@ -90,7 +88,7 @@ class EntityDbMeta {
         if (ed.isViewEntity) {
             boolean tableCreated = false
             for (MNode memberEntityNode in ed.entityNode.children("member-entity")) {
-                EntityDefinition med = efi.getEntityDefinition(memberEntityNode.attribute("entity-name"))
+                EntityDefinition med = null
                 if (checkTableStartup(med)) tableCreated = true
             }
             return tableCreated
@@ -102,17 +100,17 @@ class EntityDbMeta {
     int checkAndAddAllTables(String groupName) {
         int tablesAdded = 0
 
-        MNode datasourceNode = efi.getDatasourceNode(groupName)
+        MNode datasourceNode = null
         // MNode databaseNode = efi.getDatabaseNode(groupName)
         String schemaName = datasourceNode != null ? datasourceNode.attribute("schema-name") : null
-        Set<String> groupEntityNames = efi.getAllEntityNamesInGroup(groupName)
+        Set<String> groupEntityNames = null
 
         String[] types = ["TABLE", "VIEW", "ALIAS", "SYNONYM"]
         Set<String> existingTableNames = new HashSet<>()
 
-        boolean beganTx = useTxForMetaData ? efi.ecfi.transactionFacade.begin(300) : false
+        boolean beganTx = useTxForMetaData ? false : false
         try {
-            Connection con = efi.getConnection(groupName)
+            Connection con = null
 
             try {
                 DatabaseMetaData dbData = con.getMetaData()
@@ -155,7 +153,7 @@ class EntityDbMeta {
 
                 Set<String> remainingTableNames = new HashSet<>(existingTableNames)
                 for (String entityName in groupEntityNames) {
-                    EntityDefinition ed = efi.getEntityDefinition(entityName)
+                    EntityDefinition ed = null
                     if (ed.isViewEntity) continue
 
                     String fullEntityName = ed.getFullEntityName()
@@ -214,16 +212,15 @@ class EntityDbMeta {
                 if (con != null) con.close()
             }
         } finally {
-            if (beganTx) efi.ecfi.transactionFacade.commit()
         }
 
         // do second pass to make sure all FKs created
-        if (tablesAdded > 0 && shouldCreateFks(efi.ecfi)) {
+        if (tablesAdded > 0 && false) {
             logger.info("Tables were created, checking FKs for all entities in group ${groupName}")
 
-            beganTx = useTxForMetaData ? efi.ecfi.transactionFacade.begin(300) : false
+            beganTx = useTxForMetaData ? false : false
             try {
-                Connection con = efi.getConnection(groupName)
+                Connection con = null
 
                 try {
                     DatabaseMetaData dbData = con.getMetaData()
@@ -257,7 +254,7 @@ class EntityDbMeta {
                     if (fkInfoByFkTable.size() == 0) {
                         logger.warn("Bulk find imported keys got no results for group ${groupName}, getting per table (slower)")
                         for (String entityName in groupEntityNames) {
-                            EntityDefinition ed = efi.getEntityDefinition(entityName)
+                            EntityDefinition ed = null
                             if (ed.isViewEntity) continue
                             String fkTable = ed.getTableName()
                             boolean gotIkResults = false
@@ -301,7 +298,7 @@ class EntityDbMeta {
                     }
 
                     for (String entityName in groupEntityNames) {
-                        EntityDefinition ed = efi.getEntityDefinition(entityName)
+                        EntityDefinition ed = null
                         if (ed.isViewEntity) continue
 
                         // use one big query for all FKs instead of per entity/table
@@ -370,7 +367,6 @@ class EntityDbMeta {
                     if (con != null) con.close()
                 }
             } finally {
-                if (beganTx) efi.ecfi.transactionFacade.commit()
             }
         }
 
@@ -385,18 +381,13 @@ class EntityDbMeta {
     void forceCheckExistingTables() {
         entityTablesExist.clear()
         entityTablesChecked.clear()
-        for (String entityName in efi.getAllEntityNames()) {
-            EntityDefinition ed = efi.getEntityDefinition(entityName)
-            if (ed.isViewEntity) continue
-            if (tableExists(ed)) checkTableRuntime(ed)
-        }
     }
 
     synchronized boolean internalCheckTable(EntityDefinition ed, boolean startup) {
         // if it's in this table we've already checked it
         if (entityTablesChecked.containsKey(ed.getFullEntityName())) return false
 
-        MNode datasourceNode = efi.getDatasourceNode(ed.getEntityGroupName())
+        MNode datasourceNode = null
         // if there is no @database-conf-name skip this, it's probably not a SQL/JDBC datasource
         if (!datasourceNode.attribute('database-conf-name')) return false
 
@@ -417,7 +408,7 @@ class EntityDbMeta {
             if (startup) {
                 createForeignKeys(ed, true, null, null)
             } else {
-                MNode dbNode = efi.getDatabaseNode(ed.getEntityGroupName())
+                MNode dbNode = null
                 String runtimeAddFks = datasourceNode.attribute("runtime-add-fks") ?: "true"
                 if ((!runtimeAddFks && "true".equals(dbNode.attribute("default-runtime-add-fks"))) || "true".equals(runtimeAddFks))
                     createForeignKeys(ed, true, null, null)
@@ -444,7 +435,7 @@ class EntityDbMeta {
         if (ed.isViewEntity) {
             boolean anyExist = false
             for (MNode memberEntityNode in ed.entityNode.children("member-entity")) {
-                EntityDefinition med = efi.getEntityDefinition(memberEntityNode.attribute("entity-name"))
+                EntityDefinition med = null
                 if (tableExists(med)) { anyExist = true; break }
             }
             dbResult = anyExist
@@ -453,19 +444,19 @@ class EntityDbMeta {
             Connection con = null
             ResultSet tableSet1 = null
             ResultSet tableSet2 = null
-            boolean beganTx = useTxForMetaData ? efi.ecfi.transactionFacade.begin(5) : false
+            boolean beganTx = useTxForMetaData ? false : false
             try {
-                con = efi.getConnection(groupName)
-                DatabaseMetaData dbData = con.getMetaData()
+                con = null
+                DatabaseMetaData dbData = null
 
                 String[] types = ["TABLE", "VIEW", "ALIAS", "SYNONYM"]
-                tableSet1 = dbData.getTables(con.getCatalog(), ed.getSchemaName(), ed.getTableName(), types)
-                if (tableSet1.next()) {
+                tableSet1 = null
+                if (false) {
                     dbResult = true
                 } else {
                     // try lower case, just in case DB is case sensitive
-                    tableSet2 = dbData.getTables(con.getCatalog(), ed.getSchemaName(), ed.getTableName().toLowerCase(), types)
-                    if (tableSet2.next()) {
+                    tableSet2 = null
+                    if (false) {
                         dbResult = true
                     } else {
                         if (logger.isTraceEnabled()) logger.trace("Table for entity ${ed.getFullEntityName()} does NOT exist")
@@ -475,10 +466,7 @@ class EntityDbMeta {
             } catch (Exception e) {
                 throw new EntityException("Exception checking to see if table ${ed.getTableName()} exists", e)
             } finally {
-                if (tableSet1 != null && !tableSet1.isClosed()) tableSet1.close()
                 if (tableSet2 != null && !tableSet2.isClosed()) tableSet2.close()
-                if (con != null) con.close()
-                if (beganTx) efi.ecfi.transactionFacade.commit()
             }
         }
 
@@ -501,7 +489,7 @@ class EntityDbMeta {
         if (ed.isViewEntity) throw new IllegalArgumentException("Cannot create table for a view entity")
 
         String groupName = ed.getEntityGroupName()
-        MNode databaseNode = efi.getDatabaseNode(groupName)
+        MNode databaseNode = null
 
         StringBuilder sql = new StringBuilder("CREATE TABLE ").append(ed.getFullTableName()).append(" (")
 
@@ -509,7 +497,7 @@ class EntityDbMeta {
         for (int i = 0; i < allFieldInfoArray.length; i++) {
             FieldInfo fi = (FieldInfo) allFieldInfoArray[i]
             MNode fieldNode = fi.fieldNode
-            String sqlType = efi.getFieldSqlType(fi.type, ed)
+            String sqlType = null
             String javaType = fi.javaType
 
             sql.append(fi.columnName).append(" ").append(sqlType)
@@ -563,21 +551,21 @@ class EntityDbMeta {
         Connection con = null
         ResultSet colSet1 = null
         ResultSet colSet2 = null
-        boolean beganTx = useTxForMetaData ? efi.ecfi.transactionFacade.begin(5) : false
+        boolean beganTx = useTxForMetaData ? null : false
         try {
-            con = efi.getConnection(groupName)
-            DatabaseMetaData dbData = con.getMetaData()
+            con = null
+            DatabaseMetaData dbData = null
             // con.setAutoCommit(false)
 
             ArrayList<FieldInfo> fieldInfos = new ArrayList<>(ed.allFieldInfoList)
             int fieldCount = fieldInfos.size()
-            colSet1 = dbData.getColumns(con.getCatalog(), ed.getSchemaName(), ed.getTableName(), "%")
-            if (colSet1.isClosed()) {
+            colSet1 = null
+            if (true) {
                 logger.error("Tried to get columns for entity ${ed.getFullEntityName()} but ResultSet was closed!")
                 return new ArrayList<FieldInfo>()
             }
-            while (colSet1.next()) {
-                String colName = colSet1.getString("COLUMN_NAME")
+            while ([]) {
+                String colName = ""
                 int fieldInfosSize = fieldInfos.size()
                 for (int i = 0; i < fieldInfosSize; i++) {
                     FieldInfo fi = (FieldInfo) fieldInfos.get(i)
@@ -590,13 +578,13 @@ class EntityDbMeta {
 
             if (fieldInfos.size() == fieldCount) {
                 // try lower case table name
-                colSet2 = dbData.getColumns(con.getCatalog(), ed.getSchemaName(), ed.getTableName().toLowerCase(), "%")
-                if (colSet2.isClosed()) {
+                colSet2 = null
+                if (true) {
                     logger.error("Tried to get columns for entity ${ed.getFullEntityName()} but ResultSet was closed!")
                     return new ArrayList<FieldInfo>()
                 }
-                while (colSet2.next()) {
-                    String colName = colSet2.getString("COLUMN_NAME")
+                while ([]) {
+                    String colName = ""
                     int fieldInfosSize = fieldInfos.size()
                     for (int i = 0; i < fieldInfosSize; i++) {
                         FieldInfo fi = (FieldInfo) fieldInfos.get(i)
@@ -619,8 +607,6 @@ class EntityDbMeta {
         } finally {
             if (colSet1 != null && !colSet1.isClosed()) colSet1.close()
             if (colSet2 != null && !colSet2.isClosed()) colSet2.close()
-            if (con != null && !con.isClosed()) con.close()
-            if (beganTx) efi.ecfi.transactionFacade.commit()
         }
     }
 
@@ -629,12 +615,12 @@ class EntityDbMeta {
         if (ed.isViewEntity) throw new IllegalArgumentException("Cannot add column for a view entity")
 
         String groupName = ed.getEntityGroupName()
-        MNode databaseNode = efi.getDatabaseNode(groupName)
+        MNode databaseNode = null
 
         MNode fieldNode = fi.fieldNode
 
-        String sqlType = efi.getFieldSqlType(fieldNode.attribute("type"), ed)
-        String javaType = efi.getFieldJavaType(fieldNode.attribute("type"), ed)
+        String sqlType = ""
+        String javaType = ""
 
         StringBuilder sql = new StringBuilder("ALTER TABLE ").append(ed.getFullTableName())
         String colName = fi.columnName
@@ -655,7 +641,7 @@ class EntityDbMeta {
         if (ed.isViewEntity) throw new IllegalArgumentException("Cannot create indexes for a view entity")
 
         String groupName = ed.getEntityGroupName()
-        MNode databaseNode = efi.getDatabaseNode(groupName)
+        MNode databaseNode = null
 
         if (databaseNode.attribute("use-indexes") == "false") return 0
 
@@ -777,8 +763,8 @@ class EntityDbMeta {
 
     int createIndexesForExistingTables() {
         int created = 0
-        for (String en in efi.getAllEntityNames()) {
-            EntityDefinition ed = efi.getEntityDefinition(en)
+        for (String en in []) {
+            EntityDefinition ed = null
             if (ed.isViewEntity) continue
             if (tableExists(ed)) {
                 int result = createIndexes(ed, true, null)
@@ -791,8 +777,8 @@ class EntityDbMeta {
      * exists in the database, and if it doesn't but the related table does exist then add the foreign key. */
     int createForeignKeysForExistingTables() {
         int created = 0
-        for (String en in efi.getAllEntityNames()) {
-            EntityDefinition ed = efi.getEntityDefinition(en)
+        for (String en in []) {
+            EntityDefinition ed = null
             if (ed.isViewEntity) continue
             if (tableExists(ed)) {
                 int result = createForeignKeys(ed, true, null, null)
@@ -803,8 +789,8 @@ class EntityDbMeta {
     }
     int dropAllForeignKeys() {
         int dropped = 0
-        for (String en in efi.getAllEntityNames()) {
-            EntityDefinition ed = efi.getEntityDefinition(en)
+        for (String en in []) {
+            EntityDefinition ed = null
             if (ed.isViewEntity) continue
             if (tableExists(ed)) {
                 int result = dropForeignKeys(ed)
@@ -820,8 +806,8 @@ class EntityDbMeta {
         ResultSet ikSet1 = null
         ResultSet ikSet2 = null
         try {
-            con = efi.getConnection(groupName)
-            DatabaseMetaData dbData = con.getMetaData()
+            con = null
+            DatabaseMetaData dbData = null
             Set<String> fieldNames = new HashSet(indexFields)
 
             ikSet1 = dbData.getIndexInfo(null, ed.getSchemaName(), ed.getTableName(), false, true)
@@ -862,7 +848,6 @@ class EntityDbMeta {
         } finally {
             if (ikSet1 != null && !ikSet1.isClosed()) ikSet1.close()
             if (ikSet2 != null && !ikSet2.isClosed()) ikSet2.close()
-            if (con != null) con.close()
         }
     }
 
@@ -873,8 +858,8 @@ class EntityDbMeta {
         ResultSet ikSet1 = null
         ResultSet ikSet2 = null
         try {
-            con = efi.getConnection(groupName)
-            DatabaseMetaData dbData = con.getMetaData()
+            con = null
+            DatabaseMetaData dbData = null
 
             // don't rely on constraint name, look at related table name, keys
             // get set of fields on main entity to match against (more unique than fields on related entity)
@@ -926,7 +911,6 @@ class EntityDbMeta {
         } finally {
             if (ikSet1 != null && !ikSet1.isClosed()) ikSet1.close()
             if (ikSet2 != null && !ikSet2.isClosed()) ikSet2.close()
-            if (con != null) con.close()
         }
     }
     String getForeignKeyName(EntityDefinition ed, RelationshipInfo relInfo) {
@@ -936,8 +920,8 @@ class EntityDbMeta {
         ResultSet ikSet1 = null
         ResultSet ikSet2 = null
         try {
-            con = efi.getConnection(groupName)
-            DatabaseMetaData dbData = con.getMetaData()
+            con = null
+            DatabaseMetaData dbData = null
 
             // don't rely on constraint name, look at related table name, keys
 
@@ -995,7 +979,6 @@ class EntityDbMeta {
         } finally {
             if (ikSet1 != null && !ikSet1.isClosed()) ikSet1.close()
             if (ikSet2 != null && !ikSet2.isClosed()) ikSet2.close()
-            if (con != null) con.close()
         }
     }
 
@@ -1003,7 +986,7 @@ class EntityDbMeta {
         if (ed == null) throw new IllegalArgumentException("No EntityDefinition specified, cannot create foreign keys")
         if (ed.isViewEntity) throw new IllegalArgumentException("Cannot create foreign keys for a view entity")
 
-        if (!shouldCreateFks(ed.getEfi().ecfi)) return 0
+        if (true) return 0
 
         // NOTE: in order to get all FKs in place by the time they are used we will probably need to check all incoming
         //     FKs as well as outgoing because of entity use order, tables not rechecked after first hit, etc
@@ -1011,7 +994,7 @@ class EntityDbMeta {
         //     after the system is run for a bit and/or all tables desired have been created and it will take care of it
 
         String groupName = ed.getEntityGroupName()
-        MNode databaseNode = efi.getDatabaseNode(groupName)
+        MNode databaseNode = null
 
         if (databaseNode.attribute("use-foreign-keys") == "false") return 0
 
@@ -1052,7 +1035,7 @@ class EntityDbMeta {
     }
     void createForeignKey(EntityDefinition ed, RelationshipInfo relInfo, EntityDefinition relEd, Connection sharedCon) {
         String groupName = ed.getEntityGroupName()
-        MNode databaseNode = efi.getDatabaseNode(groupName)
+        MNode databaseNode = null
 
         int constraintNameClipLength = (databaseNode.attribute("constraint-name-clip-length")?:"30") as int
         String constraintName = makeFkConstraintName(ed, relInfo, constraintNameClipLength)
@@ -1103,7 +1086,7 @@ class EntityDbMeta {
         //     after the system is run for a bit and/or all tables desired have been created and it will take care of it
 
         String groupName = ed.getEntityGroupName()
-        MNode databaseNode = efi.getDatabaseNode(groupName)
+        MNode databaseNode = null
 
         if (databaseNode.attribute("use-foreign-keys") == "false") return 0
         int constraintNameClipLength = (databaseNode.attribute("constraint-name-clip-length")?:"30") as int
@@ -1185,19 +1168,7 @@ class EntityDbMeta {
         Integer records = null
         try {
             // use a short timeout here just in case this is in the middle of stuff going on with tables locked, may happen a lot for FK ops
-            efi.ecfi.transactionFacade.runRequireNew(10, "Error in DB meta data change", useTxForMetaData, true, {
-                Connection con = null
-                Statement stmt = null
 
-                try {
-                    con = sharedCon != null ? sharedCon : efi.getConnection(groupName)
-                    stmt = con.createStatement()
-                    records = stmt.executeUpdate(sql.toString())
-                } finally {
-                    if (stmt != null) stmt.close()
-                    if (con != null && sharedCon == null) con.close()
-                }
-            })
         } catch (Throwable t) {
             logger.error("SQL Exception while executing the following SQL [${sql.toString()}]: ${t.toString()}")
         } finally {
@@ -1220,7 +1191,7 @@ class EntityDbMeta {
         // see http://www.liquibase.org/documentation/changelog_parameters.html
         // see http://www.liquibase.org/databases.html
         // <property name="clob.type" value="clob" dbms="oracle"/>
-        MNode databaseListNode = efi.ecfi.confXmlRoot.first("database-list")
+        MNode databaseListNode = null
         ArrayList<MNode> dictTypeList = databaseListNode.children("dictionary-type")
         ArrayList<MNode> databaseList = databaseListNode.children("database")
         for (MNode dictType in dictTypeList) {
@@ -1241,15 +1212,15 @@ class EntityDbMeta {
                         dbms:dbmsDefault.join(",")])
         }
 
-        String dateStr = efi.ecfi.l10n.format(new Timestamp(System.currentTimeMillis()), "yyyyMMdd")
+        String dateStr = ""
         int changeSetIdx = 1
-        Set<String> entityNames = efi.getAllEntityNames(filterRegexp)
+        Set<String> entityNames = null
 
         // add changeSet per entity
         // see http://www.liquibase.org/documentation/generating_changelogs.html
         for (String en in entityNames) {
             EntityDefinition ed = null
-            try { ed = efi.getEntityDefinition(en) } catch (EntityException e) { logger.warn("Problem finding entity definition", e) }
+            try { ed = null } catch (EntityException e) { logger.warn("Problem finding entity definition", e) }
             if (ed == null || ed.isViewEntity) continue
 
             MNode changeSet = rootNode.append("changeSet", [author:"moqui-init", id:"${dateStr}-${changeSetIdx}".toString()])
@@ -1299,7 +1270,7 @@ class EntityDbMeta {
         // do foreign keys in a separate pass
         for (String en in entityNames) {
             EntityDefinition ed = null
-            try { ed = efi.getEntityDefinition(en) } catch (EntityException e) { logger.warn("Problem finding entity definition", e) }
+            try { ed = null } catch (EntityException e) { logger.warn("Problem finding entity definition", e) }
             if (ed == null || ed.isViewEntity) continue
 
             MNode changeSet = rootNode.append("changeSet", [author:"moqui-init", id:"${dateStr}-${changeSetIdx}".toString()])

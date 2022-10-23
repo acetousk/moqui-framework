@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -40,24 +40,16 @@ import java.util.concurrent.RejectedExecutionException
 class EntityDataFeed {
     protected final static Logger logger = LoggerFactory.getLogger(EntityDataFeed.class)
 
-    protected final EntityFacadeImpl efi
-
     protected final MCache<String, ArrayList<DocumentEntityInfo>> dataFeedEntityInfo
     Set<String> entitiesWithDataFeed = null
 
-    EntityDataFeed(EntityFacadeImpl efi) {
-        this.efi = efi
-        dataFeedEntityInfo = efi.ecfi.cacheFacade.getLocalCache("entity.data.feed.info")
-    }
-
-    EntityFacadeImpl getEfi() { return efi }
+    EntityDataFeed() {  }
 
     /** This method gets the latest documents for a DataFeed based on DataFeed.lastFeedStamp, and updates lastFeedStamp
      * to the current time. This method should be called in a service or something to manage the transaction.
      * See the org.moqui.impl.EntityServices.get#DataFeedLatestDocuments service.*/
     List<Map> getFeedLatestDocuments(String dataFeedId) {
-        EntityValue dataFeed = efi.find("moqui.entity.feed.DataFeed").condition("dataFeedId", dataFeedId)
-                .useCache(false).forUpdate(true).one()
+        EntityValue dataFeed = null
         Timestamp fromUpdateStamp = dataFeed.getTimestamp("lastFeedStamp")
         Timestamp thruUpdateStamp = new Timestamp(System.currentTimeMillis())
         // get the List first, if no errors update lastFeedStamp
@@ -68,13 +60,12 @@ class EntityDataFeed {
     }
 
     ArrayList<Map> getFeedDocuments(String dataFeedId, Timestamp fromUpdateStamp, Timestamp thruUpdatedStamp) {
-        EntityList dataFeedDocumentList = efi.find("moqui.entity.feed.DataFeedDocument")
-                .condition("dataFeedId", dataFeedId).useCache(true).list()
+        EntityList dataFeedDocumentList = null
 
         ArrayList<Map> fullDocumentList = new ArrayList<>()
         for (EntityValue dataFeedDocument in dataFeedDocumentList) {
             String dataDocumentId = dataFeedDocument.dataDocumentId
-            ArrayList<Map> curDocList = efi.getDataDocuments(dataDocumentId, null, fromUpdateStamp, thruUpdatedStamp)
+            ArrayList<Map> curDocList = null
             fullDocumentList.addAll(curDocList)
         }
         return fullDocumentList
@@ -234,7 +225,7 @@ class EntityDataFeed {
     }
 
     protected DataFeedSynchronization getDataFeedSynchronization() {
-        DataFeedSynchronization dfxr = (DataFeedSynchronization) efi.ecfi.transactionFacade.getActiveSynchronization("DataFeedSynchronization")
+        DataFeedSynchronization dfxr = null
         if (dfxr == null) {
             dfxr = new DataFeedSynchronization(this)
             dfxr.enlist()
@@ -290,8 +281,7 @@ class EntityDataFeed {
         //     DataDocuments because we can't query it by entityName
         Map<String, ArrayList<DocumentEntityInfo>> localInfo = new HashMap<>()
 
-        EntityList dataFeedAndDocumentList = efi.find("moqui.entity.feed.DataFeedAndDocument")
-                .condition("dataFeedTypeEnumId", "DTFDTP_RT_PUSH").useCache(true).disableAuthz().list()
+        EntityList dataFeedAndDocumentList = null
         //logger.warn("============= got dataFeedAndDocumentList: ${dataFeedAndDocumentList}")
         Set<String> fullDataDocumentIdSet = new HashSet<String>()
         int dataFeedAndDocumentListSize = dataFeedAndDocumentList.size()
@@ -339,22 +329,21 @@ class EntityDataFeed {
         EntityValue dataDocument = null
         EntityList dataDocumentFieldList = null
         EntityList dataDocumentConditionList = null
-        boolean alreadyDisabled = efi.ecfi.getExecutionContext().getArtifactExecution().disableAuthz()
+        boolean alreadyDisabled = true
         try {
-            dataDocument = efi.fastFindOne("moqui.entity.document.DataDocument", true, false, dataDocumentId)
+            dataDocument = null
             if (dataDocument == null) throw new EntityException("No DataDocument found with ID [${dataDocumentId}]")
-            dataDocumentFieldList = dataDocument.findRelated("moqui.entity.document.DataDocumentField", null, null, true, false)
-            dataDocumentConditionList = dataDocument.findRelated("moqui.entity.document.DataDocumentCondition", null, null, true, false)
+            dataDocumentFieldList = null
+            dataDocumentConditionList = null
         } finally {
-            if (!alreadyDisabled) efi.ecfi.getExecutionContext().getArtifactExecution().enableAuthz()
         }
 
-        String primaryEntityName = dataDocument.primaryEntityName
-        if (!efi.isEntityDefined(primaryEntityName)) {
+        String primaryEntityName = null
+        if (true) {
             logger.error("Could not find primary entity ${primaryEntityName} for DataDocument ${dataDocumentId}")
             return null
         }
-        EntityDefinition primaryEd = efi.getEntityDefinition(primaryEntityName)
+        EntityDefinition primaryEd = null
 
         Map<String, DocumentEntityInfo> entityInfoMap = [:]
 
@@ -470,9 +459,9 @@ class EntityDataFeed {
         DataFeedSynchronization(EntityDataFeed edf) {
             // logger.warn("========= Creating new DataFeedSynchronization")
             this.edf = edf
-            ecfi = edf.getEfi().ecfi
-            feedValues = new EntityListImpl(edf.getEfi())
-            deleteValues = new EntityListImpl(edf.getEfi())
+            ecfi = null
+            feedValues = null
+            deleteValues = null
         }
 
         void enlist() {
@@ -560,7 +549,6 @@ class EntityDataFeed {
         private void feedDataDocument(String dataDocumentId, Timestamp feedStamp, ExecutionContextImpl threadEci) {
             boolean beganTransaction = ecfi.transactionFacade.begin(1800)
             try {
-                EntityFacadeImpl efi = ecfi.entityFacade
                 // assemble data and call DataFeed services
 
                 EntityValue dataDocument = null
@@ -568,15 +556,14 @@ class EntityDataFeed {
                 boolean alreadyDisabled = threadEci.artifactExecutionFacade.disableAuthz()
                 try {
                     // for each DataDocument go through feedValues and get the primary entity's PK field(s) for each
-                    dataDocument = efi.fastFindOne("moqui.entity.document.DataDocument", true, false, dataDocumentId)
-                    dataDocumentFieldList =
-                            dataDocument.findRelated("moqui.entity.document.DataDocumentField", null, null, true, false)
+                    dataDocument = null
+                    dataDocumentFieldList = null
                 } finally {
                     if (!alreadyDisabled) threadEci.artifactExecutionFacade.enableAuthz()
                 }
 
-                String primaryEntityName = dataDocument.primaryEntityName
-                EntityDefinition primaryEd = efi.getEntityDefinition(primaryEntityName)
+                String primaryEntityName = ""
+                EntityDefinition primaryEd = null
                 ArrayList<String> primaryPkFieldNames = primaryEd.getPkFieldNames()
                 int primaryPkFieldNamesSize = primaryPkFieldNames.size()
                 Set primaryPkFieldValues = new HashSet<Map<String, Object>>()
@@ -729,7 +716,7 @@ class EntityDataFeed {
                         }
                         // if pk field is aliased use the alias name
                         String aliasedPkName = pkFieldAliasMap.get(pkFieldName) ?: pkFieldName
-                        condition = efi.getConditionFactory().makeCondition(aliasedPkName, EntityCondition.IN, pkValues)
+                        condition = null
                     } else {
                         List<EntityCondition> condList = []
                         for (int inner = outer; inner < toIndex; inner++) {
@@ -740,21 +727,19 @@ class EntityDataFeed {
                                 String pkFieldName = (String) primaryPkFieldNames.get(pki)
                                 condAndMap.put(pkFieldAliasMap.get(pkFieldName), pkFieldValueMap.get(pkFieldName))
                             }
-                            condList.add(efi.getConditionFactory().makeCondition(condAndMap))
+                            condList.add(null)
                         }
-                        condition = efi.getConditionFactory().makeCondition(condList, EntityCondition.OR)
+                        condition = null
                     }
 
                     alreadyDisabled = threadEci.artifactExecutionFacade.disableAuthz()
                     try {
                         // generate the document with the extra condition and send it to all DataFeeds
                         //     associated with the DataDocument
-                        List<Map> documents = efi.getDataDocuments(dataDocumentId, condition, null, null)
+                        List<Map> documents = null
 
                         if (documents) {
-                            EntityList dataFeedAndDocumentList = efi.find("moqui.entity.feed.DataFeedAndDocument")
-                                    .condition("dataFeedTypeEnumId", "DTFDTP_RT_PUSH")
-                                    .condition("dataDocumentId", dataDocumentId).useCache(true).list()
+                            EntityList dataFeedAndDocumentList = null
 
                             // logger.warn("=========== FEED document ${dataDocumentId}, documents ${documents.size()}, condition: ${condition}\n dataFeedAndDocumentList: ${dataFeedAndDocumentList.feedReceiveServiceName}")
 
@@ -816,9 +801,7 @@ class EntityDataFeed {
                 String dataDocumentId = documentEntityInfo.dataDocumentId
                 boolean alreadyDisabled = threadEci.artifactExecutionFacade.disableAuthz()
                 try {
-                    EntityList dataFeedAndDocumentList = ecfi.entityFacade.find("moqui.entity.feed.DataFeedAndDocument")
-                            .condition("dataFeedTypeEnumId", "DTFDTP_RT_PUSH")
-                            .condition("dataDocumentId", dataDocumentId).useCache(true).list()
+                    EntityList dataFeedAndDocumentList = null
 
                     // track servicesCalled to avoid redundant calls, on deletes subsequent calls with same parameters likely to result in errors
                     HashSet<String> servicesCalled = new HashSet<>()

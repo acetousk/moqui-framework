@@ -31,11 +31,11 @@ public class EntityValueImpl extends EntityValueBase {
     /** Default constructor for deserialization ONLY. */
     public EntityValueImpl() { }
     /** Primary constructor, generally used only internally by EntityFacade */
-    public EntityValueImpl(EntityDefinition ed, EntityFacadeImpl efip) { super(ed, efip); }
+    public EntityValueImpl(EntityDefinition ed) { super(ed); }
 
     @Override
     public EntityValue cloneValue() {
-        EntityValueImpl newObj = new EntityValueImpl(getEntityDefinition(), getEntityFacadeImpl());
+        EntityValueImpl newObj = new EntityValueImpl(getEntityDefinition());
         newObj.valueMapInternal.putAll(this.valueMapInternal);
         if (this.dbValueMap != null) newObj.setDbValueMap(this.dbValueMap);
         // don't set immutable (default to mutable even if original was not) or modified (start out not modified)
@@ -44,7 +44,7 @@ public class EntityValueImpl extends EntityValueBase {
 
     @Override
     public EntityValue cloneDbValue(boolean getOld) {
-        EntityValueImpl newObj = new EntityValueImpl(getEntityDefinition(), getEntityFacadeImpl());
+        EntityValueImpl newObj = new EntityValueImpl(getEntityDefinition());
         newObj.valueMapInternal.putAll(this.valueMapInternal);
         for (FieldInfo fieldInfo : getEntityDefinition().entityInfo.allFieldInfoArray)
             newObj.putKnownField(fieldInfo, getOld ? getOldDbValue(fieldInfo.name) : getOriginalDbValue(fieldInfo.name));
@@ -56,12 +56,11 @@ public class EntityValueImpl extends EntityValueBase {
     @Override
     public void createExtended(FieldInfo[] fieldInfoArray, Connection con) throws SQLException {
         EntityDefinition ed = getEntityDefinition();
-        EntityFacadeImpl efi = getEntityFacadeImpl();
 
         if (ed.isViewEntity) {
             throw new EntityException("Create not yet implemented for view-entity");
         } else {
-            EntityQueryBuilder eqb = new EntityQueryBuilder(ed, efi);
+            EntityQueryBuilder eqb = new EntityQueryBuilder(ed);
             StringBuilder sql = eqb.sqlTopLevel;
             sql.append("INSERT INTO ").append(ed.getFullTableName()).append(" (");
 
@@ -83,8 +82,6 @@ public class EntityValueImpl extends EntityValueBase {
             sql.append(") VALUES (").append(values.toString()).append(")");
 
             try {
-                efi.getEntityDbMeta().checkTableRuntime(ed);
-
                 if (con != null) eqb.useConnection(con);
                 else eqb.makeConnection(false);
                 eqb.makePreparedStatement();
@@ -99,7 +96,7 @@ public class EntityValueImpl extends EntityValueBase {
                 setSyncedWithDb();
             } catch (SQLException e) {
                 String txName = "[could not get]";
-                try { txName = efi.ecfi.transactionFacade.getTransactionManager().getTransaction().toString(); }
+                try { txName = txName; }
                 catch (Exception txe) { if (logger.isTraceEnabled()) logger.trace("Error getting transaction name: " + txe.toString()); }
                 logger.warn("Error creating " + this.toString() + " tx " + txName + " con " + eqb.connection.toString() + ": " + e.toString());
                 throw e;
@@ -114,12 +111,11 @@ public class EntityValueImpl extends EntityValueBase {
     @Override
     public void updateExtended(FieldInfo[] pkFieldArray, FieldInfo[] nonPkFieldArray, Connection con) throws SQLException {
         EntityDefinition ed = getEntityDefinition();
-        final EntityFacadeImpl efi = getEntityFacadeImpl();
 
         if (ed.isViewEntity) {
             throw new EntityException("Update not yet implemented for view-entity");
         } else {
-            final EntityQueryBuilder eqb = new EntityQueryBuilder(ed, efi);
+            final EntityQueryBuilder eqb = new EntityQueryBuilder(ed);
             ArrayList<EntityConditionParameter> parameters = eqb.parameters;
             StringBuilder sql = eqb.sqlTopLevel;
             sql.append("UPDATE ").append(ed.getFullTableName()).append(" SET ");
@@ -136,7 +132,6 @@ public class EntityValueImpl extends EntityValueBase {
             eqb.addWhereClause(pkFieldArray, valueMapInternal);
 
             try {
-                efi.getEntityDbMeta().checkTableRuntime(ed);
 
                 if (con != null) eqb.useConnection(con);
                 else eqb.makeConnection(false);
@@ -149,7 +144,7 @@ public class EntityValueImpl extends EntityValueBase {
                 setSyncedWithDb();
             } catch (SQLException e) {
                 String txName = "[could not get]";
-                try { txName = efi.ecfi.transactionFacade.getTransactionManager().getTransaction().toString(); }
+                try { txName = txName; }
                 catch (Exception txe) { if (logger.isTraceEnabled()) logger.trace("Error getting transaction name: " + txe.toString()); }
                 logger.warn("Error updating " + this.toString() + " tx " + txName + " con " + eqb.connection.toString() + ": " + e.toString());
                 throw e;
@@ -164,12 +159,11 @@ public class EntityValueImpl extends EntityValueBase {
     @Override
     public void deleteExtended(Connection con) throws SQLException {
         EntityDefinition ed = getEntityDefinition();
-        EntityFacadeImpl efi = getEntityFacadeImpl();
 
         if (ed.isViewEntity) {
             throw new EntityException("Delete not implemented for view-entity");
         } else {
-            EntityQueryBuilder eqb = new EntityQueryBuilder(ed, efi);
+            EntityQueryBuilder eqb = new EntityQueryBuilder(ed);
             StringBuilder sql = eqb.sqlTopLevel;
             sql.append("DELETE FROM ").append(ed.getFullTableName());
 
@@ -177,7 +171,6 @@ public class EntityValueImpl extends EntityValueBase {
             eqb.addWhereClause(pkFieldArray, valueMapInternal);
 
             try {
-                efi.getEntityDbMeta().checkTableRuntime(ed);
 
                 if (con != null) eqb.useConnection(con);
                 else eqb.makeConnection(false);
@@ -186,7 +179,7 @@ public class EntityValueImpl extends EntityValueBase {
                 if (eqb.executeUpdate() == 0) logger.info("Tried to delete a value that does not exist " + this.toString());
             } catch (SQLException e) {
                 String txName = "[could not get]";
-                try { txName = efi.ecfi.transactionFacade.getTransactionManager().getTransaction().toString(); }
+                try { txName = txName; }
                 catch (Exception txe) { if (logger.isTraceEnabled()) logger.trace("Error getting transaction name: " + txe.toString()); }
                 logger.warn("Error deleting " + this.toString() + " tx " + txName + " con " + eqb.connection.toString() + ": " + e.toString());
                 throw e;
@@ -202,7 +195,6 @@ public class EntityValueImpl extends EntityValueBase {
     public boolean refreshExtended() throws SQLException {
         EntityDefinition ed = getEntityDefinition();
         EntityJavaUtil.EntityInfo entityInfo = ed.entityInfo;
-        EntityFacadeImpl efi = getEntityFacadeImpl();
 
         // table doesn't exist, just return false
         if (!ed.tableExistsDbMetaOnly()) return false;
@@ -213,11 +205,11 @@ public class EntityValueImpl extends EntityValueBase {
         FieldInfo[] allFieldArray = entityInfo.allFieldInfoArray;
         // NOTE: even if there are no non-pk fields do a refresh in order to see if the record exists or not
 
-        EntityQueryBuilder eqb = new EntityQueryBuilder(ed, efi);
+        EntityQueryBuilder eqb = new EntityQueryBuilder(ed);
         ArrayList<EntityConditionParameter> parameters = eqb.parameters;
         StringBuilder sql = eqb.sqlTopLevel;
         sql.append("SELECT ");
-        eqb.makeSqlSelectFields(allFieldArray, null, "true".equals(efi.getDatabaseNode(ed.groupName).attribute("add-unique-as")));
+        eqb.makeSqlSelectFields(allFieldArray, null, false);
 
         sql.append(" FROM ").append(ed.getFullTableName()).append(" WHERE ");
 
@@ -234,7 +226,6 @@ public class EntityValueImpl extends EntityValueBase {
             // don't check create, above tableExists check is done:
             // efi.getEntityDbMeta().checkTableRuntime(ed)
             // if this is a view-entity and any table in it exists check/create all or will fail with optional members, etc
-            if (ed.isViewEntity) efi.getEntityDbMeta().checkTableRuntime(ed);
 
             eqb.makeConnection(false);
             eqb.makePreparedStatement();
@@ -245,7 +236,7 @@ public class EntityValueImpl extends EntityValueBase {
                 int nonPkSize = allFieldArray.length;
                 for (int j = 0; j < nonPkSize; j++) {
                     FieldInfo fi = allFieldArray[j];
-                    fi.getResultSetValue(rs, j + 1, valueMapInternal, efi);
+                    fi.getResultSetValue(rs, j + 1, valueMapInternal);
                 }
 
                 retVal = true;
@@ -256,7 +247,7 @@ public class EntityValueImpl extends EntityValueBase {
             }
         } catch (SQLException e) {
             String txName = "[could not get]";
-            try { txName = efi.ecfi.transactionFacade.getTransactionManager().getTransaction().toString(); }
+            try { txName = txName; }
             catch (Exception txe) { if (logger.isTraceEnabled()) logger.trace("Error getting transaction name: " + txe.toString()); }
             logger.warn("Error finding " + this.toString() + " tx " + txName + " con " + eqb.connection.toString() + ": " + e.toString());
             throw e;

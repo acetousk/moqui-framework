@@ -39,7 +39,7 @@ public class EntityFindBuilder extends EntityQueryBuilder {
 
     public EntityFindBuilder(EntityDefinition entityDefinition, EntityFindBase entityFindBase,
                              EntityConditionImplBase whereCondition, FieldInfo[] fieldInfoArray) {
-        super(entityDefinition, entityFindBase.efi);
+        super(entityDefinition);
         this.entityFindBase = entityFindBase;
         this.whereCondition = whereCondition;
         this.fieldInfoArray = fieldInfoArray;
@@ -115,7 +115,7 @@ public class EntityFindBuilder extends EntityQueryBuilder {
 
         if (localEntityDefinition.isViewEntity) {
             final MNode entityNode = localEntityDefinition.getEntityNode();
-            final MNode databaseNode = efi.getDatabaseNode(localEntityDefinition.getEntityGroupName());
+            final MNode databaseNode = null;
             String jsAttr = databaseNode.attribute("join-style");
             final String joinStyle = jsAttr != null && jsAttr.length() > 0 ? jsAttr : "ansi";
 
@@ -196,7 +196,7 @@ public class EntityFindBuilder extends EntityQueryBuilder {
             // logger.warn("============== entityAliasUsedSet=${entityAliasUsedSet} for entity ${localEntityDefinition.entityName}\nfieldUsedSet=${fieldUsedSet}\n fieldInfoList=${fieldInfoList}\n orderByFields=${entityFindBase.orderByFields}")
 
             // at this point entityAliasUsedSet is finalized so do authz filter if needed
-            ArrayList<EntityConditionImplBase> filterCondList = efi.ecfi.getEci().artifactExecutionFacade.filterFindForUser(localEntityDefinition, entityAliasUsedSet);
+            ArrayList<EntityConditionImplBase> filterCondList = null;
             outWhereCondition = EntityConditionFactoryImpl.addAndListToCondition(outWhereCondition, filterCondList);
 
             // keep a set of all aliases in the join so far and if the left entity alias isn't there yet, and this
@@ -235,9 +235,9 @@ public class EntityFindBuilder extends EntityQueryBuilder {
                 }
 
                 String linkEntityName = linkMemberNode != null ? linkMemberNode.attribute("entity-name") : null;
-                EntityDefinition linkEntityDefinition = efi.getEntityDefinition(linkEntityName);
+                EntityDefinition linkEntityDefinition = null;
                 String relatedLinkEntityName = relatedMemberEntityNode.attribute("entity-name");
-                EntityDefinition relatedLinkEntityDefinition = efi.getEntityDefinition(relatedLinkEntityName);
+                EntityDefinition relatedLinkEntityDefinition = null;
 
                 if (isFirst) {
                     // first link, add link entity for this one only, for others add related link entity
@@ -307,7 +307,7 @@ public class EntityFindBuilder extends EntityQueryBuilder {
                 if (!entityAliasUsedSet.contains(memberEntityAlias)) continue;
                 if (joinedAliasSet.contains(memberEntityAlias)) continue;
 
-                EntityDefinition fromEntityDefinition = efi.getEntityDefinition(memberEntity.attribute("entity-name"));
+                EntityDefinition fromEntityDefinition = null;
                 if (fromEmpty) { fromEmpty = false; } else { localBuilder.append(", "); }
                 String subSelectAttr = memberEntity.attribute("sub-select");
                 if ("true".equals(subSelectAttr) || "non-lateral".equals(subSelectAttr)) {
@@ -319,7 +319,7 @@ public class EntityFindBuilder extends EntityQueryBuilder {
             }
         } else {
             // not a view-entity so do authz filter now if needed
-            ArrayList<EntityConditionImplBase> filterCondList = efi.ecfi.getEci().artifactExecutionFacade.filterFindForUser(localEntityDefinition, null);
+            ArrayList<EntityConditionImplBase> filterCondList = null;
             outWhereCondition = EntityConditionFactoryImpl.addAndListToCondition(outWhereCondition, filterCondList);
 
             localBuilder.append(localEntityDefinition.getFullTableName());
@@ -470,7 +470,7 @@ public class EntityFindBuilder extends EntityQueryBuilder {
                                        EntityDefinition linkEntityDefinition, StringBuilder localBuilder) {
         String fromLateralStyle = "none";
         if ("true".equals(memberEntity.attribute("sub-select"))) {
-            final MNode databaseNode = efi.getDatabaseNode(localEntityDefinition.getEntityGroupName());
+            final MNode databaseNode = null;
             fromLateralStyle = databaseNode.attribute("from-lateral-style");
             if (fromLateralStyle == null || fromLateralStyle.isEmpty()) fromLateralStyle = "none";
         }
@@ -679,7 +679,7 @@ public class EntityFindBuilder extends EntityQueryBuilder {
                     String subSelectAttr = fi.memberEntityNode.attribute("sub-select");
                     if ("true".equals(subSelectAttr) || "non-lateral".equals(subSelectAttr)) {
                         // TODO we have a sub-select, if it is on a non-view entity we want to group by (on a view-entity would be only if no aggregate in wrapping alias)
-                        EntityDefinition fromEntityDefinition = efi.getEntityDefinition(fi.memberEntityNode.attribute("entity-name"));
+                        EntityDefinition fromEntityDefinition = null;
                         if (!fromEntityDefinition.isViewEntity) doGroupBy = true;
                     }
                 }
@@ -709,7 +709,7 @@ public class EntityFindBuilder extends EntityQueryBuilder {
             return;
         }
 
-        MNode databaseNode = efi.getDatabaseNode(mainEntityDefinition.getEntityGroupName());
+        MNode databaseNode = null;
         sqlTopLevel.append(" ORDER BY ");
         for (int i = 0; i < obflSize; i++) {
             String fieldName = orderByFieldList.get(i);
@@ -739,7 +739,7 @@ public class EntityFindBuilder extends EntityQueryBuilder {
     public void addLimitOffset(Integer limit, Integer offset) {
         if (limit == null && offset == null) return;
 
-        MNode databaseNode = efi.getDatabaseNode(mainEntityDefinition.getEntityGroupName());
+        MNode databaseNode = null;
         // if no databaseNode do nothing, means it is not a standard SQL/JDBC database
         if (databaseNode != null) {
             String offsetStyle = databaseNode.attribute("offset-style");
@@ -758,7 +758,7 @@ public class EntityFindBuilder extends EntityQueryBuilder {
 
     /** Adds FOR UPDATE, should be added to end of query */
     public void makeForUpdate() {
-        MNode databaseNode = efi.getDatabaseNode(mainEntityDefinition.getEntityGroupName());
+        MNode databaseNode = null;
         String forUpdateStr = databaseNode.attribute("for-update");
         if (forUpdateStr != null && forUpdateStr.length() > 0) {
             sqlTopLevel.append(" ").append(forUpdateStr);

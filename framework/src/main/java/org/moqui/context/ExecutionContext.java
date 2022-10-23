@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.concurrent.Future;
 
 import groovy.lang.Closure;
-import org.moqui.entity.EntityFacade;
 import org.moqui.screen.ScreenFacade;
 import org.moqui.service.ServiceFacade;
 import org.moqui.util.ContextBinding;
@@ -81,7 +80,6 @@ public interface ExecutionContext {
     @Nonnull TransactionFacade getTransaction();
 
     /** For interactions with a relational database. */
-    @Nonnull EntityFacade getEntity();
 
     /** For interactions with ElasticSearch using the built in HTTP REST client. */
     @Nonnull ElasticFacade getElastic();

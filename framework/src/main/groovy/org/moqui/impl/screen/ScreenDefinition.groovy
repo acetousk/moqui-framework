@@ -439,8 +439,7 @@ class ScreenDefinition {
         }
 
         // override dir structure and subscreens-item elements with moqui.screen.SubscreensItem entity
-        EntityFind subscreensItemFind = sfi.ecfi.entityFacade.find("moqui.screen.SubscreensItem")
-                .condition([screenLocation:location] as Map<String, Object>)
+        EntityFind subscreensItemFind = null
         // NOTE: this filter should NOT be done here, causes subscreen items to be filtered by first user that renders the screen, not by current user!
         // subscreensItemFind.condition("userGroupId", EntityCondition.IN, sfi.ecfi.executionContext.user.userGroupIdSet)
         EntityList subscreensItemList = subscreensItemFind.useCache(true).disableAuthz().list()
@@ -735,8 +734,7 @@ class ScreenDefinition {
         if (localeUnderscoreIndex > 0) langString = localeString.substring(0, localeUnderscoreIndex)
 
         // do very simple cached query for all, then filter in iterator by locale
-        EntityList list = sfi.ecfi.entityFacade.find("moqui.screen.ScreenDocument").condition("screenLocation", location)
-                .orderBy("docIndex").useCache(true).disableAuthz().list()
+        EntityList list = null
         int listSize = list.size()
 
         List<Map<String, Object>> outList = new ArrayList<>(listSize)
@@ -960,7 +958,7 @@ class ScreenDefinition {
                     //     to get around define a service with a parameter that allows safe or any HTML instead of using implicit entity auto directly
                     if (ec.serviceFacade.isEntityAutoPattern(singleServiceName)) {
                         String entityName = ServiceDefinition.getNounFromName(singleServiceName)
-                        EntityDefinition ed = ec.entityFacade.getEntityDefinition(entityName)
+                        EntityDefinition ed = null
                         if (ed != null) {
                             ArrayList<String> fieldNameList = ed.getAllFieldNames()
                             int fieldNameListSize = fieldNameList.size()
@@ -1152,9 +1150,7 @@ class ScreenDefinition {
                 return defaultResponse
             }
             Long docIndex = docIndexString as Long
-            EntityValue screenDocument = eci.entityFacade.find("moqui.screen.ScreenDocument")
-                    .condition("screenLocation", parentScreen.location).condition("docIndex", docIndex)
-                    .useCache(true).disableAuthz().one()
+            EntityValue screenDocument = null
             if (screenDocument == null) {
                 eci.web.sendError(HttpServletResponse.SC_NOT_FOUND, "No document found for index ${docIndex}", null)
                 return defaultResponse

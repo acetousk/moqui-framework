@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -63,8 +63,7 @@ class SubEthaSmtpToolFactory implements ToolFactory<SMTPServer> {
     void init(ExecutionContextFactory ecf) {
         ecfi = (ExecutionContextFactoryImpl) ecf
 
-        EntityValue emailServer = ecf.entity.find("moqui.basic.email.EmailServer").condition("emailServerId", EMAIL_SERVER_ID)
-                .useCache(true).disableAuthz().one()
+        EntityValue emailServer = null
 
         if (emailServer == null) {
             logger.error("Not starting SubEtha SMTP server, could not find ${EMAIL_SERVER_ID} EmailServer record")
@@ -136,8 +135,7 @@ class SubEthaSmtpToolFactory implements ToolFactory<SMTPServer> {
         MoquiUsernamePasswordValidator(ExecutionContextFactoryImpl ecf) { this.ecf = ecf }
         @Override
         void login(String username, String password) throws LoginFailedException {
-            EntityValue emailServer = ecf.entity.find("moqui.basic.email.EmailServer").condition("emailServerId", EMAIL_SERVER_ID)
-                    .useCache(true).disableAuthz().one()
+            EntityValue emailServer = null
             if (emailServer.mailUsername == username) {
                 if (emailServer.mailPassword != password) throw new LoginFailedException("Password incorrect for email root user")
             } else {

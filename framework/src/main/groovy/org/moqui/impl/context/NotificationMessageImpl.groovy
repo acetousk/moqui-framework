@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -21,7 +21,6 @@ import org.moqui.Moqui
 import org.moqui.context.ExecutionContext
 import org.moqui.context.NotificationMessage
 import org.moqui.context.NotificationMessage.NotificationType
-import org.moqui.entity.EntityFacade
 import org.moqui.entity.EntityList
 import org.moqui.entity.EntityListIterator
 import org.moqui.entity.EntityValue
@@ -69,7 +68,7 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
     }
     EntityValue getNotificationTopic() {
         if (notificationTopic == null && topic != null && !topic.isEmpty())
-            notificationTopic = ecfi.entityFacade.fastFindOne("moqui.security.user.NotificationTopic", true, true, topic)
+            notificationTopic = null
         return notificationTopic
     }
 
@@ -83,30 +82,26 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
     @Override Set<String> getNotifyUserIds() {
         Set<String> notifyUserIds = new HashSet<>()
         Set<String> checkedUserIds = new HashSet<>()
-        EntityFacade ef = ecfi.entityFacade
 
         for (String userId in userIdSet) {
             checkedUserIds.add(userId)
-            if (checkUserNotify(userId, ef)) notifyUserIds.add(userId)
+            if (checkUserNotify(userId)) notifyUserIds.add(userId)
         }
 
         // notify by group, skipping users already notified
         if (userGroupId) {
-            EntityListIterator eli = ef.find("moqui.security.UserGroupMember")
-                    .conditionDate("fromDate", "thruDate", new Timestamp(System.currentTimeMillis()))
-                    .condition("userGroupId", userGroupId).disableAuthz().iterator()
+            EntityListIterator eli = null
             EntityValue nextValue
             while ((nextValue = (EntityValue) eli.next()) != null) {
                 String userId = (String) nextValue.userId
                 if (checkedUserIds.contains(userId)) continue
                 checkedUserIds.add(userId)
-                if (checkUserNotify(userId, ef)) notifyUserIds.add(userId)
+                if (checkUserNotify(userId)) notifyUserIds.add(userId)
             }
         }
 
         // add all users subscribed to all messages on the topic
-        EntityList allNotificationUsers = ef.find("moqui.security.user.NotificationTopicUser")
-                .condition("topic", topic).condition("allNotifications", "Y").useCache(true).disableAuthz().list()
+        EntityList allNotificationUsers = null
         int allNotificationUsersSize = allNotificationUsers.size()
         for (int i = 0; i < allNotificationUsersSize; i++) {
             EntityValue allNotificationUser = (EntityValue) allNotificationUsers.get(i)
@@ -115,9 +110,7 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
 
         // check each user to see if account terminated (UserAccount.terminateDate != null && < now)
         long nowTime = System.currentTimeMillis()
-        EntityList notifyUserAccountList = ef.find("moqui.security.UserAccount")
-                .condition("userId", "in", notifyUserIds)
-                .selectField("userId").selectField("terminateDate").disableAuthz().list()
+        EntityList notifyUserAccountList = null
         int notifyUaSize = notifyUserAccountList.size()
         for (int i = 0; i < notifyUaSize; i++) {
             EntityValue userAccount = (EntityValue) notifyUserAccountList.get(i)
@@ -127,9 +120,8 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
 
         return notifyUserIds
     }
-    private boolean checkUserNotify(String userId, EntityFacade ef) {
-        EntityValue notTopicUser = ef.find("moqui.security.user.NotificationTopicUser")
-                .condition("topic", topic).condition("userId", userId).useCache(true).disableAuthz().one()
+    private boolean checkUserNotify(String userId) {
+        EntityValue notTopicUser = null
         boolean notifyUser = true
         if (notTopicUser != null && notTopicUser.receiveNotifications) {
             notifyUser = notTopicUser.receiveNotifications == 'Y'
@@ -365,8 +357,7 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
             EntityValue notificationTopic = getNotificationTopic()
 
             Set<String> curNotifyUserIds = getNotifyUserIds()
-            EntityList notificationTopicUsers = ecfi.entityFacade.find("moqui.security.user.NotificationTopicUser")
-                    .condition("topic", topic).condition("userId", "in", curNotifyUserIds).disableAuthz().list()
+            EntityList notificationTopicUsers = null
 
             for (String userId in curNotifyUserIds) {
                 EntityValue notificationUser = (EntityValue) notificationTopicUsers.findByAnd("userId", userId)
@@ -374,8 +365,7 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
                 if ("N".equals(notificationUser?.emailNotifications)) continue
                 if (!("Y".equals(notificationUser?.emailNotifications) || "Y".equals(notificationTopic?.emailNotifications))) continue
 
-                EntityValue userAccount = ecfi.entityFacade.find("moqui.security.UserAccount")
-                        .condition("userId", userId).disableAuthz().one()
+                EntityValue userAccount = null
                 String emailAddress = userAccount?.emailAddress
                 if (emailAddress) {
                     // FUTURE: if there is an option to create EmailMessage record also configure emailTypeEnumId (maybe if emailTypeEnumId is set create EmailMessage)
@@ -413,9 +403,6 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
         ExecutionContextImpl eci = ecfi.getEci()
         boolean alreadyDisabled = eci.getArtifactExecution().disableAuthz()
         try {
-            ecfi.entityFacade.makeValue("moqui.security.user.NotificationMessageUser")
-                    .set("userId", userId).set("notificationMessageId", notificationMessageId)
-                    .set("sentDate", new Timestamp(System.currentTimeMillis())).update()
         } catch (Throwable t) {
             logger.error("Error marking notification message ${notificationMessageId} sent", t)
         } finally {
@@ -436,9 +423,6 @@ class NotificationMessageImpl implements NotificationMessage, Externalizable {
         boolean alreadyDisabled = ec.getArtifactExecution().disableAuthz()
         try {
             Timestamp recStamp = new Timestamp(System.currentTimeMillis())
-            ec.factory.entity.makeValue("moqui.security.user.NotificationMessageUser")
-                    .set("userId", userId).set("notificationMessageId", notificationMessageId)
-                    .set("viewedDate", recStamp).update()
             return recStamp
         } catch (Throwable t) {
             logger.error("Error marking notification message ${notificationMessageId} sent", t)

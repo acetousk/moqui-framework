@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -18,7 +18,6 @@ import org.moqui.entity.EntityCondition
 import org.moqui.entity.EntityException
 import org.moqui.entity.EntityValue
 import org.moqui.impl.entity.EntityDefinition
-import org.moqui.impl.entity.EntityFacadeImpl
 import org.moqui.impl.entity.EntityFindBase
 import org.moqui.impl.entity.EntityJavaUtil
 import org.moqui.impl.entity.EntityListImpl
@@ -287,7 +286,7 @@ class TransactionCache implements Synchronization {
             // if this has been deleted return a DeletedEntityValue instance so caller knows it was deleted and doesn't look in the DB for another record
             EntityWriteInfo currentEwi = (EntityWriteInfo) lastWriteInfoMap.get(key)
             if (currentEwi != null && currentEwi.writeMode == WriteMode.DELETE)
-                return new EntityValueBase.DeletedEntityValue(efb.getEntityDef(), ecfi.entityFacade)
+                return new EntityValueBase.DeletedEntityValue(efb.getEntityDef())
         }
 
         // cloneValue() so that updates aren't in the read cache until an update is done
@@ -348,7 +347,7 @@ class TransactionCache implements Synchronization {
                     }
                 }
                 if (foundCreatedDependent) {
-                    EntityListImpl createdValueList = new EntityListImpl(ecfi.entityFacade)
+                    EntityListImpl createdValueList = null
                     Map createMap = createByEntityRef.get(ed.getFullEntityName())
                     if (createMap != null) {
                         for (Object createEvbObj in createMap.values()) {
@@ -445,7 +444,6 @@ class TransactionCache implements Synchronization {
             int writeInfoListSize = writeInfoList.size()
             if (writeInfoListSize > 0) {
                 // logger.error("Tx cache flush at", new BaseException("txc flush"))
-                EntityFacadeImpl efi = ecfi.entityFacade
 
                 long startTime = System.currentTimeMillis()
                 int createCount = 0
@@ -458,7 +456,7 @@ class TransactionCache implements Synchronization {
                     String groupName = ewi.evb.getEntityDefinition().getEntityGroupName()
                     Connection con = connectionByGroup.get(groupName)
                     if (con == null) {
-                        con = efi.getConnection(groupName)
+                        con = null
                         connectionByGroup.put(groupName, con)
                     }
 

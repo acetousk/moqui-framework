@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -21,17 +21,15 @@ import org.moqui.util.MNode
 @CompileStatic
 class EntityDynamicViewImpl implements EntityDynamicView {
 
-    protected EntityFacadeImpl efi
-
     protected String entityName = "DynamicView"
     protected MNode entityNode = new MNode("view-entity", ["package":"dynamic", "entity-name":"DynamicView", "is-dynamic-view":"true"])
 
-    EntityDynamicViewImpl(EntityFindImpl entityFind) { this.efi = entityFind.efi }
-    EntityDynamicViewImpl(EntityFacadeImpl efi) { this.efi = efi }
+    EntityDynamicViewImpl(EntityFindImpl entityFind) {  }
+    EntityDynamicViewImpl() {  }
 
     EntityDefinition makeEntityDefinition() {
         // System.out.println("========= MNode:\n${entityNode.toString()}")
-        return new EntityDefinition(efi, entityNode)
+        return null
     }
 
     @Override
@@ -60,7 +58,7 @@ class EntityDynamicViewImpl implements EntityDynamicView {
         MNode joinFromMemberEntityNode =
                 entityNode.first({ MNode it -> it.name == "member-entity" && it.attribute("entity-alias") == joinFromAlias })
         String entityName = joinFromMemberEntityNode.attribute("entity-name")
-        EntityDefinition joinFromEd = efi.getEntityDefinition(entityName)
+        EntityDefinition joinFromEd = null
         EntityJavaUtil.RelationshipInfo relInfo = joinFromEd.getRelationshipInfo(relationshipName)
         if (relInfo == null) throw new EntityException("Relationship not found with name [${relationshipName}] on entity [${entityName}]")
 

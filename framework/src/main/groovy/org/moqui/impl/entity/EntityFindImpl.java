@@ -32,8 +32,8 @@ public class EntityFindImpl extends EntityFindBase {
     protected static final Logger logger = LoggerFactory.getLogger(EntityFindImpl.class);
     protected static final boolean isTraceEnabled = logger.isTraceEnabled();
 
-    public EntityFindImpl(EntityFacadeImpl efi, String entityName) { super(efi, entityName); }
-    public EntityFindImpl(EntityFacadeImpl efi, EntityDefinition ed) { super(efi, ed); }
+    public EntityFindImpl(String entityName) { super(entityName); }
+    public EntityFindImpl(EntityDefinition ed) { super(ed); }
 
     @Override
     public EntityDynamicView makeEntityDynamicView() {
@@ -56,7 +56,7 @@ public class EntityFindImpl extends EntityFindBase {
         efb.isFindOne();
 
         // SELECT fields
-        efb.makeSqlSelectFields(fieldInfoArray, fieldOptionsArray, "true".equals(efi.getDatabaseNode(ed.groupName).attribute("add-unique-as")));
+        efb.makeSqlSelectFields(fieldInfoArray, fieldOptionsArray, false);
         // FROM Clause
         efb.makeSqlFromClause();
         // WHERE clause only for one/pk query
@@ -73,7 +73,6 @@ public class EntityFindImpl extends EntityFindBase {
             // don't check create, above tableExists check is done:
             // efi.getEntityDbMeta().checkTableRuntime(ed)
             // if this is a view-entity and any table in it exists check/create all or will fail with optional members, etc
-            if (ed.isViewEntity) efi.getEntityDbMeta().checkTableRuntime(ed);
 
             efb.makeConnection(useClone);
             efb.makePreparedStatement();
@@ -82,13 +81,13 @@ public class EntityFindImpl extends EntityFindBase {
             final String condSql = isTraceEnabled && whereCondition != null ? whereCondition.toString() : null;
             ResultSet rs = efb.executeQuery();
             if (rs.next()) {
-                newEntityValue = new EntityValueImpl(ed, efi);
+                newEntityValue = new EntityValueImpl(ed);
                 LiteStringMap<Object> valueMap = newEntityValue.valueMapInternal;
                 int size = fieldInfoArray.length;
                 for (int i = 0; i < size; i++) {
                     FieldInfo fi = fieldInfoArray[i];
                     if (fi == null) break;
-                    fi.getResultSetValue(rs, i + 1, valueMap, efi);
+                    fi.getResultSetValue(rs, i + 1, valueMap);
                 }
             } else {
                 if (isTraceEnabled) logger.trace("Result set was empty for find on entity " + entityName + " with condition " + condSql);
@@ -111,13 +110,13 @@ public class EntityFindImpl extends EntityFindBase {
         EntityDefinition ed = this.getEntityDef();
 
         // table doesn't exist, just return empty ELI
-        if (!ed.tableExistsDbMetaOnly()) return new EntityListIteratorWrapper(new ArrayList<>(), ed, efi, null, null);
+        if (!ed.tableExistsDbMetaOnly()) return new EntityListIteratorWrapper(new ArrayList<>(), ed, null, null);
 
         EntityFindBuilder efb = new EntityFindBuilder(ed, this, whereCondition, fieldInfoArray);
         if (getDistinct()) efb.makeDistinct();
 
         // select fields
-        efb.makeSqlSelectFields(fieldInfoArray, fieldOptionsArray, "true".equals(efi.getDatabaseNode(ed.groupName).attribute("add-unique-as")));
+        efb.makeSqlSelectFields(fieldInfoArray, fieldOptionsArray, false);
         // FROM Clause
         efb.makeSqlFromClause();
         // WHERE clause
@@ -141,14 +140,13 @@ public class EntityFindImpl extends EntityFindBase {
             // don't check create, above tableExists check is done:
             // efi.getEntityDbMeta().checkTableRuntime(ed)
             // if this is a view-entity and any table in it exists check/create all or will fail with optional members, etc
-            if (ed.isViewEntity) efi.getEntityDbMeta().checkTableRuntime(ed);
 
             Connection con = efb.makeConnection(useClone);
             efb.makePreparedStatement();
             efb.setPreparedStatementValues();
 
             ResultSet rs = efb.executeQuery();
-            elii = new EntityListIteratorImpl(con, rs, ed, fieldInfoArray, efi, txCache, whereCondition, orderByExpanded);
+            elii = new EntityListIteratorImpl(con, rs, ed, fieldInfoArray, txCache, whereCondition, orderByExpanded);
             // ResultSet will be closed in the EntityListIterator
             efb.releaseAll();
             queryTextList.add(efb.finalSql);
@@ -197,7 +195,6 @@ public class EntityFindImpl extends EntityFindBase {
             // don't check create, above tableExists check is done:
             // efi.getEntityDbMeta().checkTableRuntime(ed)
             // if this is a view-entity and any table in it exists check/create all or will fail with optional members, etc
-            if (ed.isViewEntity) efi.getEntityDbMeta().checkTableRuntime(ed);
 
             efb.makeConnection(useClone);
             efb.makePreparedStatement();

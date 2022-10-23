@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -973,14 +973,14 @@ class WebFacadeImpl implements WebFacade {
                     // logger.warn("========== REST ${method} ${request.getPathInfo()} ${extraPathNameList}; body list object: ${bodyListObj}")
                     parmStack.push()
                     parmStack.putAll((Map) bodyListObj)
-                    Object responseObj = eci.entityFacade.rest(method, extraPathNameList, parmStack, masterNameInPath)
+                    Object responseObj = null
                     responseList.add(responseObj ?: [:])
                     parmStack.pop()
                 }
                 response.addIntHeader('X-Run-Time-ms', (System.currentTimeMillis() - startTime) as int)
                 sendJsonResponse(responseList)
             } else {
-                Object responseObj = eci.entityFacade.rest(method, extraPathNameList, parmStack, masterNameInPath)
+                Object responseObj = null
                 response.addIntHeader('X-Run-Time-ms', (System.currentTimeMillis() - startTime) as int)
 
                 if (parmStack.xTotalCount != null) response.addIntHeader('X-Total-Count', parmStack.xTotalCount as int)
@@ -1154,14 +1154,12 @@ class WebFacadeImpl implements WebFacade {
 
         try {
             // make sure systemMessageTypeId and systemMessageRemoteId are valid before the service call
-            EntityValue systemMessageType = eci.entityFacade.find("moqui.service.message.SystemMessageType")
-                    .condition("systemMessageTypeId", systemMessageTypeId).disableAuthz().one()
+            EntityValue systemMessageType = null
             if (systemMessageType == null) {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Message type ${systemMessageTypeId} not valid")
                 return
             }
-            EntityValue systemMessageRemote = eci.entityFacade.find("moqui.service.message.SystemMessageRemote")
-                    .condition("systemMessageRemoteId", systemMessageRemoteId).disableAuthz().one()
+            EntityValue systemMessageRemote = null
             if (systemMessageRemote == null) {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Remote system ${systemMessageRemoteId} not valid")
                 return
@@ -1328,8 +1326,7 @@ class WebFacadeImpl implements WebFacade {
             if (emailMessageId != null && !emailMessageId.isEmpty()) {
                 int dotIndex = emailMessageId.indexOf(".")
                 if (dotIndex > 0) emailMessageId = emailMessageId.substring(0, dotIndex)
-                EntityValue emailMessage = eci.entity.find("moqui.basic.email.EmailMessage").condition("emailMessageId", emailMessageId)
-                        .disableAuthz().one()
+                EntityValue emailMessage = null
                 if (emailMessage == null) {
                     logger.warn("Tried to mark EmailMessage ${emailMessageId} viewed but not found")
                 } else if (!"ES_VIEWED".equals(emailMessage.statusId)) {

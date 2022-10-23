@@ -23,7 +23,6 @@ import org.moqui.impl.context.WebFacadeImpl
 import org.moqui.impl.entity.EntityDefinition
 import org.moqui.impl.entity.EntityDefinition.MasterDefinition
 import org.moqui.impl.entity.EntityDefinition.MasterDetail
-import org.moqui.impl.entity.EntityFacadeImpl
 import org.moqui.impl.entity.EntityJavaUtil.RelationshipInfo
 import org.moqui.impl.entity.FieldInfo
 import org.moqui.impl.service.RestApi
@@ -102,16 +101,14 @@ class RestSchemaUtil {
         }
         if (oneRelInfo != null && oneRelInfo.title != null) {
             if (oneRelInfo.relatedEd.getFullEntityName() == 'moqui.basic.Enumeration') {
-                EntityList enumList = ed.efi.find("moqui.basic.Enumeration").condition("enumTypeId", oneRelInfo.title)
-                        .orderBy("sequenceNum,enumId").disableAuthz().list()
+                EntityList enumList = null
                 if (enumList) {
                     List<String> enumIdList = []
                     for (EntityValue ev in enumList) enumIdList.add((String) ev.enumId)
                     return enumIdList
                 }
             } else if (oneRelInfo.relatedEd.getFullEntityName() == 'moqui.basic.StatusItem') {
-                EntityList statusList = ed.efi.find("moqui.basic.StatusItem").condition("statusTypeId", oneRelInfo.title)
-                        .orderBy("sequenceNum,statusId").disableAuthz().list()
+                EntityList statusList = null
                 if (statusList) {
                     List<String> statusIdList = []
                     for (EntityValue ev in statusList) statusIdList.add((String) ev.statusId)
@@ -510,7 +507,7 @@ class RestSchemaUtil {
         String entityName = parmNode.attribute("entity-name")
         String fieldName = parmNode.attribute("field-name")
         if (entityName && fieldName) {
-            EntityDefinition ed = sd.sfi.ecfi.entityFacade.getEntityDefinition(entityName)
+            EntityDefinition ed = null
             if (ed == null) throw new ServiceException("Entity ${entityName} not found, from parameter ${parmNode.attribute('name')} of service ${sd.serviceName}")
             FieldInfo fi = ed.getFieldInfo(fieldName)
             if (fi == null) throw new ServiceException("Field ${fieldName} not found for entity ${entityName}, from parameter ${parmNode.attribute('name')} of service ${sd.serviceName}")
@@ -578,8 +575,6 @@ class RestSchemaUtil {
             return
         }
 
-        EntityFacadeImpl efi = eci.entityFacade
-
         if (extraPathNameList.size() == 0) {
             List allRefList = []
             Map definitionsMap = [:]
@@ -591,12 +586,12 @@ class RestSchemaUtil {
             Set<String> entityNameSet
             if (getMaster) {
                 // if getMaster and no entity name in path, just get entities with master definitions
-                entityNameSet = efi.getAllEntityNamesWithMaster()
+                entityNameSet = null
             } else {
-                entityNameSet = efi.getAllNonViewEntityNames()
+                entityNameSet = null
             }
             for (String entityName in entityNameSet) {
-                EntityDefinition ed = efi.getEntityDefinition(entityName)
+                EntityDefinition ed = null
                 String refName = ed.getShortOrFullEntityName()
                 if (getMaster) {
                     Map<String, MasterDefinition> masterDefMap = ed.getMasterDefinitionMap()
@@ -633,7 +628,7 @@ class RestSchemaUtil {
             if (getMaster && !masterName) masterName = "default"
 
             try {
-                EntityDefinition ed = efi.getEntityDefinition(entityName)
+                EntityDefinition ed = null
                 if (ed == null) {
                     eci.webImpl.sendJsonError(HttpServletResponse.SC_BAD_REQUEST, "No entity found with name or alias [${entityName}]", null)
                     return
@@ -665,8 +660,6 @@ class RestSchemaUtil {
             return
         }
 
-        EntityFacadeImpl efi = eci.entityFacade
-
         List<Map> schemasList = []
         Map<String, Object> rootMap = [title:'Moqui Entity REST API', version:eci.factory.moquiVersion, baseUri:linkPrefix,
                                        mediaType:'application/json', schemas:schemasList] as Map<String, Object>
@@ -687,12 +680,12 @@ class RestSchemaUtil {
             entityNameSet.add(entityName)
         } else if (getMaster) {
             // if getMaster and no entity name in path, just get entities with master definitions
-            entityNameSet = efi.getAllEntityNamesWithMaster()
+            entityNameSet = null
         } else {
-            entityNameSet = efi.getAllNonViewEntityNames()
+            entityNameSet = null
         }
         for (String entityName in entityNameSet) {
-            EntityDefinition ed = efi.getEntityDefinition(entityName)
+            EntityDefinition ed = null
             String refName = ed.getShortOrFullEntityName()
             if (getMaster) {
                 Set<String> masterNameSet = new LinkedHashSet<String>()
@@ -736,8 +729,6 @@ class RestSchemaUtil {
             return
         }
 
-        EntityFacadeImpl efi = eci.entityFacade
-
         String entityName = extraPathNameList.get(0)
         String outputType = "application/json"
         if (entityName.endsWith(".yaml")) outputType = "application/yaml"
@@ -777,13 +768,13 @@ class RestSchemaUtil {
             entityNameSet.add(entityName)
         } else if (getMaster) {
             // if getMaster and no entity name in path, just get entities with master definitions
-            entityNameSet = efi.getAllEntityNamesWithMaster()
+            entityNameSet = null
         } else {
-            entityNameSet = efi.getAllNonViewEntityNames()
+            entityNameSet = null
         }
 
         for (String curEntityName in entityNameSet) {
-            EntityDefinition ed = efi.getEntityDefinition(curEntityName)
+            EntityDefinition ed = null
             if (getMaster) {
                 Set<String> masterNameSet = new LinkedHashSet<String>()
                 if (masterName) {

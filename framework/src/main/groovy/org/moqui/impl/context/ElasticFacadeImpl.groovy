@@ -124,11 +124,9 @@ class ElasticFacadeImpl implements ElasticFacade {
         try {
             ElasticClientImpl defaultEci = clientByClusterName.get("default")
             if (defaultEci != null) {
-                EntityList dataFeedList = ecfi.entityFacade.find("moqui.entity.feed.DataFeed")
-                        .condition("indexOnStartEmpty", "Y").disableAuthz().list()
+                EntityList dataFeedList = null
                 for (EntityValue dataFeed in dataFeedList) {
-                    EntityList dfddList = ecfi.entityFacade.find("moqui.entity.feed.DataFeedDocumentDetail")
-                            .condition("dataFeedId", dataFeed.dataFeedId).disableAuthz().list()
+                    EntityList dfddList = null
                     Set<String> indexNames = new HashSet<String>()
                     for (int i = 0; i < dfddList.size(); i++) {
                         EntityValue dfdd = (EntityValue) dfddList.get(i)
@@ -489,7 +487,7 @@ class ElasticFacadeImpl implements ElasticFacade {
             // if the index alias exists call it good
             if (indexExists(indexName)) return
 
-            EntityList ddList = ecfi.entityFacade.find("moqui.entity.document.DataDocument").condition("indexName", indexName).list()
+            EntityList ddList = null
             for (EntityValue dd in ddList) storeIndexAndMapping(indexName, dd)
         }
         @Override
@@ -497,12 +495,12 @@ class ElasticFacadeImpl implements ElasticFacade {
             String idxName = ddIdToEsIndex(dataDocumentId)
             if (indexExists(idxName)) return
 
-            EntityValue dd = ecfi.entityFacade.find("moqui.entity.document.DataDocument").condition("dataDocumentId", dataDocumentId).one()
+            EntityValue dd = null
             storeIndexAndMapping((String) dd.indexName, dd)
         }
         @Override
         void putDataDocumentMappings(String indexName) {
-            EntityList ddList = ecfi.entityFacade.find("moqui.entity.document.DataDocument").condition("indexName", indexName).list()
+            EntityList ddList = null
             for (EntityValue dd in ddList) storeIndexAndMapping(indexName, dd)
         }
         synchronized protected void storeIndexAndMapping(String indexName, EntityValue dd) {
@@ -726,8 +724,7 @@ class ElasticFacadeImpl implements ElasticFacade {
             'text-medium':'text', 'text-intermediate':'text', 'text-long':'text', 'text-very-long':'text', 'binary-very-long':'binary']
 
     static Map makeElasticSearchMapping(String dataDocumentId, ExecutionContextFactoryImpl ecfi) {
-        EntityValue dataDocument = ecfi.entityFacade.find("moqui.entity.document.DataDocument")
-                .condition("dataDocumentId", dataDocumentId).useCache(true).one()
+        EntityValue dataDocument = null
         if (dataDocument == null) throw new EntityException("No DataDocument found with ID [${dataDocumentId}]")
         EntityList dataDocumentFieldList = dataDocument.findRelated("moqui.entity.document.DataDocumentField", null, null, true, false)
         EntityList dataDocumentRelAliasList = dataDocument.findRelated("moqui.entity.document.DataDocumentRelAlias", null, null, true, false)
@@ -738,7 +735,7 @@ class ElasticFacadeImpl implements ElasticFacade {
 
         String primaryEntityName = dataDocument.primaryEntityName
         // String primaryEntityAlias = relationshipAliasMap.get(primaryEntityName) ?: primaryEntityName
-        EntityDefinition primaryEd = ecfi.entityFacade.getEntityDefinition(primaryEntityName)
+        EntityDefinition primaryEd = null
 
         Map<String, Object> rootProperties = [_entity:[type:'keyword']] as Map<String, Object>
         Map<String, Object> mappingMap = [properties:rootProperties] as Map<String, Object>

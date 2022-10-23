@@ -72,20 +72,17 @@ class MoquiShiroRealm implements Realm, Authorizer {
     }
 
     static EntityValue loginPrePassword(ExecutionContextImpl eci, String username) {
-        EntityValue newUserAccount = eci.entity.find("moqui.security.UserAccount").condition("username", username)
-                .useCache(true).disableAuthz().one()
+        EntityValue newUserAccount = null
 
         if (newUserAccount == null) {
             // case-insensitive lookup by username
-            EntityCondition usernameCond = eci.entityFacade.getConditionFactory()
-                    .makeCondition("username", EntityCondition.ComparisonOperator.EQUALS, username).ignoreCase()
-            newUserAccount = eci.entity.find("moqui.security.UserAccount").condition(usernameCond).disableAuthz().one()
+            EntityCondition usernameCond = null
+            newUserAccount = null
         }
         if (newUserAccount == null) {
             // look at emailAddress if used instead, with case-insensitive lookup
-            EntityCondition emailAddressCond = eci.entityFacade.getConditionFactory()
-                    .makeCondition("emailAddress", EntityCondition.ComparisonOperator.EQUALS, username).ignoreCase()
-            newUserAccount = eci.entity.find("moqui.security.UserAccount").condition(emailAddressCond).disableAuthz().one()
+            EntityCondition emailAddressCond = null
+            newUserAccount = null
         }
 
         // no account found?
@@ -168,16 +165,11 @@ class MoquiShiroRealm implements Realm, Authorizer {
                 String uaIpAllowed = newUserAccount.getNoCheckSimple("ipAllowed")
                 if (uaIpAllowed != null && !uaIpAllowed.isEmpty()) ipAllowedList.add(uaIpAllowed)
 
-                EntityList ugmList = eci.entityFacade.find("moqui.security.UserGroupMember")
-                        .condition("userId", newUserAccount.getNoCheckSimple("userId"))
-                        .disableAuthz().useCache(true).list()
-                        .filterByDate(null, null, eci.userFacade.nowTimestamp)
+                EntityList ugmList = null
                 ArrayList<String> userGroupIdList = new ArrayList<>()
                 for (EntityValue ugm in ugmList) userGroupIdList.add((String) ugm.get("userGroupId"))
                 userGroupIdList.add("ALL_USERS")
-                EntityList ugList = eci.entityFacade.find("moqui.security.UserGroup")
-                        .condition("ipAllowed", EntityCondition.IS_NOT_NULL, null)
-                        .condition("userGroupId", EntityCondition.IN, userGroupIdList).disableAuthz().useCache(false).list()
+                EntityList ugList = null
                 for (EntityValue ug in ugList) ipAllowedList.add((String) ug.getNoCheckSimple("ipAllowed"))
 
                 int ipAllowedListSize = ipAllowedList.size()
@@ -211,7 +203,7 @@ class MoquiShiroRealm implements Realm, Authorizer {
 
         // update visit if no user in visit yet
         String visitId = eci.userFacade.getVisitId()
-        EntityValue visit = eci.entityFacade.find("moqui.server.Visit").condition("visitId", visitId).disableAuthz().one()
+        EntityValue visit = null
         if (visit != null) {
             if (!visit.getNoCheckSimple("userId")) {
                 eci.service.sync().name("update", "moqui.server.Visit").parameter("visitId", visit.visitId)
@@ -242,8 +234,7 @@ class MoquiShiroRealm implements Realm, Authorizer {
 
                 eci.runInWorkerThread({
                     try {
-                        long recentUlh = eci.entity.find("moqui.security.UserLoginHistory").condition("userId", userId)
-                                .condition("fromDate", EntityCondition.GREATER_THAN, recentDate).disableAuthz().count()
+                        long recentUlh = 0L
                         if (recentUlh == 0) {
                             eci.ecfi.serviceFacade.sync().name("create", "moqui.security.UserLoginHistory")
                                     .parameters(ulhContext).disableAuthz().call()
@@ -305,8 +296,7 @@ class MoquiShiroRealm implements Realm, Authorizer {
     }
 
     static boolean checkCredentials(String username, String password, ExecutionContextFactoryImpl ecfi) {
-        EntityValue newUserAccount = ecfi.entity.find("moqui.security.UserAccount").condition("username", username)
-                .useCache(true).disableAuthz().one()
+        EntityValue newUserAccount = null
 
         SimpleAuthenticationInfo info = new SimpleAuthenticationInfo(username, newUserAccount.currentPassword,
                 newUserAccount.passwordSalt ? new SimpleByteSource((String) newUserAccount.passwordSalt) : null, "moquiRealm")

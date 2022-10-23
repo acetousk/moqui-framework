@@ -1,12 +1,12 @@
 /*
  * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -32,7 +32,6 @@ import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
 import org.moqui.impl.context.ArtifactExecutionInfoImpl.ArtifactAuthzCheck
 import org.moqui.impl.entity.EntityDefinition
-import org.moqui.impl.entity.EntityFacadeImpl
 import org.moqui.util.MNode
 
 import org.slf4j.Logger
@@ -519,11 +518,7 @@ class ArtifactExecutionFacadeImpl implements ArtifactExecutionFacade {
 
                 // check the ArtifactTarpitLock for the current artifact attempt before seeing if there is a new lock to create
                 // NOTE: this only runs if we are recording a hit time for an artifact, so no performance impact otherwise
-                EntityFacadeImpl efi = ecfi.entityFacade
-                EntityList tarpitLockList = efi.find('moqui.security.ArtifactTarpitLock')
-                        .condition([userId:userId, artifactName:aeii.getName(), artifactTypeEnumId:artifactTypeEnum.name()] as Map<String, Object>)
-                        .useCache(true).list()
-                        .filterByCondition(efi.getConditionFactory().makeCondition('releaseDateTime', ComparisonOperator.GREATER_THAN, ufi.getNowTimestamp()), true)
+                EntityList tarpitLockList = null
                 if (tarpitLockList.size() > 0) {
                     Timestamp releaseDateTime = tarpitLockList.get(0).getTimestamp('releaseDateTime')
                     int retryAfterSeconds = ((releaseDateTime.getTime() - System.currentTimeMillis())/1000).intValue()
@@ -555,7 +550,7 @@ class ArtifactExecutionFacadeImpl implements ArtifactExecutionFacade {
         }
     }
     ArrayList<AuthzFilterInfo> getFindFiltersForUser(String findEntityName) {
-        EntityDefinition findEd = eci.entityFacade.getEntityDefinition(findEntityName)
+        EntityDefinition findEd = null
         return getFindFiltersForUser(findEd, null)
     }
     ArrayList<AuthzFilterInfo> getFindFiltersForUser(EntityDefinition findEd, Set<String> entityAliasUsedSet) {
@@ -572,8 +567,7 @@ class ArtifactExecutionFacadeImpl implements ArtifactExecutionFacade {
         if (findEntityName.startsWith("moqui.")) return null
 
         // find applicable EntityFilter records
-        EntityList artifactAuthzFilterList = eci.entityFacade.find("moqui.security.ArtifactAuthzFilter")
-                .condition("artifactAuthzId", aacv.artifactAuthzId).disableAuthz().useCache(true).list()
+        EntityList artifactAuthzFilterList = null
 
         if (artifactAuthzFilterList == null) return null
         int authzFilterSize = artifactAuthzFilterList.size()
@@ -585,8 +579,7 @@ class ArtifactExecutionFacadeImpl implements ArtifactExecutionFacade {
             String entityFilterSetId = (String) artifactAuthzFilter.getNoCheckSimple("entityFilterSetId")
             String authzApplyCond = (String) artifactAuthzFilter.getNoCheckSimple("applyCond")
 
-            EntityValue entityFilterSet = eci.entityFacade.find("moqui.security.EntityFilterSet")
-                    .condition("entityFilterSetId", entityFilterSetId).disableAuthz().useCache(true).one()
+            EntityValue entityFilterSet = null
             String setApplyCond = (String) entityFilterSet.getNoCheckSimple("applyCond")
 
             boolean hasAuthzCond = authzApplyCond != null && !authzApplyCond.isEmpty()
@@ -606,8 +599,7 @@ class ArtifactExecutionFacadeImpl implements ArtifactExecutionFacade {
 
             // NOTE: at this level the results could be cached, but worth it? EntityFilter entity list cached already,
             //     some processing for view-entity but mostly only if entityAliasUsedSet, and could only cache if !entityAliasUsedSet
-            EntityList entityFilterList = eci.entityFacade.find("moqui.security.EntityFilter")
-                    .condition("entityFilterSetId", entityFilterSetId).disableAuthz().useCache(true).list()
+            EntityList entityFilterList = null
 
             if (entityFilterList == null) continue
             int entFilterSize = entityFilterList.size()
@@ -695,7 +687,7 @@ class ArtifactExecutionFacadeImpl implements ArtifactExecutionFacade {
                 }
                 // logger.warn("===== ${findEd.getFullEntityName()} filterMapObj: ${filterMapObj}")
 
-                EntityConditionFactoryImpl conditionFactory = eci.entityFacade.conditionFactoryImpl
+                EntityConditionFactoryImpl conditionFactory = null
                 String efComparisonEnumId = (String) entityFilter.getNoCheckSimple('comparisonEnumId')
                 ComparisonOperator compOp = efComparisonEnumId != null && efComparisonEnumId.length() > 0 ?
                         conditionFactory.comparisonOperatorFromEnumId(efComparisonEnumId) : null

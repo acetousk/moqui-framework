@@ -67,7 +67,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 if (sd != null) {
                     inParameterNames = sd.getInParameterNames();
                 } else if (isEntityAutoPattern()) {
-                    EntityDefinition ed = ecfi.entityFacade.getEntityDefinition(noun);
+                    EntityDefinition ed = null;
                     if (ed != null) inParameterNames = ed.getAllFieldNames();
                 }
 
@@ -218,7 +218,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 }
             } else {
                 logger.info("No service with name " + serviceName + ", isEntityAutoPattern=" + isEntityAutoPattern() +
-                        ", path=" + path + ", verb=" + verb + ", noun=" + noun + ", noun is entity? " + eci.getEntityFacade().isEntityDefined(noun));
+                        ", path=" + path + ", verb=" + verb + ", noun=" + noun + ", noun is entity? ");
                 if (ignorePreviousError) eci.messageFacade.popErrors();
                 throw new ServiceException("Could not find service with name " + serviceName);
             }
@@ -435,9 +435,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
             EntityValue doCall(Object it) {
                 boolean authzDisabled = eci.artifactExecutionFacade.disableAuthz();
                 try {
-                    return eci.getEntity().makeValue("moqui.service.semaphore.ServiceParameterSemaphore")
-                            .set("serviceName", semaphoreName).set("parameterValue", parameterValue)
-                            .set("lockThread", null).set("lockTime", null).update();
+                    return null;
                 } finally {
                     if (!authzDisabled) eci.artifactExecutionFacade.enableAuthz();
                 }
@@ -482,8 +480,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                     final long startTime = System.currentTimeMillis();
 
                     // look up semaphore, note that is no forUpdate, we want to loop wait below instead of doing a database lock wait
-                    EntityValue serviceSemaphore = eci.getEntity().find("moqui.service.semaphore.ServiceParameterSemaphore")
-                            .condition("serviceName", semaphoreName).condition("parameterValue", parameterValue).useCache(false).one();
+                    EntityValue serviceSemaphore = null;
                     // if there is an active semaphore but lockTime is too old reset and ignore it
                     if (serviceSemaphore != null && (serviceSemaphore.getNoCheckSimple("lockThread") != null || serviceSemaphore.getNoCheckSimple("lockTime") != null)) {
                         Timestamp lockTime = serviceSemaphore.getTimestamp("lockTime");
@@ -503,8 +500,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                                 // sleep, watch for interrupt
                                 try { Thread.sleep(semaphoreSleepTime); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
                                 // get updated semaphore and see if it has been cleared
-                                serviceSemaphore = eci.getEntity().find("moqui.service.semaphore.ServiceParameterSemaphore")
-                                        .condition("serviceName", semaphoreName).condition("parameterValue", parameterValue).useCache(false).one();
+                                serviceSemaphore = null;
                                 if (serviceSemaphore == null || (serviceSemaphore.getNoCheckSimple("lockThread") == null && serviceSemaphore.getNoCheckSimple("lockTime") == null)) {
                                     semaphoreCleared = true;
                                     break;
@@ -521,18 +517,14 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
 
                     // if we got to here the semaphore didn't exist or has cleared, so update existing or create new
                     // do a for-update find now to make sure we own the record if one exists
-                    serviceSemaphore = eci.getEntity().find("moqui.service.semaphore.ServiceParameterSemaphore")
-                            .condition("serviceName", semaphoreName).condition("parameterValue", parameterValue)
-                            .useCache(false).forUpdate(true).one();
+                    serviceSemaphore = null;
 
                     final Timestamp lockTime = new Timestamp(System.currentTimeMillis());
                     if (serviceSemaphore != null) {
                         return serviceSemaphore.set("lockThread", lockThreadName).set("lockTime", lockTime).update();
                     } else {
                         try {
-                            return eci.getEntity().makeValue("moqui.service.semaphore.ServiceParameterSemaphore")
-                                    .set("serviceName", semaphoreName).set("parameterValue", parameterValue)
-                                    .set("lockThread", lockThreadName).set("lockTime", lockTime).create();
+                            return null;
                         } catch (EntitySqlException e) {
                             if ("23505".equals(e.getSQLState())) {
                                 logger.warn("Record exists error creating semaphore " + semaphoreName + " parameter " + parameterValue + ", retrying: " + e.toString());
@@ -594,7 +586,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 }
 
                 try {
-                    EntityDefinition ed = eci.getEntityFacade().getEntityDefinition(noun);
+                    EntityDefinition ed = null;
                     if ("create".equals(verb)) {
                         EntityAutoServiceRunner.createEntity(eci, ed, currentParameters, result, null);
                     } else if ("update".equals(verb)) {

@@ -26,7 +26,6 @@ import org.moqui.entity.EntityException
 import org.moqui.entity.EntityList
 import org.moqui.entity.EntityListIterator
 import org.moqui.entity.EntityValue
-import org.moqui.impl.entity.EntityFacadeImpl
 import org.moqui.screen.ScreenTest
 import org.moqui.util.WebUtilities
 import org.moqui.impl.context.ArtifactExecutionInfoImpl
@@ -309,9 +308,7 @@ class ScreenRenderImpl implements ScreenRender {
             // get user's default saved find if there is one
             String userId = ec.userFacade.getUserId()
             if (userId != null) {
-                EntityValue formListFindUserDefault = ec.entityFacade.find("moqui.screen.form.FormListFindUserDefault")
-                        .condition("userId", userId).condition("screenLocation", screenUrlInfo.targetScreen.location)
-                        .disableAuthz().useCache(true).one()
+                EntityValue formListFindUserDefault = null
                 if (formListFindUserDefault != null) {
                     formListFindId = (String) formListFindUserDefault.get("formListFindId")
                     ec.contextStack.put("formListFindId", formListFindId)
@@ -337,7 +334,7 @@ class ScreenRenderImpl implements ScreenRender {
                 }
             }
             if (!foundMatchingParm) {
-                EntityValue formListFind = ec.entityFacade.fastFindOne("moqui.screen.form.FormListFind", true, true, formListFindId)
+                EntityValue formListFind = null
                 if (formListFind?.orderByField && !ec.contextStack.getByString("orderByField")) ec.contextStack.put("orderByField", formListFind.orderByField)
                 ec.contextStack.putAll(flfParameters)
                 // logger.warn("Found formListFindId and no matching parameters, orderByField [${formListFind?.orderByField}], added paramters: ${flfParameters}")
@@ -1583,15 +1580,14 @@ class ScreenRenderImpl implements ScreenRender {
         Object fieldValue = getFieldValue(fieldNode, "")
         if (fieldValue == null) return getDefaultText(widgetNode)
         String entityName = widgetNode.attribute("entity-name")
-        EntityDefinition ed = sfi.ecfi.entityFacade.getEntityDefinition(entityName)
+        EntityDefinition ed = null
 
         // find the entity value
         String keyFieldName = widgetNode.attribute("key-field-name")
         if (keyFieldName == null || keyFieldName.isEmpty()) keyFieldName = widgetNode.attribute("entity-key-name")
         if ((keyFieldName == null || keyFieldName.isEmpty()) && ed != null) keyFieldName = ed.getPkFieldNames().get(0)
         String useCache = widgetNode.attribute("use-cache") ?: widgetNode.attribute("entity-use-cache") ?: "true"
-        EntityValue ev = ec.entity.find(entityName).condition(keyFieldName, fieldValue)
-                .useCache(useCache == "true").one()
+        EntityValue ev = null
         if (ev == null) return getDefaultText(widgetNode)
 
         String value = ""
@@ -2170,29 +2166,23 @@ class ScreenRenderImpl implements ScreenRender {
         // if no setting default to STT_INTERNAL
         if (stteId == null) stteId = "STT_INTERNAL"
 
-        EntityFacadeImpl entityFacade = sfi.ecfi.entityFacade
         // see if there is a user setting for the theme
-        String themeId = entityFacade.fastFindOne("moqui.security.UserScreenTheme", true, true, ec.userFacade.userId, stteId)?.screenThemeId
+        String themeId = null
         // if no user theme see if group a user is in has a theme
         if (themeId == null || themeId.length() == 0) {
             // use reverse alpha so ALL_USERS goes last...
             List<String> userGroupIdSet = new ArrayList(new TreeSet(ec.user.getUserGroupIdSet())).reverse(true)
-            EntityList groupThemeList = entityFacade.find("moqui.security.UserGroupScreenTheme")
-                    .condition("userGroupId", "in", userGroupIdSet).condition("screenThemeTypeEnumId", stteId)
-                    .orderBy("sequenceNum,-userGroupId").useCache(true).disableAuthz().list()
+            EntityList groupThemeList = null
             if (groupThemeList.size() > 0) themeId = groupThemeList.first().screenThemeId
         }
 
         // use the Enumeration.enumCode from the type to find the theme type's default screenThemeId
         if (themeId == null || themeId.length() == 0) {
-            EntityValue themeTypeEnum = entityFacade.fastFindOne("moqui.basic.Enumeration", true, true, stteId)
-            if (themeTypeEnum?.enumCode) themeId = themeTypeEnum.enumCode
+            EntityValue themeTypeEnum = null
         }
         // theme with "DEFAULT" in the ID
         if (themeId == null || themeId.length() == 0) {
-            EntityValue stv = entityFacade.find("moqui.screen.ScreenTheme")
-                    .condition("screenThemeTypeEnumId", stteId)
-                    .condition("screenThemeId", ComparisonOperator.LIKE, "%DEFAULT%").disableAuthz().one()
+            EntityValue stv = null
             if (stv) themeId = stv.screenThemeId
         }
 
@@ -2211,9 +2201,7 @@ class ScreenRenderImpl implements ScreenRender {
             if (cachedList != null) return cachedList
         }
 
-        EntityList strList = sfi.ecfi.entityFacade.find("moqui.screen.ScreenThemeResource")
-                .condition("screenThemeId", screenThemeId).condition("resourceTypeEnumId", resourceTypeEnumId)
-                .orderBy("sequenceNum").useCache(true).disableAuthz().list()
+        EntityList strList = null
         int strListSize = strList.size()
         ArrayList<String> values = new ArrayList<>(strListSize)
         for (int i = 0; i < strListSize; i++) {
@@ -2231,8 +2219,7 @@ class ScreenRenderImpl implements ScreenRender {
         Map<String, String> curThemeIconByText = sfi.getThemeIconByText(screenThemeId)
         if (curThemeIconByText.containsKey(text)) return curThemeIconByText.get(text)
 
-        EntityList stiList = sfi.ecfi.entityFacade.find("moqui.screen.ScreenThemeIcon")
-                .condition("screenThemeId", screenThemeId).useCache(true).disableAuthz().list()
+        EntityList stiList = null
         int stiListSize = stiList.size()
         String iconClass = (String) null
         for (int i = 0; i < stiListSize; i++) {

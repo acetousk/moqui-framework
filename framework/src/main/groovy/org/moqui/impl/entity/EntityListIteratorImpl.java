@@ -32,7 +32,6 @@ import java.util.Map;
 
 public class EntityListIteratorImpl implements EntityListIterator {
     protected static final Logger logger = LoggerFactory.getLogger(EntityListIteratorImpl.class);
-    protected final EntityFacadeImpl efi;
     private final TransactionCache txCache;
     protected final Connection con;
     private final ResultSet rs;
@@ -51,8 +50,7 @@ public class EntityListIteratorImpl implements EntityListIterator {
     private final ArrayList<ArtifactExecutionInfo> artifactStack;
 
     public EntityListIteratorImpl(Connection con, ResultSet rs, EntityDefinition entityDefinition, FieldInfo[] fieldInfoArray,
-                                  EntityFacadeImpl efi, TransactionCache txCache, EntityCondition queryCondition, ArrayList<String> obf) {
-        this.efi = efi;
+                                  TransactionCache txCache, EntityCondition queryCondition, ArrayList<String> obf) {
         this.con = con;
         this.rs = rs;
         this.entityDefinition = entityDefinition;
@@ -78,7 +76,7 @@ public class EntityListIteratorImpl implements EntityListIterator {
         }
 
         // capture the current artifact stack for finalize not closed debugging, has minimal performance impact (still ~0.0038ms per call compared to numbers below)
-        artifactStack = efi.ecfi.getEci().artifactExecutionFacade.getStackArray();
+        artifactStack = null;
 
         /* uncomment only if needed temporarily: huge performance impact, ~0.036ms per call with, ~0.0037ms without (~10x difference!)
         StackTraceElement[] tempStack = Thread.currentThread().getStackTrace();
@@ -143,7 +141,7 @@ public class EntityListIteratorImpl implements EntityListIterator {
 
     @Override public EntityValue currentEntityValue() { return currentEntityValueBase(); }
     public EntityValueBase currentEntityValueBase() {
-        EntityValueImpl newEntityValue = new EntityValueImpl(entityDefinition, efi);
+        EntityValueImpl newEntityValue = new EntityValueImpl(entityDefinition);
         if (txcListIndex >= 0) {
             return findAugmentInfo.valueList.get(txcListIndex);
         } else {
@@ -151,7 +149,7 @@ public class EntityListIteratorImpl implements EntityListIterator {
             for (int i = 0; i < fieldInfoListSize; i++) {
                 FieldInfo fi = fieldInfoArray[i];
                 if (fi == null) break;
-                fi.getResultSetValue(rs, i + 1, valueMap, efi);
+                fi.getResultSetValue(rs, i + 1, valueMap);
             }
             // if txCache in place always put in cache for future reference (onePut handles any stale from DB issues too)
             if (txCache != null) txCache.onePut(newEntityValue, false);
@@ -270,7 +268,7 @@ public class EntityListIteratorImpl implements EntityListIterator {
             // move back to before first if we need to
             if (haveMadeValue && !rs.isBeforeFirst()) rs.beforeFirst();
 
-            EntityList list = new EntityListImpl(efi);
+            EntityList list = null;
             EntityValue value;
             while ((value = next()) != null) list.add(value);
 
@@ -292,7 +290,7 @@ public class EntityListIteratorImpl implements EntityListIterator {
         // TODO: somehow handle txcList after DB list? same issue as absolute() and relative() methods
         if (txcListSize > 0) throw new EntityException("Cannot get partial list when transaction cache is in place and there are augmenting creates; disable the tx cache before this operation");
         try {
-            EntityList list = new EntityListImpl(this.efi);
+            EntityList list = null;
             if (limit == 0) return list;
 
             // list is 1 based
@@ -354,7 +352,6 @@ public class EntityListIteratorImpl implements EntityListIterator {
     public void remove() {
         // TODO: call EECAs
         try {
-            efi.getEntityCache().clearCacheForValue((EntityValueBase) currentEntityValue(), false);
             rs.deleteRow();
         } catch (SQLException e) {
             throw new EntityException("Error removing row", e);

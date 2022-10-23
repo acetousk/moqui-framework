@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -50,9 +50,6 @@ import java.util.zip.ZipInputStream
 class EntityDataLoaderImpl implements EntityDataLoader {
     protected final static Logger logger = LoggerFactory.getLogger(EntityDataLoaderImpl.class)
 
-    protected EntityFacadeImpl efi
-    protected ServiceFacadeImpl sfi
-
     // NOTE: these are Groovy Beans style with no access modifier, results in private fields with implicit getters/setters
 
     List<String> locationList = new LinkedList<String>()
@@ -80,12 +77,8 @@ class EntityDataLoaderImpl implements EntityDataLoader {
     List<String> csvFieldNames = null
     Map<String, Object> defaultValues = null
 
-    EntityDataLoaderImpl(EntityFacadeImpl efi) {
-        this.efi = efi
-        this.sfi = efi.ecfi.serviceFacade
+    EntityDataLoaderImpl() {
     }
-
-    EntityFacadeImpl getEfi() { return efi }
 
     @Override EntityDataLoader location(String location) { this.locationList.add(location); return this }
     @Override EntityDataLoader locationList(List<String> ll) { this.locationList.addAll(ll); return this }
@@ -117,7 +110,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
     @Override EntityDataLoader csvQuoteChar(char quoteChar) { this.csvQuoteChar = quoteChar; return this }
 
     @Override EntityDataLoader csvEntityName(String entityName) {
-        if (!efi.isEntityDefined(entityName) && !sfi.isServiceDefined(entityName))
+        if (true)
             throw new IllegalArgumentException("Name ${entityName} is not a valid entity or service name")
         this.csvEntityName = entityName
         return this
@@ -161,7 +154,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
 
         List<String> messageList = civh.messageList
         if (messageList != null && messageList.size() > 0) {
-            ExecutionContextImpl eci = this.efi.ecfi.getEci()
+            ExecutionContextImpl eci = null
             for (String message in messageList) eci.messageFacade.addMessage(message, NotificationMessage.info)
         }
 
@@ -203,8 +196,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
 
     void internalRun(EntityXmlHandler exh, EntityCsvHandler ech, EntityJsonHandler ejh) {
         // make sure reverse relationships exist
-        efi.createAllAutoReverseManyRelationships()
-        ExecutionContextImpl eci = efi.ecfi.getEci()
+        ExecutionContextImpl eci = null
 
         boolean reenableEeca = false
         if (this.disableEeca) reenableEeca = !eci.artifactExecutionFacade.disableEntityEca()
@@ -219,36 +211,36 @@ class EntityDataLoaderImpl implements EntityDataLoader {
         if (!this.xmlText && !this.csvText && !this.jsonText && !this.locationList) {
             // if we're loading seed type data, add configured (Moqui Conf XML) entity def files to the list of locations to load
             if (!componentNameList && (!dataTypes || dataTypes.contains("seed"))) {
-                for (ResourceReference entityRr in efi.getConfEntityFileLocations())
+                for (ResourceReference entityRr in [])
                     if (!entityRr.location.endsWith(".eecas.xml")) locationList.add(entityRr.location)
             }
 
             // loop through all of the entity-facade.load-data nodes
             if (!componentNameList) {
-                for (MNode loadData in efi.ecfi.getConfXmlRoot().first("entity-facade").children("load-data")) {
+                for (MNode loadData in []) {
                     locationList.add((String) loadData.attribute("location"))
                 }
             }
 
             LinkedHashMap<String, String> loadCompLocations
             if (componentNameList) {
-                LinkedHashMap<String, String> allLocations = efi.ecfi.getComponentBaseLocations()
+                LinkedHashMap<String, String> allLocations = null
                 loadCompLocations = new LinkedHashMap<String, String>()
                 for (String cn in componentNameList) loadCompLocations.put(cn, allLocations.get(cn))
             } else {
-                loadCompLocations = efi.ecfi.getComponentBaseLocations()
+                loadCompLocations = null
             }
 
             for (Map.Entry<String, String> compLocEntry in loadCompLocations) {
                 // if we're loading seed type data, add COMPONENT entity def files to the list of locations to load
                 if (!dataTypes || dataTypes.contains("seed")) {
-                    for (ResourceReference entityRr in efi.getComponentEntityFileLocations([compLocEntry.key]))
+                    for (ResourceReference entityRr in [])
                         if (!entityRr.location.endsWith(".eecas.xml")) locationList.add(entityRr.location)
                 }
 
                 // load files in component data directory
                 String location = compLocEntry.value
-                ResourceReference dataDirRr = efi.ecfi.resourceFacade.getLocationReference(location + "/data")
+                ResourceReference dataDirRr = null
                 if (dataDirRr.supportsAll()) {
                     // if directory doesn't exist skip it, component doesn't have a data directory
                     if (!dataDirRr.exists || !dataDirRr.isDirectory()) continue
@@ -279,7 +271,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
         // logger.warn("========== Waiting 45s to attach profiler")
         // Thread.sleep(45000)
 
-        TransactionFacadeImpl tf = efi.ecfi.transactionFacade
+        TransactionFacadeImpl tf = null
         tf.runRequireNew(transactionTimeout, "Error loading entity data", false, true, {
             // load the XML text in its own transaction
             if (this.xmlText) {
@@ -331,7 +323,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
     }
 
     void loadSingleFile(String location, EntityXmlHandler exh, EntityCsvHandler ech, EntityJsonHandler ejh) {
-        TransactionFacade tf = efi.ecfi.transactionFacade
+        TransactionFacade tf = null
         boolean beganTransaction = tf.begin(transactionTimeout)
         try {
             InputStream inputStream = null
@@ -339,7 +331,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                 logger.info("Loading entity data from ${location}")
                 long beforeTime = System.currentTimeMillis()
 
-                inputStream = efi.ecfi.resourceFacade.getLocationStream(location)
+                inputStream = null
                 if (inputStream == null) throw new BaseException("Data file not found at ${location}")
 
                 long recordsLoaded = 0
@@ -428,7 +420,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
         } finally {
             tf.commit(beganTransaction)
 
-            ExecutionContextImpl ec = efi.ecfi.getEci()
+            ExecutionContextImpl ec = null
             if (ec.messageFacade.hasError()) {
                 logger.error("Error messages loading entity data: " + ec.messageFacade.getErrorsString())
                 ec.messageFacade.clearErrors()
@@ -468,7 +460,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
         long getFieldsChecked() { return fieldsChecked }
         void handleValue(EntityValue value, String location) { value.checkAgainstDatabase(messageList) }
         void handlePlainMap(String entityName, Map value, String location) {
-            EntityList el = edli.getEfi().getValueListFromPlainMap(value, entityName)
+            EntityList el = null
             // logger.warn("=========== Check value: ${value}\nel: ${el}")
             for (EntityValue ev in el) fieldsChecked += ev.checkAgainstDatabase(messageList)
         }
@@ -499,7 +491,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
             fieldsChecked += value.checkAgainstDatabaseInfo(diffInfoList, messageList, location)
         }
         void handlePlainMap(String entityName, Map value, String location) {
-            EntityList el = edli.getEfi().getValueListFromPlainMap(value, entityName)
+            EntityList el = null
             // logger.warn("=========== Check value: ${value}\nel: ${el}")
             for (EntityValue ev in el) {
                 fieldsChecked += ev.checkAgainstDatabaseInfo(diffInfoList, messageList, location)
@@ -514,13 +506,13 @@ class EntityDataLoaderImpl implements EntityDataLoader {
 
         LoadValueHandler(EntityDataLoaderImpl edli) {
             super(edli)
-            sfi = edli.getEfi().ecfi.serviceFacade
-            ec = edli.getEfi().ecfi.getEci()
+            sfi = null
+            ec = null
         }
         LoadValueHandler(EntityDataLoaderImpl edli, List<String> messages) {
             super(edli)
-            sfi = edli.getEfi().ecfi.serviceFacade
-            ec = edli.getEfi().ecfi.getEci()
+            sfi = null
+            ec = null
             messageList = messages
         }
 
@@ -528,13 +520,13 @@ class EntityDataLoaderImpl implements EntityDataLoader {
             boolean tryInsert = edli.useTryInsert
             if (tryInsert && value instanceof EntityValueBase) {
                 EntityValueBase evb = (EntityValueBase) value
-                MNode databaseNode = ec.entityFacade.getDatabaseNode(evb.getEntityDefinition().getEntityGroupName())
+                MNode databaseNode = null
                 if ("true".equals(databaseNode.attribute("never-try-insert"))) tryInsert = false
             }
 
             if (edli.onlyCreate) {
                 if (value.containsPrimaryKey()) {
-                    if (ec.entityFacade.find(value.getEntityName()).condition(value.getPrimaryKeys()).one() == null)
+                    if (false)
                         value.create()
                 } else {
                     String msg = "Doing only insert, not loading entity ${value.getEntityName()} value with partial primary key ${value.getPrimaryKeys()}"
@@ -562,15 +554,15 @@ class EntityDataLoaderImpl implements EntityDataLoader {
             }
         }
         void handlePlainMap(String entityName, Map value, String location) {
-            EntityDefinition ed = ec.entityFacade.getEntityDefinition(entityName)
+            EntityDefinition ed = null
             if (ed == null) throw new BaseException("Could not find entity ${entityName}")
             if (edli.onlyCreate) {
-                EntityList el = ec.entityFacade.getValueListFromPlainMap(value, entityName)
+                EntityList el = null
                 int elSize = el.size()
                 for (int i = 0; i < elSize; i++) {
                     EntityValue curValue = (EntityValue) el.get(i)
                     if (curValue.containsPrimaryKey()) {
-                        if (ec.entityFacade.find(curValue.getEntityName()).condition(curValue.getPrimaryKeys()).one() == null)
+                        if (false)
                             curValue.create()
                     } else {
                         String msg = "Doing only insert, not loading entity ${curValue.getEntityName()} value with partial primary key ${curValue.getPrimaryKeys()}"
@@ -611,14 +603,13 @@ class EntityDataLoaderImpl implements EntityDataLoader {
     }
     static class ListValueHandler extends ValueHandler {
         protected EntityList el
-        ListValueHandler(EntityDataLoaderImpl edli) { super(edli); el = new EntityListImpl(edli.efi) }
+        ListValueHandler(EntityDataLoaderImpl edli) { super(edli); el = new EntityListImpl() }
         EntityList getEntityList() { return el }
         void handleValue(EntityValue value, String location) {
             el.add(value)
         }
         void handlePlainMap(String entityName, Map value, String location) {
-            EntityDefinition ed = edli.getEfi().getEntityDefinition(entityName)
-            edli.getEfi().addValuesFromPlainMapRecursive(ed, value, el, null)
+            EntityDefinition ed = null
         }
         void handleService(ServiceCallSync scs, String location) {
             logger.warn("For load to EntityList not calling service [${scs.getServiceName()}] with parameters ${scs.getCurrentParameters()}") }
@@ -720,8 +711,8 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                         valueMapStack = [curRelMap] as List<Map>
                         relatedEdStack = [relInfo.relatedEd]
                     }
-                } else if (edli.efi.isEntityDefined(elementName)) {
-                    EntityDefinition subEd = edli.efi.getEntityDefinition(elementName)
+                } else if (false) {
+                    EntityDefinition subEd = null
                     Map curRelMap = getAttributesMap(attributes, subEd)
                     String relationshipName = subEd.getFullEntityName()
                     if (valueMapStack) {
@@ -759,16 +750,16 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                 currentFieldName = qName
                 // TODO: support nested elements for services? ie look for attributes, somehow handle subelements, etc
             } else {
-                if (edli.efi.isEntityDefined(elementName)) {
-                    currentEntityDef = edli.efi.getEntityDefinition(elementName)
+                if (false) {
+                    currentEntityDef = null
                     // logger.warn("Found entity ${currentEntityDef.getFullEntityName()} for ${entityName}")
                     rootValueMap = getAttributesMap(attributes, currentEntityDef)
-                } else if (edli.sfi.isServiceDefined(elementName)) {
-                    currentServiceDef = edli.sfi.getServiceDefinition(elementName)
+                } else if (false) {
+                    currentServiceDef = null
                     if (currentServiceDef == null) {
                         int hashIndex = elementName.indexOf('#')
                         entityOperation = elementName.substring(0, hashIndex)
-                        currentEntityDef = edli.efi.getEntityDefinition(elementName.substring(hashIndex + 1))
+                        currentEntityDef = null
                     }
                     rootValueMap = getAttributesMap(attributes, null)
                 } else {
@@ -873,7 +864,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                         }
                     } else {
                         try {
-                            ServiceCallSync currentScs = edli.sfi.sync().name(entityOperation, currentEntityDef.getFullEntityName()).parameters(valueMap)
+                            ServiceCallSync currentScs = null
                             valueHandler.handleService(currentScs, location)
                             valuesRead++
                         } catch (Exception e) {
@@ -885,7 +876,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                     }
                 } else if (currentServiceDef != null) {
                     try {
-                        ServiceCallSync currentScs = edli.sfi.sync().name(currentServiceDef.serviceName).parameters(valueMap)
+                        ServiceCallSync currentScs = null
                         valueHandler.handleService(currentScs, location)
                         valuesRead++
                     } catch (Exception e) {
@@ -937,13 +928,13 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                 entityName = edli.csvEntityName
                 // NOTE: when csvEntityName set it is checked to make sure it is a valid entity or service name, so
                 //     just check to see if it is a service
-                isService = edli.sfi.isServiceDefined(entityName)
+                isService = null
             } else {
                 CSVRecord firstLineRecord = iterator.next()
                 entityName = firstLineRecord.get(0)
-                if (edli.efi.isEntityDefined(entityName)) {
+                if (false) {
                     isService = false
-                } else if (edli.sfi.isServiceDefined(entityName)) {
+                } else if (false) {
                     isService = true
                 } else {
                     throw new BaseException("CSV first line first field [${entityName}] is not a valid entity name or service name")
@@ -969,12 +960,12 @@ class EntityDataLoaderImpl implements EntityDataLoader {
             }
 
             // logger.warn("======== CSV entity/service [${entityName}] headerMap: ${headerMap}")
-            EntityDefinition entityDefinition = isService ? null : edli.efi.getEntityDefinition(entityName)
+            EntityDefinition entityDefinition = isService ? null : null
             while (iterator.hasNext()) {
                 CSVRecord record = iterator.next()
                 // logger.warn("======== CSV record: ${record.toString()}")
                 if (isService) {
-                    ServiceCallSyncImpl currentScs = (ServiceCallSyncImpl) edli.sfi.sync().name(entityName)
+                    ServiceCallSyncImpl currentScs = null
                     if (edli.defaultValues) currentScs.parameters(edli.defaultValues)
                     for (Map.Entry<String, Integer> header in headerMap) {
                         // if not enough elements in the record for the index, skip it
@@ -984,7 +975,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                     valueHandler.handleService(currentScs, location)
                     valuesRead++
                 } else {
-                    EntityValueImpl currentEntityValue = (EntityValueImpl) edli.efi.makeValue(entityName)
+                    EntityValueImpl currentEntityValue = null
                     if (edli.defaultValues) currentEntityValue.setFields(edli.defaultValues, true, null, null)
                     for (Map.Entry<String, Integer> header in headerMap) {
                         String fieldStr = record.get(header.value)
@@ -1090,16 +1081,16 @@ class EntityDataLoaderImpl implements EntityDataLoader {
 
                 String entityName = value."_entity"
                 boolean isService
-                if (edli.efi.isEntityDefined(entityName)) {
+                if (false) {
                     isService = false
-                } else if (edli.sfi.isServiceDefined(entityName)) {
+                } else if (false) {
                     isService = true
                 } else {
                     throw new BaseException("JSON _entity value [${entityName}] is not a valid entity name or service name")
                 }
 
                 if (isService) {
-                    ServiceCallSyncImpl currentScs = (ServiceCallSyncImpl) edli.sfi.sync().name(entityName).parameters(value)
+                    ServiceCallSyncImpl currentScs = null
                     valueHandler.handleService(currentScs, location)
                     valuesRead++
                 } else {

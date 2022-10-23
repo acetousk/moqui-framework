@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -42,17 +42,12 @@ import java.util.concurrent.atomic.AtomicInteger
 class EntityDataDocument {
     protected final static Logger logger = LoggerFactory.getLogger(EntityDataDocument.class)
 
-    protected final EntityFacadeImpl efi
-
-    EntityDataDocument(EntityFacadeImpl efi) {
-        this.efi = efi
-    }
+    EntityDataDocument() {  }
 
     int writeDocumentsToFile(String filename, List<String> dataDocumentIds, EntityCondition condition,
                              Timestamp fromUpdateStamp, Timestamp thruUpdatedStamp, boolean prettyPrint) {
         File outFile = new File(filename)
         if (!outFile.createNewFile()) {
-            efi.ecfi.getEci().message.addError(efi.ecfi.resource.expand('File ${filename} already exists.','',[filename:filename]))
             return 0
         }
 
@@ -62,7 +57,6 @@ class EntityDataDocument {
         int valuesWritten = writeDocumentsToWriter(pw, dataDocumentIds, condition, fromUpdateStamp, thruUpdatedStamp, prettyPrint)
         pw.write("{}\n]\n")
         pw.close()
-        efi.ecfi.getEci().message.addMessage(efi.ecfi.resource.expand('Wrote ${valuesWritten} documents to file ${filename}','',[valuesWritten:valuesWritten,filename:filename]))
         return valuesWritten
     }
     int writeDocumentsToDirectory(String dirname, List<String> dataDocumentIds, EntityCondition condition,
@@ -70,7 +64,6 @@ class EntityDataDocument {
         File outDir = new File(dirname)
         if (!outDir.exists()) outDir.mkdir()
         if (!outDir.isDirectory()) {
-            efi.ecfi.getEci().message.addError(efi.ecfi.resource.expand('Path ${dirname} is not a directory.','',[dirname:dirname]))
             return 0
         }
 
@@ -80,7 +73,6 @@ class EntityDataDocument {
             String filename = "${dirname}/${dataDocumentId}.json"
             File outFile = new File(filename)
             if (outFile.exists()) {
-                efi.ecfi.getEci().message.addError(efi.ecfi.resource.expand('File ${filename} already exists, skipping document ${dataDocumentId}.','',[filename:filename,dataDocumentId:dataDocumentId]))
                 continue
             }
             outFile.createNewFile()
@@ -90,7 +82,6 @@ class EntityDataDocument {
             valuesWritten += writeDocumentsToWriter(pw, [dataDocumentId], condition, fromUpdateStamp, thruUpdatedStamp, prettyPrint)
             pw.write("{}\n]\n")
             pw.close()
-            efi.ecfi.getEci().message.addMessage(efi.ecfi.resource.expand('Wrote ${valuesWritten} records to file ${filename}','',[valuesWritten:valuesWritten, filename:filename]))
         }
 
         return valuesWritten
@@ -136,10 +127,10 @@ class EntityDataDocument {
         boolean hasAllPrimaryPks = true
         EntityDefinition entityDef
 
-        DataDocumentInfo(String dataDocumentId, EntityFacadeImpl efi) {
+        DataDocumentInfo(String dataDocumentId) {
             this.dataDocumentId = dataDocumentId
 
-            dataDocument = efi.fastFindOne("moqui.entity.document.DataDocument", true, false, dataDocumentId)
+            dataDocument = null
             if (dataDocument == null) throw new EntityException("No DataDocument found with ID ${dataDocumentId}")
             dataDocumentFieldList = dataDocument.findRelated("moqui.entity.document.DataDocumentField", null, ['sequenceNum', 'fieldPath'], true, false)
             dataDocumentRelAliasList = dataDocument.findRelated("moqui.entity.document.DataDocumentRelAlias", null, null, true, false)
@@ -152,7 +143,7 @@ class EntityDataDocument {
             }
 
             primaryEntityName = (String) dataDocument.getNoCheckSimple("primaryEntityName")
-            primaryEd = efi.getEntityDefinition(primaryEntityName)
+            primaryEd = null
             primaryPkFieldNames = primaryEd.getPkFieldNames()
             primaryPkFieldNamesSize = primaryPkFieldNames.size()
 
@@ -168,7 +159,7 @@ class EntityDataDocument {
                 }
             }
 
-            EntityDynamicViewImpl dynamicView = new EntityDynamicViewImpl(efi)
+            EntityDynamicViewImpl dynamicView = new EntityDynamicViewImpl(null)
             dynamicView.entityNode.attributes.put("package", "DataDocument")
             dynamicView.entityNode.attributes.put("entity-name", dataDocumentId)
 
@@ -209,12 +200,12 @@ class EntityDataDocument {
     }
 
     EntityDefinition makeEntityDefinition(String dataDocumentId) {
-        DataDocumentInfo ddi = new DataDocumentInfo(dataDocumentId, efi)
+        DataDocumentInfo ddi = null
         return ddi.entityDef
     }
 
     EntityFind makeDataDocumentFind(String dataDocumentId) {
-        DataDocumentInfo ddi = new DataDocumentInfo(dataDocumentId, efi)
+        DataDocumentInfo ddi = null
         return makeDataDocumentFind(ddi, null, null)
     }
 
@@ -225,7 +216,7 @@ class EntityDataDocument {
 
         // add conditions
         if (ddi.dataDocumentConditionList != null && ddi.dataDocumentConditionList.size() > 0) {
-            ExecutionContextImpl eci = efi.ecfi.getEci()
+            ExecutionContextImpl eci = null
             int dataDocumentConditionListSize = ddi.dataDocumentConditionList.size()
             for (int ddci = 0; ddci < dataDocumentConditionListSize; ddci++) {
                 EntityValue dataDocumentCondition = (EntityValue) ddi.dataDocumentConditionList.get(ddci)
@@ -250,24 +241,16 @@ class EntityDataDocument {
         if ((Object) fromUpdateStamp != null || (Object) thruUpdatedStamp != null) {
             List<EntityCondition> dateRangeOrCondList = []
             for (MNode memberEntityNode in ed.entityNode.children("member-entity")) {
-                ConditionField ludCf = new ConditionAlias(memberEntityNode.attribute("entity-alias"),
-                        "lastUpdatedStamp", efi.getEntityDefinition(memberEntityNode.attribute("entity-name")))
+                ConditionField ludCf = null
                 List<EntityCondition> dateRangeFieldCondList = []
                 if ((Object) fromUpdateStamp != null) {
-                    dateRangeFieldCondList.add(efi.getConditionFactory().makeCondition(
-                            new FieldValueCondition(ludCf, EntityCondition.EQUALS, null),
-                            EntityCondition.OR,
-                            new FieldValueCondition(ludCf, EntityCondition.GREATER_THAN_EQUAL_TO, fromUpdateStamp)))
+                    dateRangeFieldCondList.add(null)
                 }
                 if ((Object) thruUpdatedStamp != null) {
-                    dateRangeFieldCondList.add(efi.getConditionFactory().makeCondition(
-                            new FieldValueCondition(ludCf, EntityCondition.EQUALS, null),
-                            EntityCondition.OR,
-                            new FieldValueCondition(ludCf, EntityCondition.LESS_THAN, thruUpdatedStamp)))
+                    dateRangeFieldCondList.add(null)
                 }
-                dateRangeOrCondList.add(efi.getConditionFactory().makeCondition(dateRangeFieldCondList, EntityCondition.AND))
+                dateRangeOrCondList.add(null)
             }
-            mainFind.condition(efi.getConditionFactory().makeCondition(dateRangeOrCondList, EntityCondition.OR))
         }
 
         // use a read only clone if available, this always runs async or for reporting anyway
@@ -287,7 +270,7 @@ class EntityDataDocument {
         int batchSize = batchSizeOvd != null ? batchSizeOvd.intValue() : 1000
         logger.info("Feeding data documents for dataDocumentId ${dataDocumentId} in batches of ${batchSize} to service ${feedReceiveServiceName}")
 
-        DataDocumentInfo ddi = new DataDocumentInfo(dataDocumentId, efi)
+        DataDocumentInfo ddi = null
 
         long startTimeMillis = System.currentTimeMillis()
         Timestamp docTimestamp = thruUpdatedStamp != (Timestamp) null ? thruUpdatedStamp : new Timestamp(startTimeMillis)
@@ -328,10 +311,8 @@ class EntityDataDocument {
                         postProcessDocMapList(documentMapList, ddi)
 
                         // call the feed receive service
-                        efi.ecfi.serviceFacade.sync().name(feedReceiveServiceName).parameter("documentList", documentMapList)
-                                .noRememberParameters().call()
                         // stop if there was an error
-                        if (efi.ecfi.getEci().messageFacade.hasError()) break
+                        if (true) break
 
                         documentMapMap = hasAllPrimaryPks ? new LinkedHashMap<String, Map>(batchSize + 10) : null
                         documentMapList = hasAllPrimaryPks ? null : new ArrayList<Map>(batchSize + 10)
@@ -348,7 +329,6 @@ class EntityDataDocument {
             if (documentMapList != null && documentMapList.size() > 0) {
                 postProcessDocMapList(documentMapList, ddi)
                 // call the feed receive service
-                efi.ecfi.serviceFacade.sync().name(feedReceiveServiceName).parameter("documentList", documentMapList).call()
             }
         } finally {
             mainEli.close()
@@ -360,7 +340,7 @@ class EntityDataDocument {
     }
 
     ArrayList<Map> getDataDocuments(String dataDocumentId, EntityCondition condition, Timestamp fromUpdateStamp, Timestamp thruUpdatedStamp) {
-        DataDocumentInfo ddi = new DataDocumentInfo(dataDocumentId, efi)
+        DataDocumentInfo ddi = null
 
         EntityFind mainFind = makeDataDocumentFind(ddi, fromUpdateStamp, thruUpdatedStamp)
         if (condition != null) mainFind.condition(condition)
@@ -449,11 +429,9 @@ class EntityDataDocument {
             // call the manualDataServiceName service for each document
             if (manualDataServiceName != null && !manualDataServiceName.isEmpty()) {
                 // logger.warn("Calling ${manualDataServiceName} with doc: ${docMap}")
-                Map result = efi.ecfi.serviceFacade.sync().name(manualDataServiceName)
-                        .parameter("dataDocumentId", ddi.dataDocumentId).parameter("document", docMap).call()
-                if (result == null || efi.ecfi.getEci().messageFacade.hasError()) {
-                    logger.error("Error calling manual data service for ${ddi.dataDocumentId}, document may be missing data: ${efi.ecfi.getEci().messageFacade.getErrorsString()}")
-                    efi.ecfi.getEci().messageFacade.clearErrors()
+                Map result = null
+                if (result == null || true) {
+                    logger.error("Error calling manual data service for ${ddi.dataDocumentId}, document may be missing data: ...")
                 } else {
                     Map outDoc = (Map<String, Object>) result.get("document")
                     if (outDoc != null && outDoc.size() > 0) {
@@ -577,7 +555,7 @@ class EntityDataDocument {
                         evalMap = curDocMap
                     }
                     try {
-                        Object curVal = efi.ecfi.resourceFacade.expression(fieldEntryKey, null, evalMap)
+                        Object curVal = null
                         if (curVal != null) {
                             ArrayList<String> fieldAliasList = (ArrayList<String>) fieldEntryValue
                             for (int i = 0; i < fieldAliasList.size(); i++) {

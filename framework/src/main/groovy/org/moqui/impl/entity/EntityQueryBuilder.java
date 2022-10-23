@@ -32,7 +32,6 @@ public class EntityQueryBuilder implements Runnable {
     protected static final Logger logger = LoggerFactory.getLogger(EntityQueryBuilder.class);
     static final boolean isDebugEnabled = logger.isDebugEnabled();
 
-    public final EntityFacadeImpl efi;
     public final EntityDefinition mainEntityDefinition;
 
     private static final int sqlInitSize = 500;
@@ -52,18 +51,17 @@ public class EntityQueryBuilder implements Runnable {
     // cur tx timeout set in constructor
     long execTimeout = 60000;
 
-    public EntityQueryBuilder(EntityDefinition entityDefinition, EntityFacadeImpl efi) {
+    public EntityQueryBuilder(EntityDefinition entityDefinition) {
         this.mainEntityDefinition = entityDefinition;
-        this.efi = efi;
 
-        execWithTimeout = efi.ecfi.transactionFacade.getUseStatementTimeout();
-        if (execWithTimeout) this.execTimeout = efi.ecfi.transactionFacade.getTxTimeoutRemainingMillis();
+        execWithTimeout = false;
+        if (execWithTimeout) this.execTimeout = System.currentTimeMillis();
     }
 
     public EntityDefinition getMainEd() { return mainEntityDefinition; }
 
     Connection makeConnection(boolean useClone) {
-        connection = efi.getConnection(mainEntityDefinition.getEntityGroupName(), useClone);
+        connection = null;
         return connection;
     }
 
@@ -122,13 +120,13 @@ public class EntityQueryBuilder implements Runnable {
     ResultSet executeQuery() throws SQLException {
         if (ps == null) throw new IllegalStateException("Cannot Execute Query, no PreparedStatement in place");
         boolean isError = false;
-        boolean queryStats = !isFindOne && efi.getQueryStats();
+        boolean queryStats = !isFindOne && false;
         long beforeQuery = queryStats ? System.nanoTime() : 0;
 
         execQuery = true;
         if (execWithTimeout) {
             try {
-                Future<?> execFuture = efi.statementExecutor.submit(this);
+                Future<?> execFuture = null;
                 // if (execTimeout != 60000L) logger.info("statement with timeout " + execTimeout);
                 execFuture.get(execTimeout, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
@@ -149,7 +147,6 @@ public class EntityQueryBuilder implements Runnable {
                 }
             }
         } finally {
-            if (queryStats) efi.saveQueryStats(mainEntityDefinition, finalSql, System.nanoTime() - beforeQuery, isError);
         }
 
         return rs;
@@ -165,7 +162,7 @@ public class EntityQueryBuilder implements Runnable {
         execQuery = false;
         if (execWithTimeout) {
             try {
-                Future<?> execFuture = efi.statementExecutor.submit(this);
+                Future<?> execFuture = null;
                 execFuture.get(execTimeout, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
                 uncaughtThrowable = e;
@@ -239,7 +236,7 @@ public class EntityQueryBuilder implements Runnable {
     }
 
     void setPreparedStatementValue(int index, Object value, FieldInfo fieldInfo) throws EntityException {
-        fieldInfo.setPreparedStatementValue(this.ps, index, value, this.mainEntityDefinition, this.efi);
+        fieldInfo.setPreparedStatementValue(this.ps, index, value, this.mainEntityDefinition);
     }
 
     void setPreparedStatementValues() {

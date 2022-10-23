@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -70,8 +70,7 @@ public class L10nFacadeImpl implements L10nFacade {
         String defaultValue = original;
         int localeUnderscoreIndex = localeString.indexOf('_');
 
-        EntityFind find = eci.getEntity().find("moqui.basic.LocalizedMessage")
-                .condition("original", original).condition("locale", localeString).useCache(true);
+        EntityFind find = null;
         EntityValue localizedMessage = find.one();
         if (localizedMessage == null && localeUnderscoreIndex > 0)
             localizedMessage = find.condition("locale", localeString.substring(0, localeUnderscoreIndex)).one();
@@ -84,8 +83,7 @@ public class L10nFacadeImpl implements L10nFacade {
             int indexOfHash = original.lastIndexOf("##");
             if (indexOfHash > 0 && indexOfHash > indexOfCloseCurly) {
                 defaultValue = original.substring(0, indexOfHash);
-                EntityFind findHash = eci.getEntity().find("moqui.basic.LocalizedMessage")
-                        .condition("original", defaultValue).condition("locale", localeString).useCache(true);
+                EntityFind findHash = null;
                 localizedMessage = findHash.one();
                 if (localizedMessage == null && localeUnderscoreIndex > 0)
                     localizedMessage = findHash.condition("locale", localeString.substring(0, localeUnderscoreIndex)).one();

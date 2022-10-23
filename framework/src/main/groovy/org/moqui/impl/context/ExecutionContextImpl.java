@@ -15,11 +15,9 @@ package org.moqui.impl.context;
 
 import groovy.lang.Closure;
 import org.moqui.context.*;
-import org.moqui.entity.EntityFacade;
 import org.moqui.entity.EntityFind;
 import org.moqui.entity.EntityList;
 import org.moqui.entity.EntityValue;
-import org.moqui.impl.entity.EntityFacadeImpl;
 import org.moqui.impl.screen.ScreenFacadeImpl;
 import org.moqui.impl.service.ServiceFacadeImpl;
 import org.moqui.screen.ScreenFacade;
@@ -44,8 +42,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     public final ExecutionContextFactoryImpl ecfi;
     public final ContextStack contextStack = new ContextStack();
     public final ContextBinding contextBindingInternal = new ContextBinding(contextStack);
-
-    private EntityFacadeImpl activeEntityFacade;
 
     private WebFacade webFacade = (WebFacade) null;
     private WebFacadeImpl webFacadeImpl = (WebFacadeImpl) null;
@@ -80,7 +76,6 @@ public class ExecutionContextImpl implements ExecutionContext {
         forThreadId = forThread.getId();
         // createLoc = new BaseException("ec create");
 
-        activeEntityFacade = ecfi.entityFacade;
         userFacade = new UserFacadeImpl(this);
         messageFacade = new MessageFacadeImpl();
         artifactExecutionFacade = new ArtifactExecutionFacadeImpl(this);
@@ -136,9 +131,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     @Override public @Nonnull CacheFacade getCache() { return cacheFacade; }
     @Override public @Nonnull TransactionFacade getTransaction() { return transactionFacade; }
 
-    @Override public @Nonnull EntityFacade getEntity() { return activeEntityFacade; }
-    public @Nonnull EntityFacadeImpl getEntityFacade() { return activeEntityFacade; }
-
     @Override public @Nonnull ElasticFacade getElastic() { return ecfi.elasticFacade; }
     @Override public @Nonnull ServiceFacade getService() { return serviceFacade; }
     @Override public @Nonnull ScreenFacade getScreen() { return screenFacade; }
@@ -153,7 +145,7 @@ public class ExecutionContextImpl implements ExecutionContext {
         List<NotificationMessage> nmList = new ArrayList<>();
         boolean alreadyDisabled = artifactExecutionFacade.disableAuthz();
         try {
-            EntityFind nmbuFind = activeEntityFacade.find("moqui.security.user.NotificationMessageByUser").condition("userId", userId);
+            EntityFind nmbuFind = null;
             if (topic != null && !topic.isEmpty()) nmbuFind.condition("topic", topic);
             EntityList nmbuList = nmbuFind.list();
             for (EntityValue nmbu : nmbuList) {
