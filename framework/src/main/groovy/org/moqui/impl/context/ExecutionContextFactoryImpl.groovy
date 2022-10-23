@@ -28,7 +28,6 @@ import org.codehaus.groovy.tools.GroovyClass
 import org.moqui.BaseException
 import org.moqui.Moqui
 import org.moqui.context.*
-
 import org.moqui.entity.EntityDataLoader
 import org.moqui.entity.EntityFacade
 import org.moqui.entity.EntityList
@@ -121,7 +120,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
 
     // ======== Permanent Delegated Facades ========
     @SuppressWarnings("GrFinalVariableAccess") public final LoggerFacadeImpl loggerFacade
-    @SuppressWarnings("GrFinalVariableAccess") public final ResourceFacadeImpl resourceFacade
     @SuppressWarnings("GrFinalVariableAccess") public final TransactionFacadeImpl transactionFacade
     @SuppressWarnings("GrFinalVariableAccess") public final EntityFacadeImpl entityFacade
     @SuppressWarnings("GrFinalVariableAccess") public final ServiceFacadeImpl serviceFacade
@@ -201,7 +199,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         // this init order is important as some facades will use others
         loggerFacade = new LoggerFacadeImpl(this)
         // logger.info("Logger Facade initialized")
-        resourceFacade = new ResourceFacadeImpl(this)
         logger.info("Resource Facade initialized")
 
         transactionFacade = new TransactionFacadeImpl(this)
@@ -256,7 +253,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         // this init order is important as some facades will use others
         loggerFacade = new LoggerFacadeImpl(this)
         // logger.info("LoggerFacadeImpl initialized")
-        resourceFacade = new ResourceFacadeImpl(this)
         logger.info("Resource Facade initialized")
 
         transactionFacade = new TransactionFacadeImpl(this)
@@ -917,7 +913,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         return compLocMap
     }
 
-    @Override @Nonnull ResourceFacade getResource() { resourceFacade }
     @Override @Nonnull LoggerFacade getLogger() { loggerFacade }
     @Override @Nonnull TransactionFacade getTransaction() { transactionFacade }
     @Override @Nonnull EntityFacade getEntity() { entityFacade }

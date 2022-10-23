@@ -422,7 +422,7 @@ public class ServiceDefinition {
                     if (parameterInfo.defaultStr != null) {
                         Map<String, Object> combinedMap = new HashMap<>(parameters);
                         combinedMap.putAll(newMap);
-                        parameterValue = eci.resourceFacade.expression(parameterInfo.defaultStr, null, combinedMap);
+                        parameterValue = parameterInfo.defaultStr;
                         if (parameterValue != null) {
                             hasParameter = true;
                             isString = false;
@@ -452,7 +452,7 @@ public class ServiceDefinition {
                         if (parameterInfo.defaultValueNeedsExpand) {
                             Map<String, Object> combinedMap = new HashMap<>(parameters);
                             combinedMap.putAll(newMap);
-                            stringValue = eci.resourceFacade.expand(parameterInfo.defaultValue, null, combinedMap, false);
+                            stringValue = parameterInfo.defaultValue;
                         } else {
                             stringValue = parameterInfo.defaultValue;
                         }

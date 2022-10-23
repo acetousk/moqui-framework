@@ -266,24 +266,13 @@ class ServiceFacadeImpl implements ServiceFacade {
         // search for the service def XML file in the components
         for (String location in this.ecfi.getComponentBaseLocations().values()) {
             // logger.warn("Finding service node for location=[${location}], servicePathLocation=[${servicePathLocation}]")
-            serviceComponentRr = this.ecfi.resourceFacade.getLocationReference(location + "/" + servicePathLocation)
-            if (serviceComponentRr.supportsExists()) {
-                if (serviceComponentRr.exists) {
-                    MNode tempNode = findServiceNode(serviceComponentRr, verb, noun)
-                    if (tempNode != null) {
-                        if (foundRr != null) logger.info("Found service ${verb}#${noun} at ${serviceComponentRr.location} which overrides service at ${foundRr.location}")
-                        serviceNode = tempNode
-                        foundRr = serviceComponentRr
-                    }
-                }
-            } else {
-                // only way to see if it is a valid location is to try opening the stream, so no extra conditions here
-                MNode tempNode = findServiceNode(serviceComponentRr, verb, noun)
-                if (tempNode != null) {
-                    if (foundRr != null) logger.info("Found service ${verb}#${noun} at ${serviceComponentRr.location} which overrides service at ${foundRr.location}")
-                    serviceNode = tempNode
-                    foundRr = serviceComponentRr
-                }
+            serviceComponentRr = null
+            // only way to see if it is a valid location is to try opening the stream, so no extra conditions here
+            MNode tempNode = findServiceNode(serviceComponentRr, verb, noun)
+            if (tempNode != null) {
+                if (foundRr != null) logger.info("Found service ${verb}#${noun} at ... which overrides service at ${foundRr.location}")
+                serviceNode = tempNode
+                foundRr = serviceComponentRr
             }
             // NOTE: don't quit on finding first, allow later components to override earlier: if (serviceNode != null) break
         }
@@ -316,7 +305,7 @@ class ServiceFacadeImpl implements ServiceFacade {
                 return null
             }
 
-            ResourceReference includeRr = ecfi.resourceFacade.getLocationReference(includeLocation)
+            ResourceReference includeRr = null
             // logger.warn("includeLocation: ${includeLocation}\nincludeRr: ${includeRr}")
             return findServiceNode(includeRr, verb, noun)
         }
@@ -330,14 +319,14 @@ class ServiceFacadeImpl implements ServiceFacade {
         // search declared service-file elements in Moqui Conf XML
         for (MNode serviceFile in ecfi.confXmlRoot.first("service-facade").children("service-file")) {
             String location = serviceFile.attribute("location")
-            ResourceReference entryRr = ecfi.resourceFacade.getLocationReference(location)
+            ResourceReference entryRr = null
             findServicesInFile("classpath://service", entryRr, sns)
         }
 
         // search for service def XML files in the components
         for (String location in this.ecfi.getComponentBaseLocations().values()) {
             //String location = "component://${componentName}/service"
-            ResourceReference serviceRr = this.ecfi.resourceFacade.getLocationReference(location + "/service")
+            ResourceReference serviceRr = null
             if (serviceRr.supportsExists() && serviceRr.exists && serviceRr.supportsDirectory()) {
                 findServicesInDir(serviceRr.location, serviceRr, sns)
             }
@@ -410,7 +399,7 @@ class ServiceFacadeImpl implements ServiceFacade {
         LinkedList<ServiceEcaRule> ruleNoIdList = new LinkedList<>()
         // search for the service def XML file in the components
         for (String location in this.ecfi.getComponentBaseLocations().values()) {
-            ResourceReference serviceDirRr = this.ecfi.resourceFacade.getLocationReference(location + "/service")
+            ResourceReference serviceDirRr = null
             if (serviceDirRr.supportsAll()) {
                 // if for some weird reason this isn't a directory, skip it
                 if (!serviceDirRr.isDirectory()) continue
@@ -530,7 +519,7 @@ class ServiceFacadeImpl implements ServiceFacade {
 
         // search for the service def XML file in the components
         for (String location in this.ecfi.getComponentBaseLocations().values()) {
-            ResourceReference serviceDirRr = this.ecfi.resourceFacade.getLocationReference(location + "/service")
+            ResourceReference serviceDirRr = null
             if (serviceDirRr.supportsAll()) {
                 // if for some weird reason this isn't a directory, skip it
                 if (!serviceDirRr.isDirectory()) continue

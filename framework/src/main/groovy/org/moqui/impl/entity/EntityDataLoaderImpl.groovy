@@ -242,7 +242,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
 
                 // load files in component data directory
                 String location = compLocEntry.value
-                ResourceReference dataDirRr = efi.ecfi.resourceFacade.getLocationReference(location + "/data")
+                ResourceReference dataDirRr = null
                 if (dataDirRr.supportsAll()) {
                     // if directory doesn't exist skip it, component doesn't have a data directory
                     if (!dataDirRr.exists || !dataDirRr.isDirectory()) continue
@@ -328,7 +328,7 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                 logger.info("Loading entity data from ${location}")
                 long beforeTime = System.currentTimeMillis()
 
-                inputStream = efi.ecfi.resourceFacade.getLocationStream(location)
+                inputStream = null
                 if (inputStream == null) throw new BaseException("Data file not found at ${location}")
 
                 long recordsLoaded = 0

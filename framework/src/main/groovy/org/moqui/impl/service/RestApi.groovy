@@ -71,7 +71,7 @@ class RestApi {
         long startTime = System.currentTimeMillis()
         // find *.rest.xml files in component/service directories, put in rootResourceMap
         for (String location in this.ecfi.getComponentBaseLocations().values()) {
-            ResourceReference serviceDirRr = this.ecfi.resourceFacade.getLocationReference(location + "/service")
+            ResourceReference serviceDirRr = null
             if (serviceDirRr.supportsAll()) {
                 // if for some weird reason this isn't a directory, skip it
                 if (!serviceDirRr.isDirectory()) continue

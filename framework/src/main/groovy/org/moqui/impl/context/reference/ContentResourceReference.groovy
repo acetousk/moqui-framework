@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -23,7 +23,6 @@ import javax.jcr.Session
 import javax.jcr.Property
 
 import org.moqui.resource.ResourceReference
-import org.moqui.impl.context.ResourceFacadeImpl
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -40,7 +39,7 @@ class ContentResourceReference extends BaseResourceReference {
     protected javax.jcr.Node theNode = null
 
     ContentResourceReference() { }
-    
+
     @Override ResourceReference init(String location, ExecutionContextFactoryImpl ecf) {
         this.ecf = ecf
 
@@ -120,8 +119,7 @@ class ContentResourceReference extends BaseResourceReference {
     @Override boolean supportsExists() { true }
     @Override boolean getExists() {
         if (theNode != null) return true
-        Session session = ((ResourceFacadeImpl) ecf.resource).getContentRepositorySession(repositoryName)
-        return session.nodeExists(nodePath)
+        return false
     }
 
     @Override boolean supportsLastModified() { true }
@@ -151,7 +149,6 @@ class ContentResourceReference extends BaseResourceReference {
             logger.warn("Data was null, not saving to resource [${getLocation()}]")
             return
         }
-        Session session = ((ResourceFacadeImpl) ecf.resource).getContentRepositorySession(repositoryName)
         javax.jcr.Node fileNode = getNode()
         javax.jcr.Node fileContent
         if (fileNode != null) {
@@ -163,7 +160,7 @@ class ContentResourceReference extends BaseResourceReference {
             if (nodePathList && nodePathList[0] == "") nodePathList.remove(0)
             // remove the filename to just get the directory
             if (nodePathList) nodePathList.remove(nodePathList.size()-1)
-            javax.jcr.Node folderNode = findDirectoryNode(session, nodePathList, true)
+            javax.jcr.Node folderNode = null
 
             // now create the node
             fileNode = folderNode.addNode(fileName, "nt:file")
@@ -174,16 +171,14 @@ class ContentResourceReference extends BaseResourceReference {
         Calendar lastModified = Calendar.getInstance(); lastModified.setTimeInMillis(System.currentTimeMillis())
         fileContent.setProperty("jcr:lastModified", lastModified)
         if (obj instanceof CharSequence) {
-            fileContent.setProperty("jcr:data", session.valueFactory.createValue(obj.toString()))
+            fileContent.setProperty("jcr:data", "")
         } else if (obj instanceof InputStream) {
-            fileContent.setProperty("jcr:data", session.valueFactory.createBinary((InputStream) obj))
+            fileContent.setProperty("jcr:data", "")
         } else if (obj == null) {
-            fileContent.setProperty("jcr:data", session.valueFactory.createValue(""))
+            fileContent.setProperty("jcr:data", "")
         } else {
             throw new IllegalArgumentException("Cannot save content for obj with type ${obj.class.name}")
         }
-
-        session.save()
     }
 
     static javax.jcr.Node findDirectoryNode(Session session, List<String> pathList, boolean create) {
@@ -210,27 +205,16 @@ class ContentResourceReference extends BaseResourceReference {
         if (!newLocation.startsWith(locationPrefix))
             throw new IllegalArgumentException("New location [${newLocation}] is not a content location, not moving resource at ${getLocation()}")
 
-        Session session = ((ResourceFacadeImpl) ecf.resource).getContentRepositorySession(repositoryName)
-
-        ResourceReference newRr = ecf.resource.getLocationReference(newLocation)
-        if (!newRr instanceof ContentResourceReference)
-            throw new IllegalArgumentException("New location [${newLocation}] is not a content location, not moving resource at ${getLocation()}")
-        ContentResourceReference newCrr = (ContentResourceReference) newRr
+        Session session = null
 
         // make sure the target folder exists
-        List<String> nodePathList = new ArrayList<>(Arrays.asList(newCrr.getNodePath().split('/')))
-        if (nodePathList && nodePathList[0] == "") nodePathList.remove(0)
-        if (nodePathList) nodePathList.remove(nodePathList.size()-1)
-        findDirectoryNode(session, nodePathList, true)
-
-        session.move(this.getNodePath(), newCrr.getNodePath())
         session.save()
 
         this.theNode = null
     }
 
     @Override ResourceReference makeDirectory(String name) {
-        Session session = ((ResourceFacadeImpl) ecf.resource).getContentRepositorySession(repositoryName)
+        Session session = null
         findDirectoryNode(session, [name], true)
         return new ContentResourceReference().init("${location}/${name}", ecf)
     }
@@ -243,7 +227,7 @@ class ContentResourceReference extends BaseResourceReference {
         javax.jcr.Node curNode = getNode()
         if (curNode == null) return false
 
-        Session session = ((ResourceFacadeImpl) ecf.resource).getContentRepositorySession(repositoryName)
+        Session session = null
         session.removeItem(nodePath)
         session.save()
 
@@ -253,7 +237,7 @@ class ContentResourceReference extends BaseResourceReference {
 
     javax.jcr.Node getNode() {
         if (theNode != null) return theNode
-        Session session = ((ResourceFacadeImpl) ecf.resource).getContentRepositorySession(repositoryName)
+        Session session = null
         return session.nodeExists(nodePath) ? session.getNode(nodePath) : null
     }
 }

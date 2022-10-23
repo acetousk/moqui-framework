@@ -1031,7 +1031,7 @@ class EntityDefinition {
             String fromFieldName = dateFilter.attribute("from-field-name") ?: "fromDate"
             String thruFieldName = dateFilter.attribute("thru-field-name") ?: "thruDate"
 
-            Timestamp validDate = dateFilter.attribute("valid-date") ? efi.ecfi.resourceFacade.expand(dateFilter.attribute("valid-date"), "") as Timestamp : null
+            Timestamp validDate = dateFilter.attribute("valid-date") ? dateFilter.attribute("valid-date") as Timestamp : null
             if (validDate == (Timestamp) null) validDate = null
 
             String entityAliasAttr = dateFilter.attribute("entity-alias")
@@ -1112,7 +1112,7 @@ class EntityDefinition {
                 // NOTE: may need to convert value from String to object for field
                 String condValue = econdition.attribute("value") ?: null
                 // NOTE: only expand if contains "${", expanding normal strings does l10n and messes up key values; hopefully this won't result in a similar issue
-                if (condValue && condValue.contains("\${")) condValue = efi.ecfi.resourceFacade.expand(condValue, "") as String
+                if (condValue && condValue.contains("\${")) condValue = condValue as String
                 Object condValueObj = condEd.convertFieldString(field.fieldName, condValue, eci);
                 cond = new FieldValueCondition(field, EntityConditionFactoryImpl.getComparisonOperator(econdition.attribute("operator")), condValueObj)
             }

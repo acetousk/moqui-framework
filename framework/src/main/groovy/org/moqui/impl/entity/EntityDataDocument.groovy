@@ -570,7 +570,7 @@ class EntityDataDocument {
                         evalMap = curDocMap
                     }
                     try {
-                        Object curVal = efi.ecfi.resourceFacade.expression(fieldEntryKey, null, evalMap)
+                        Object curVal = fieldEntryKey
                         if (curVal != null) {
                             ArrayList<String> fieldAliasList = (ArrayList<String>) fieldEntryValue
                             for (int i = 0; i < fieldAliasList.size(); i++) {

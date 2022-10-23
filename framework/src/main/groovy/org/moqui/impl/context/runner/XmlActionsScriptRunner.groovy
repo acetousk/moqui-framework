@@ -57,7 +57,7 @@ class XmlActionsScriptRunner implements ScriptRunner {
     protected synchronized XmlAction loadXmlAction(String location) {
         XmlAction xa = (XmlAction) scriptXmlActionLocationCache.get(location)
         if (xa == null) {
-            xa = new XmlAction(ecfi, ecfi.resourceFacade.getLocationText(location, false), location)
+            xa = new XmlAction(ecfi, "", location)
             scriptXmlActionLocationCache.put(location, xa)
         }
         return xa
@@ -74,9 +74,9 @@ class XmlActionsScriptRunner implements ScriptRunner {
         Template newTemplate = null
         Reader templateReader = null
         try {
-            templateReader = new InputStreamReader(ecfi.resourceFacade.getLocationStream(templateLocation))
+            templateReader = new InputStreamReader(null)
             newTemplate = new Template(templateLocation, templateReader,
-                    ecfi.resourceFacade.ftlTemplateRenderer.getFtlConfiguration())
+                    null)
         } catch (Exception e) {
             logger.error("Error while initializing XMLActions template at [${templateLocation}]", e)
         } finally {

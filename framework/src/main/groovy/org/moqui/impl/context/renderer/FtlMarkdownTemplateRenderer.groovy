@@ -47,7 +47,7 @@ class FtlMarkdownTemplateRenderer implements TemplateRenderer {
         if (!hasVersion) {
             if (templateFtlLocationCache instanceof MCache) {
                 MCache<String, Template> mCache = (MCache) templateFtlLocationCache
-                ResourceReference rr = ecfi.resourceFacade.getLocationReference(location)
+                ResourceReference rr = null
                 long lastModified = rr != null ? rr.getLastModified() : 0L
                 theTemplate = mCache.get(location, lastModified)
             } else {
@@ -77,13 +77,9 @@ class FtlMarkdownTemplateRenderer implements TemplateRenderer {
             String mdText = pdp.markdownToHtml(ecfi.resourceFacade.getLocationText(location, false))
             */
 
-            com.vladsch.flexmark.util.ast.Node document = MarkdownTemplateRenderer.PARSER.parse(ecfi.resourceFacade.getLocationText(location, false))
-            String mdText = MarkdownTemplateRenderer.RENDERER.render(document)
 
             // logger.warn("======== .md.ftl post-markdown text: ${mdText}")
 
-            Reader templateReader = new StringReader(mdText)
-            newTemplate = new Template(location, templateReader, ecfi.resourceFacade.ftlTemplateRenderer.getFtlConfiguration())
         } catch (Exception e) {
             throw new BaseArtifactException("Error while initializing template at [${location}]", e)
         }

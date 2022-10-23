@@ -50,7 +50,7 @@ class RemoteRestServiceRunner implements ServiceRunner {
             // TODO: consider somehow removing parameters used in location from the parameters Map,
             //     thinking of something like a ContextStack feature to watch for field names (keys) used,
             //     and then remove those from parameters Map
-            location = eci.resourceFacade.expand(location, null, parameters, false)
+            location = location
         }
 
         if (RestClient.GET.is(rc.getMethod())) {

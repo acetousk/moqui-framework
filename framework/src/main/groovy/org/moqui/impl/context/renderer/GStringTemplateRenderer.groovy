@@ -58,7 +58,7 @@ class GStringTemplateRenderer implements TemplateRenderer {
         Template theTemplate;
         if (templateGStringLocationCache instanceof MCache) {
             MCache<String, Template> mCache = (MCache) templateGStringLocationCache;
-            ResourceReference rr = ecfi.resourceFacade.getLocationReference(location);
+            ResourceReference rr = null;
             long lastModified = rr != null ? rr.getLastModified() : 0L;
             theTemplate = mCache.get(location, lastModified);
         } else {
@@ -76,7 +76,7 @@ class GStringTemplateRenderer implements TemplateRenderer {
         Template newTemplate = null
         Reader templateReader = null
         try {
-            templateReader = new InputStreamReader(ecfi.resourceFacade.getLocationStream(location))
+            templateReader = new InputStreamReader(null)
             GStringTemplateEngine gste = new GStringTemplateEngine()
             newTemplate = gste.createTemplate(templateReader)
         } catch (Exception e) {

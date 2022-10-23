@@ -63,7 +63,6 @@ public interface ExecutionContext {
     /** For localization (l10n) functionality, like localizing messages. */
 
     /** For accessing resources by location string (http://, jar://, component://, content://, classpath://, etc). */
-    @Nonnull ResourceFacade getResource();
 
     /** For trace, error, etc logging to the console, files, etc. */
     @Nonnull LoggerFacade getLogger();

@@ -69,7 +69,7 @@ class JavaxScriptRunner implements ScriptRunner {
             // cache the CompiledScript
             CompiledScript script = (CompiledScript) scriptLocationCache.get(location)
             if (script == null) {
-                script = engine.compile(ec.getResource().getLocationText(location, false))
+                script = null
                 scriptLocationCache.put(location, script)
             }
             result = script.eval(bindings)
@@ -77,7 +77,7 @@ class JavaxScriptRunner implements ScriptRunner {
             // cache the script text
             String scriptText = (String) scriptLocationCache.get(location)
             if (scriptText == null) {
-                scriptText = ec.getResource().getLocationText(location, false)
+                scriptText = null
                 scriptLocationCache.put(location, scriptText)
             }
             result = engine.eval(scriptText, bindings)

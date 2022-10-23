@@ -69,7 +69,7 @@ public class RemoteJsonRpcServiceRunner implements ServiceRunner {
             // logger.warn("========== JSON-RPC response: ${jsonResponse}")
             jsonObj = slurper.parseText(jsonResponse)
         } catch (Throwable t) {
-            String errMsg = ec.resource.expand('Error parsing JSON-RPC response for service [${serviceName ?: method}]: ${t.toString()}','',[serviceName:serviceName, method:method, t:t])
+            String errMsg = 'Error parsing JSON-RPC response for service [${serviceName ?: method}]: ${t.toString()} ' + serviceName + ' ' + method + ' ' + t
             logger.error(errMsg, t)
             return null
         }
@@ -88,7 +88,7 @@ public class RemoteJsonRpcServiceRunner implements ServiceRunner {
                 }
             }
         } else {
-            String errMsg = ec.resource.expand('JSON-RPC response was not a object/Map for service [${serviceName ?: method}]: ${jsonObj}','',[serviceName:serviceName,method:method,jsonObj:jsonObj])
+            String errMsg = 'JSON-RPC response was not a object/Map for service [${serviceName ?: method}]: ${jsonObj} ' + ' ' + serviceName + ' ' + method + ' ' + jsonObj
             logger.error(errMsg)
             return null
         }

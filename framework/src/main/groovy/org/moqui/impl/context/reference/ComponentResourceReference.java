@@ -53,7 +53,7 @@ public class ComponentResourceReference extends WrapperResourceReference {
         baseLocation.insert(0, "/");
         baseLocation.insert(0, ecf.getComponentBaseLocations().get(componentName));
 
-        setRr(ecf.getResource().getLocationReference(baseLocation.toString()));
+        setRr(null);
         return this;
     }
 

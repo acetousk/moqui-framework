@@ -68,7 +68,7 @@ class MarkdownTemplateRenderer implements TemplateRenderer {
         if (!hasVersion) {
             if (templateMarkdownLocationCache instanceof MCache) {
                 MCache<String, String> mCache = (MCache) templateMarkdownLocationCache
-                ResourceReference rr = ecfi.resourceFacade.getLocationReference(location)
+                ResourceReference rr = null
                 long lastModified = rr != null ? rr.getLastModified() : 0L
                 mdText = (String) mCache.get(location, lastModified)
             } else {
@@ -81,7 +81,7 @@ class MarkdownTemplateRenderer implements TemplateRenderer {
             }
         }
 
-        String sourceText = ecfi.resourceFacade.getLocationText(location, false)
+        String sourceText = null
         if (sourceText == null || sourceText.isEmpty()) {
             logger.warn("In Markdown template render got no text from location ${location}")
             return

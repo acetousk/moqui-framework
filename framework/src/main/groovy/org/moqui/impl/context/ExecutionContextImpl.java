@@ -47,7 +47,6 @@ public class ExecutionContextImpl implements ExecutionContext {
 
     // local references to ECFI fields
     public final LoggerFacadeImpl loggerFacade;
-    public final ResourceFacadeImpl resourceFacade;
     public final ServiceFacadeImpl serviceFacade;
     public final TransactionFacadeImpl transactionFacade;
 
@@ -71,12 +70,10 @@ public class ExecutionContextImpl implements ExecutionContext {
         activeEntityFacade = ecfi.entityFacade;
 
         loggerFacade = ecfi.loggerFacade;
-        resourceFacade = ecfi.resourceFacade;
         serviceFacade = ecfi.serviceFacade;
         transactionFacade = ecfi.transactionFacade;
 
         if (loggerFacade == null) throw new IllegalStateException("loggerFacade was null");
-        if (resourceFacade == null) throw new IllegalStateException("resourceFacade was null");
         if (serviceFacade == null) throw new IllegalStateException("serviceFacade was null");
         if (transactionFacade == null) throw new IllegalStateException("transactionFacade was null");
 
@@ -102,7 +99,6 @@ public class ExecutionContextImpl implements ExecutionContext {
         return ecfi.getTool(toolName, instanceClass, parameters);
     }
 
-    @Override public @Nonnull ResourceFacade getResource() { return resourceFacade; }
     @Override public @Nonnull LoggerFacade getLogger() { return loggerFacade; }
     @Override public @Nonnull TransactionFacade getTransaction() { return transactionFacade; }
 
@@ -127,7 +123,7 @@ public class ExecutionContextImpl implements ExecutionContext {
         if (skipStats != null) return skipStats;
         String skipStatsCond = ecfi.skipStatsCond;
         Map<String, Object> skipParms = new HashMap<>();
-        skipStats = (skipStatsCond != null && !skipStatsCond.isEmpty()) && ecfi.resourceFacade.condition(skipStatsCond, null, skipParms);
+        skipStats = (skipStatsCond != null && !skipStatsCond.isEmpty()) && false;
         return skipStats;
     }
 
@@ -149,7 +145,6 @@ public class ExecutionContextImpl implements ExecutionContext {
         // make sure there are no transactions open, if any commit them all now
         ecfi.transactionFacade.destroyAllInThread();
         // clean up resources, like JCR session
-        ecfi.resourceFacade.destroyAllInThread();
         // clear out the ECFI's reference to this as well
         ecfi.activeContext.remove();
         ecfi.activeContextMap.remove(Thread.currentThread().getId());
