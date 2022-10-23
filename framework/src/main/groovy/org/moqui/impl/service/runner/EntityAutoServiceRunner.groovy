@@ -477,7 +477,7 @@ class EntityAutoServiceRunner implements ServiceRunner {
                             .condition("statusId", parameterStatusId).useCache(true).one()
                     logger.warn("Status transition not allowed from ${lookedUpStatusId} to ${parameterStatusId} on entity ${ed.fullEntityName} with PK ${lookedUpValue.getPrimaryKeys()}\n${transitionCheckMessages.join('\n')}")
                     throw new ServiceException('StatusFlowTransitionNotFoundTemplate ' +
-                            eci.l10n.localize(ed.fullEntityName + '##EntityName') + ' ' +
+                            ed.fullEntityName + ' ##EntityName' + ' ' +
                             lookedUpStatusId + ' ' + parameterStatusId + ' ' +
                             lookedUpStatus?.getNoCheckSimple("description") + ' ' +
                             parameterStatus?.getNoCheckSimple("description"))
