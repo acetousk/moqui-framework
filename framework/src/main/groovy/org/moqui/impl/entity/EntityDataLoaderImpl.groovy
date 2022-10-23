@@ -19,9 +19,7 @@ import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVRecord
 import org.moqui.BaseException
-import org.moqui.impl.context.TransactionFacadeImpl
 import org.moqui.resource.ResourceReference
-import org.moqui.context.TransactionFacade
 import org.moqui.entity.EntityDataLoader
 import org.moqui.entity.EntityException
 import org.moqui.entity.EntityList
@@ -269,55 +267,12 @@ class EntityDataLoaderImpl implements EntityDataLoader {
         // logger.warn("========== Waiting 45s to attach profiler")
         // Thread.sleep(45000)
 
-        TransactionFacadeImpl tf = efi.ecfi.transactionFacade
-        tf.runRequireNew(transactionTimeout, "Error loading entity data", false, true, {
-            // load the XML text in its own transaction
-            if (this.xmlText) {
-                tf.runUseOrBegin(transactionTimeout, "Error loading XML entity data", {
-                    XMLReader reader = SAXParserFactory.newInstance().newSAXParser().XMLReader
-                    exh.setLocation("xmlText")
-                    reader.setContentHandler(exh)
-                    reader.parse(new InputSource(new StringReader(this.xmlText)))
-                })
-            }
-
-            // load the CSV text in its own transaction
-            if (this.csvText) {
-                InputStream csvInputStream = new ByteArrayInputStream(csvText.getBytes("UTF-8"))
-                try {
-                    tf.runUseOrBegin(transactionTimeout, "Error loading CSV entity data", { ech.loadFile("csvText", csvInputStream) })
-                } finally {
-                    if (csvInputStream != null) csvInputStream.close()
-                }
-            }
-
-            // load the JSON text in its own transaction
-            if (this.jsonText) {
-                InputStream jsonInputStream = new ByteArrayInputStream(jsonText.getBytes("UTF-8"))
-                try {
-                    tf.runUseOrBegin(transactionTimeout, "Error loading JSON entity data", { ejh.loadFile("jsonText", jsonInputStream) })
-                } finally {
-                    if (jsonInputStream != null) jsonInputStream.close()
-                }
-            }
-
-            // load each file in its own transaction
-            for (String location in this.locationList) {
-                try {
-                    loadSingleFile(location, exh, ech, ejh)
-                } catch (Throwable t) {
-                    logger.error("Skipping to next file after error: ${t.toString()} ${t.getCause() != null ? t.getCause().toString() : ''}")
-                }
-            }
-        })
-
         // logger.warn("========== Done loading, waiting for a long time so process is still running for profiler")
         // Thread.sleep(60*1000*100)
     }
 
     void loadSingleFile(String location, EntityXmlHandler exh, EntityCsvHandler ech, EntityJsonHandler ejh) {
-        TransactionFacade tf = efi.ecfi.transactionFacade
-        boolean beganTransaction = tf.begin(transactionTimeout)
+        boolean beganTransaction = false
         try {
             InputStream inputStream = null
             try {
@@ -388,7 +343,6 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                         } catch (TypeToSkipException e) {
                             // nothing to do, this just stops the parsing when we know the file is not in the types we want
                         } catch (Throwable t) {
-                            tf.rollback(beganTransaction, "Error loading entity data", t)
                             throw new BaseException("Error loading entity data from ${entry.getName()} in zip file ${location}", t)
                         }
                     }
@@ -408,11 +362,8 @@ class EntityDataLoaderImpl implements EntityDataLoader {
                 if (inputStream != null) inputStream.close()
             }
         } catch (Throwable t) {
-            tf.rollback(beganTransaction, "Error loading entity data", t)
             throw new BaseException("Error loading entity data from ${location}", t)
         } finally {
-            tf.commit(beganTransaction)
-
             ExecutionContextImpl ec = efi.ecfi.getEci()
         }
     }

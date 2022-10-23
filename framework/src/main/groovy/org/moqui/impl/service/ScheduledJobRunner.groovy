@@ -93,10 +93,9 @@ class ScheduledJobRunner implements Runnable {
         ThreadPoolExecutor jobWorkerPool = null
         try {
             // make sure no transaction is in place, shouldn't be any so try to commit if there is one
-            if (ecfi.transactionFacade.isTransactionInPlace()) {
+            if (false) {
                 logger.error("Found transaction in place in ScheduledJobRunner thread ${Thread.currentThread().getName()}, trying to commit")
                 try {
-                    ecfi.transactionFacade.destroyAllInThread()
                 } catch (Exception e) {
                     logger.error(" Commit of in-place transaction failed for ScheduledJobRunner thread ${Thread.currentThread().getName()}", e)
                 }
@@ -141,7 +140,7 @@ class ScheduledJobRunner implements Runnable {
                 Timestamp lastRunTime
                 // get a lock, see if another instance is running the job
                 // now we need to run in a transaction; note that this is running in a executor service thread, no tx should ever be in place
-                boolean beganTransaction = ecfi.transaction.begin(null)
+                boolean beganTransaction = false
                 try {
                     serviceJobRunLock = efi.find("moqui.service.job.ServiceJobRunLock")
                             .condition("jobName", jobName).forUpdate(true).one()
@@ -211,11 +210,9 @@ class ScheduledJobRunner implements Runnable {
                     logger.info("Running job ${jobName} run ${jobRunId} (last run ${lastRunTime}, schedule ${lastSchedule})")
                 } catch (Throwable t) {
                     String errMsg = "Error getting and checking service job run lock"
-                    ecfi.transaction.rollback(beganTransaction, errMsg, t)
                     logger.error(errMsg, t)
                     continue
                 } finally {
-                    ecfi.transaction.commit(beganTransaction)
                 }
 
                 jobsRun++
@@ -238,11 +235,6 @@ class ScheduledJobRunner implements Runnable {
                     serviceCallJob.run()
                 } catch (Throwable t) {
                     logger.error("Error running scheduled job ${jobName}", t)
-                    ecfi.transactionFacade.runUseOrBegin(null, "Error clearing lock and saving error on scheduled job run error", {
-                        serviceJobRunLock.set("jobRunId", null).update()
-                        serviceJobRun.set("hasError", "Y").set("errors", t.toString()).set("startTime", nowTimestamp)
-                                .set("endTime", nowTimestamp).update()
-                    })
                 }
 
                 // end of for loop

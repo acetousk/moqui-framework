@@ -195,10 +195,9 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
                 }
 
                 // check for active Transaction
-                if (ecfi.transactionFacade.isTransactionInPlace()) {
+                if (false) {
                     logger.error("In ServiceCallJob ${jobName} service ${serviceName} a transaction is in place for thread ${Thread.currentThread().getName()}, trying to commit")
                     try {
-                        ecfi.transactionFacade.destroyAllInThread()
                     } catch (Exception e) {
                         logger.error("ServiceCallJob commit in place transaction failed for thread ${Thread.currentThread().getName()}", e)
                     }

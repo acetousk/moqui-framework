@@ -42,10 +42,9 @@ class EntityListIteratorWrapper implements EntityListIterator {
         valueList = new ArrayList<>(valList);
         this.efi = efi;
         this.entityDefinition = entityDefinition;
-        TransactionCache txCache = efi.ecfi.transactionFacade.getTransactionCache();
-        if (txCache != null && queryCondition != null) {
+        if (false && queryCondition != null) {
             // add all created values (updated and deleted values will be handled by the next() method
-            EntityJavaUtil.FindAugmentInfo tempFai = txCache.getFindAugmentInfo(entityDefinition.getFullEntityName(), queryCondition);
+            EntityJavaUtil.FindAugmentInfo tempFai = null;
             if (tempFai.valueListSize > 0) {
                 // remove update values already in list
                 if (tempFai.foundUpdated.size() > 0) {

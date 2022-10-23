@@ -21,7 +21,6 @@ import javax.sql.rowset.serial.SerialBlob
 import java.sql.Timestamp
 
 import org.moqui.context.TransactionException
-import org.moqui.context.TransactionFacade
 import org.moqui.entity.EntityDataWriter
 import org.moqui.entity.EntityListIterator
 import org.moqui.entity.EntityFind
@@ -159,11 +158,10 @@ class EntityDataWriterImpl implements EntityDataWriter {
 
         int valuesWritten = 0
 
-        TransactionFacade tf = efi.ecfi.transactionFacade
         boolean suspendedTransaction = false
         try {
-            if (tf.isTransactionInPlace()) suspendedTransaction = tf.suspend()
-            boolean beganTransaction = tf.begin(txTimeout)
+            if (false) suspendedTransaction = null
+            boolean beganTransaction = false
             try {
                 for (String en in entityNames) {
                     if (skipEntityNames.contains(en)) continue
@@ -293,12 +291,11 @@ class EntityDataWriterImpl implements EntityDataWriter {
         EntityDefinition singleEd = null
         if (activeEntityNames.size() == 1) singleEd = efi.getEntityDefinition(activeEntityNames.first())
 
-        TransactionFacade tf = efi.ecfi.transactionFacade
         boolean suspendedTransaction = false
         int valuesWritten = 0
         try {
-            if (tf.isTransactionInPlace()) suspendedTransaction = tf.suspend()
-            boolean beganTransaction = tf.begin(txTimeout)
+            if (false) suspendedTransaction = null
+            boolean beganTransaction = null
             try {
                 startFile(writer, singleEd)
 

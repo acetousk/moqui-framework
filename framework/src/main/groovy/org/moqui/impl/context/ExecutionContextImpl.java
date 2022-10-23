@@ -45,7 +45,6 @@ public class ExecutionContextImpl implements ExecutionContext {
 
     // local references to ECFI fields
     public final LoggerFacadeImpl loggerFacade;
-    public final TransactionFacadeImpl transactionFacade;
 
     private Boolean skipStats = null;
     private Cache<String, String> l10nMessageCache;
@@ -67,10 +66,8 @@ public class ExecutionContextImpl implements ExecutionContext {
         activeEntityFacade = ecfi.entityFacade;
 
         loggerFacade = ecfi.loggerFacade;
-        transactionFacade = ecfi.transactionFacade;
 
         if (loggerFacade == null) throw new IllegalStateException("loggerFacade was null");
-        if (transactionFacade == null) throw new IllegalStateException("transactionFacade was null");
 
         initCaches();
 
@@ -95,7 +92,6 @@ public class ExecutionContextImpl implements ExecutionContext {
     }
 
     @Override public @Nonnull LoggerFacade getLogger() { return loggerFacade; }
-    @Override public @Nonnull TransactionFacade getTransaction() { return transactionFacade; }
 
     @Override public @Nonnull EntityFacade getEntity() { return activeEntityFacade; }
     public @Nonnull EntityFacadeImpl getEntityFacade() { return activeEntityFacade; }
@@ -136,7 +132,6 @@ public class ExecutionContextImpl implements ExecutionContext {
         // if webFacade exists this is the end of a request, so trigger after-request actions
 
         // make sure there are no transactions open, if any commit them all now
-        ecfi.transactionFacade.destroyAllInThread();
         // clean up resources, like JCR session
         // clear out the ECFI's reference to this as well
         ecfi.activeContext.remove();

@@ -126,7 +126,7 @@ class ServiceEcaRule {
         }
 
         void enlist() {
-            TransactionManager tm = ecfi.transactionFacade.getTransactionManager()
+            TransactionManager tm = null
             if (tm == null || tm.getStatus() != Status.STATUS_ACTIVE) throw new XAException("Cannot enlist: no transaction manager or transaction not active")
 
             Transaction tx = tm.getTransaction()
@@ -150,15 +150,12 @@ class ServiceEcaRule {
 
         void runInThreadAndTx() {
             ExecutionContextImpl.ThreadPoolRunnable runnable = new ExecutionContextImpl.ThreadPoolRunnable(ecfi, {
-                boolean beganTransaction = ecfi.transactionFacade.begin(null)
+                boolean beganTransaction = false
                 try {
                     sec.standaloneRun(parameters, results, ecfi.getEci())
                 } catch (Throwable t) {
                     logger.error("Error running Service TX ECA rule", t)
-                    ecfi.transactionFacade.rollback(beganTransaction, "Error running Service TX ECA rule", t)
                 } finally {
-                    if (beganTransaction && ecfi.transactionFacade.isTransactionInPlace())
-                        ecfi.transactionFacade.commit()
                 }
             })
             ecfi.workerPool.submit(runnable)

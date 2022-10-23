@@ -117,7 +117,6 @@ public class ContextJavaUtil {
 
     static final AtomicLong moquiTxIdLast = new AtomicLong(0L);
     static class TxStackInfo {
-        private TransactionFacadeImpl transactionFacade;
         public final long moquiTxId = moquiTxIdLast.incrementAndGet();
         public Exception transactionBegin = null;
         public Long transactionBeginStartTime = null;
@@ -137,8 +136,6 @@ public class ContextJavaUtil {
         public Map<String, Synchronization> getActiveSynchronizationMap() { return activeSynchronizationMap; }
         public Map<String, ConnectionWrapper> getTxConByGroup() { return txConByGroup; }
 
-        public TxStackInfo(TransactionFacadeImpl tfi) { transactionFacade = tfi; }
-
         public void clearCurrent() {
             rollbackOnlyInfo = null;
             transactionBegin = null;
@@ -155,7 +152,7 @@ public class ContextJavaUtil {
             // if (recordLockListSize > 0) logger.warn("TOREMOVE TxStackInfo EntityRecordLock clearing " + recordLockListSize + " locks");
             for (int i = 0; i < recordLockListSize; i++) {
                 EntityRecordLock erl = recordLockList.get(i);
-                erl.clear(transactionFacade.recordLockByEntityPk);
+                erl.clear(null);
             }
             recordLockList.clear();
         }
@@ -263,12 +260,10 @@ public class ContextJavaUtil {
      */
     public static class ConnectionWrapper implements Connection {
         protected Connection con;
-        TransactionFacadeImpl tfi;
         String groupName;
 
-        public ConnectionWrapper(Connection con, TransactionFacadeImpl tfi, String groupName) {
+        public ConnectionWrapper(Connection con, String groupName) {
             this.con = con;
-            this.tfi = tfi;
             this.groupName = groupName;
         }
 
@@ -452,10 +447,9 @@ public class ContextJavaUtil {
                     logger.error("Error destroying ExecutionContext in WorkerThreadPoolExecutor.afterExecute()", t);
                 }
             } else {
-                if (ecfi.transactionFacade.isTransactionInPlace()) {
+                if (false) {
                     logger.error("In WorkerThreadPoolExecutor a transaction is in place for thread " + Thread.currentThread().getName() + ", trying to commit");
                     try {
-                        ecfi.transactionFacade.destroyAllInThread();
                     } catch (Exception e) {
                         logger.error("WorkerThreadPoolExecutor commit in place transaction failed in thread " + Thread.currentThread().getName(), e);
                     }

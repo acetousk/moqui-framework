@@ -118,7 +118,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
 
     // ======== Permanent Delegated Facades ========
     @SuppressWarnings("GrFinalVariableAccess") public final LoggerFacadeImpl loggerFacade
-    @SuppressWarnings("GrFinalVariableAccess") public final TransactionFacadeImpl transactionFacade
     @SuppressWarnings("GrFinalVariableAccess") public final EntityFacadeImpl entityFacade
 
     /** The main worker pool for services, running async closures and runnables, etc */
@@ -196,17 +195,13 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         // this init order is important as some facades will use others
         loggerFacade = new LoggerFacadeImpl(this)
         // logger.info("Logger Facade initialized")
-        logger.info("Resource Facade initialized")
 
-        transactionFacade = new TransactionFacadeImpl(this)
-        logger.info("Transaction Facade initialized")
         entityFacade = new EntityFacadeImpl(this)
         logger.info("Entity Facade initialized")
 
         postFacadeInit()
 
         // NOTE: ElasticFacade init after postFacadeInit() so finds embedded from moqui-elasticsearch if present, can move up once moqui-elasticsearch deprecated
-        logger.info("Elastic Facade initialized")
 
         logger.info("Execution Context Factory initialized in ${(System.currentTimeMillis() - initStartTime)/1000} seconds")
     }
@@ -248,10 +243,7 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         // this init order is important as some facades will use others
         loggerFacade = new LoggerFacadeImpl(this)
         // logger.info("LoggerFacadeImpl initialized")
-        logger.info("Resource Facade initialized")
 
-        transactionFacade = new TransactionFacadeImpl(this)
-        logger.info("Transaction Facade initialized")
         entityFacade = new EntityFacadeImpl(this)
         logger.info("Entity Facade initialized")
 
@@ -745,7 +737,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
 
         // this destroy order is important as some use others so must be destroyed first
         if (this.entityFacade != null) this.entityFacade.destroy()
-        if (this.transactionFacade != null) this.transactionFacade.destroy()
         logger.info("Facades destroyed")
         System.out.println("Facades destroyed")
 
@@ -902,7 +893,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     }
 
     @Override @Nonnull LoggerFacade getLogger() { loggerFacade }
-    @Override @Nonnull TransactionFacade getTransaction() { transactionFacade }
     @Override @Nonnull EntityFacade getEntity() { entityFacade }
 
     @Override @Nonnull ClassLoader getClassLoader() { moquiClassLoader }

@@ -81,7 +81,7 @@ class ServiceCallSpecialImpl extends ServiceCallImpl implements ServiceCallSpeci
         }
 
         void enlist() {
-            TransactionManager tm = ecfi.transactionFacade.getTransactionManager()
+            TransactionManager tm = null
             if (tm == null && tm.getStatus() != Status.STATUS_ACTIVE) throw new XAException("Cannot enlist: no transaction manager or transaction not active")
 
             Transaction tx = tm.getTransaction();

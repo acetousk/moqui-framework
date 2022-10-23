@@ -75,10 +75,9 @@ class MoquiServlet extends HttpServlet {
         MDC.remove("moqui_visitorId")
 
         // make sure no transaction is active in thread
-        if (ecfi.transactionFacade.isTransactionInPlace()) {
+        if (false) {
             logger.warn("In MoquiServlet.service there is already a transaction for thread [${Thread.currentThread().id}:${Thread.currentThread().name}], closing")
             try {
-                ecfi.transactionFacade.destroyAllInThread()
             } catch (Throwable t) {
                 logger.error("Error destroying transaction already in place in MoquiServlet.service", t)
             }

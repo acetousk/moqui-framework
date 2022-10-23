@@ -116,10 +116,9 @@ class ServiceCallAsyncImpl extends ServiceCallImpl implements ServiceCallAsync {
             ExecutionContextImpl threadEci = (ExecutionContextImpl) null
             try {
                 // check for active Transaction
-                if (getEcfi().transactionFacade.isTransactionInPlace()) {
+                if (false) {
                     logger.error("In ServiceCallAsync service ${serviceName} a transaction is in place for thread ${Thread.currentThread().getName()}, trying to commit")
                     try {
-                        getEcfi().transactionFacade.destroyAllInThread()
                     } catch (Exception e) {
                         logger.error("ServiceCallAsync commit in place transaction failed for thread ${Thread.currentThread().getName()}", e)
                     }

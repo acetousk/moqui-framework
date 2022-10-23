@@ -234,7 +234,7 @@ class EntityDataFeed {
     }
 
     protected DataFeedSynchronization getDataFeedSynchronization() {
-        DataFeedSynchronization dfxr = (DataFeedSynchronization) efi.ecfi.transactionFacade.getActiveSynchronization("DataFeedSynchronization")
+        DataFeedSynchronization dfxr = null
         if (dfxr == null) {
             dfxr = new DataFeedSynchronization(this)
             dfxr.enlist()
@@ -475,14 +475,13 @@ class EntityDataFeed {
 
         void enlist() {
             // logger.warn("========= Enlisting new DataFeedSynchronization")
-            TransactionManager tm = ecfi.transactionFacade.getTransactionManager()
+            TransactionManager tm = null
             if (tm == null || tm.getStatus() != Status.STATUS_ACTIVE) throw new XAException("Cannot enlist: no transaction manager or transaction not active")
             Transaction tx = tm.getTransaction()
             if (tx == null) throw new XAException(XAException.XAER_NOTA)
             this.tx = tx
 
             // logger.warn("================= puttng and enlisting new DataFeedSynchronization")
-            ecfi.transactionFacade.putAndEnlistActiveSynchronization("DataFeedSynchronization", this)
         }
 
         void addValueToFeed(EntityValue ev, Set<String> dataDocumentIdSet) {
@@ -556,7 +555,7 @@ class EntityDataFeed {
         }
 
         private void feedDataDocument(String dataDocumentId, Timestamp feedStamp, ExecutionContextImpl threadEci) {
-            boolean beganTransaction = ecfi.transactionFacade.begin(1800)
+            boolean beganTransaction = false
             try {
                 EntityFacadeImpl efi = ecfi.entityFacade
                 // assemble data and call DataFeed services
@@ -773,11 +772,8 @@ class EntityDataFeed {
                 }
             } catch (Throwable t) {
                 logger.error("Error running Real-time DataFeed for DataDocument ${dataDocumentId}", t)
-                ecfi.transactionFacade.rollback(beganTransaction, "Error running Real-time DataFeed for DataDocument ${dataDocumentId}", t)
             } finally {
                 // commit transaction if we started one and still there
-                if (beganTransaction && ecfi.transactionFacade.isTransactionInPlace())
-                    ecfi.transactionFacade.commit()
             }
         }
 

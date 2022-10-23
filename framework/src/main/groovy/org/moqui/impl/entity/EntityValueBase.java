@@ -118,7 +118,7 @@ public abstract class EntityValueBase implements EntityValue {
         return efiTransient;
     }
     private TransactionCache getTxCache(ExecutionContextFactoryImpl ecfi) {
-        if (txCacheInternal == null) txCacheInternal = ecfi.transactionFacade.getTransactionCache();
+        if (txCacheInternal == null) txCacheInternal = null;
         return txCacheInternal;
     }
     public EntityDefinition getEntityDefinition() {
@@ -1303,8 +1303,7 @@ public abstract class EntityValueBase implements EntityValue {
 
     private void registerMutateLock() {
         final EntityFacadeImpl efi = getEntityFacadeImpl();
-        final TransactionFacadeImpl tfi = efi.ecfi.transactionFacade;
-        if (!tfi.getUseLockTrack()) return;
+        if (true) return;
 
         final EntityDefinition ed = getEntityDefinition();
 
@@ -1359,7 +1358,7 @@ public abstract class EntityValueBase implements EntityValue {
         if (entityInfo.hasFieldDefaults) checkSetFieldDefaults(ed, ec, null);
 
         // set lastUpdatedStamp
-        final Long time = ecfi.transactionFacade.getCurrentTransactionStartTime();
+        final Long time = System.currentTimeMillis();
         Long lastUpdatedLong = time != null && time > 0 ? time : System.currentTimeMillis();
         FieldInfo lastUpdatedStampInfo = ed.entityInfo.lastUpdatedStampInfo;
         if (lastUpdatedStampInfo != null && valueMapInternal.getByIString(lastUpdatedStampInfo.name, lastUpdatedStampInfo.index) == null)
@@ -1513,8 +1512,8 @@ public abstract class EntityValueBase implements EntityValue {
 
             // set lastUpdatedStamp
             if (!modifiedLastUpdatedStamp && lastUpdatedStampInfo != null) {
-                final Long time = ecfi.transactionFacade.getCurrentTransactionStartTime();
-                long lastUpdatedLong = time != null && time > 0 ? time : System.currentTimeMillis();
+                final Long time = System.currentTimeMillis();
+                long lastUpdatedLong = time != null && time > 0 ? time : time;
                 valueMapInternal.putByIString(lastUpdatedStampInfo.name, new Timestamp(lastUpdatedLong), lastUpdatedStampInfo.index);
                 nonPkFieldArray[nonPkFieldArrayIndex] = lastUpdatedStampInfo;
                 // never gets used after this point, but if ever does will need to: nonPkFieldArrayIndex++
