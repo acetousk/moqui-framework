@@ -174,7 +174,6 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         if (sd == null) {
             logger.info("No service with name " + serviceName + ", isEntityAutoPattern=" + isEntityAutoPattern() +
                     ", path=" + path + ", verb=" + verb + ", noun=" + noun + ", noun is entity? " + eci.getEntityFacade().isEntityDefined(noun));
-            if (ignorePreviousError) eci.messageFacade.popErrors();
             throw new ServiceException("Could not find service with name " + serviceName);
         }
 
