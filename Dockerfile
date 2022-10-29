@@ -38,10 +38,8 @@ EXPOSE $webapp_http_port
 EXPOSE $h2_console_port
 EXPOSE $open_search_port
 EXPOSE $open_search_cluster_port
+EXPOSE $hazelcast_port
 CMD ["conf=conf/MoquiDevConf.xml", "port=$webapp_http_port"]
-
-#FROM dev AS dev-hazelcast
-#EXPOSE $hazelcast_port
 
 FROM builder AS production
 EXPOSE $webapp_http_port

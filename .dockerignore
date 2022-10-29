@@ -1,7 +1,9 @@
 .git/
 .github/
 .gitlab/
-docker/
+docker/elasticsearch
+docker/kibana
+docker/nginx
 .gitignore
 .gitlab-ci.yml
 .travis.yml
