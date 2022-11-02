@@ -66,7 +66,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 if (sd != null) {
                     inParameterNames = sd.getInParameterNames();
                 } else if (isEntityAutoPattern()) {
-                    EntityDefinition ed = ecfi.entityFacade.getEntityDefinition(noun);
+                    EntityDefinition ed = null;
                     if (ed != null) inParameterNames = ed.getAllFieldNames();
                 }
 
@@ -167,9 +167,24 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         }
 
         if (sd == null) {
+<<<<<<< HEAD
             logger.info("No service with name " + serviceName + ", isEntityAutoPattern=" + isEntityAutoPattern() +
                     ", path=" + path + ", verb=" + verb + ", noun=" + noun + ", noun is entity? " + eci.getEntityFacade().isEntityDefined(noun));
             throw new ServiceException("Could not find service with name " + serviceName);
+=======
+            if (sfi.isEntityAutoPattern(path, verb, noun)) {
+                try {
+                    return runImplicitEntityAuto(currentParameters, secaRules, eci);
+                } finally {
+                    if (ignorePreviousError) eci.messageFacade.popErrors();
+                }
+            } else {
+                logger.info("No service with name " + serviceName + ", isEntityAutoPattern=" + isEntityAutoPattern() +
+                        ", path=" + path + ", verb=" + verb + ", noun=" + noun + ", noun is entity? ");
+                if (ignorePreviousError) eci.messageFacade.popErrors();
+                throw new ServiceException("Could not find service with name " + serviceName);
+            }
+>>>>>>> remove-entity
         }
 
         if ("interface".equals(serviceType)) {
@@ -317,6 +332,20 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
             parameterValue = parmObj != null ? parmObj.toString() : "_NULL_";
         }
 
+<<<<<<< HEAD
+=======
+        eci.transactionFacade.runRequireNew(null, "Error in clear service semaphore", new Closure<EntityValue>(this, this) {
+            EntityValue doCall(Object it) {
+                boolean authzDisabled = eci.artifactExecutionFacade.disableAuthz();
+                try {
+                    return null;
+                } finally {
+                    if (!authzDisabled) eci.artifactExecutionFacade.enableAuthz();
+                }
+            }
+            public EntityValue doCall() { return doCall(null); }
+        });
+>>>>>>> remove-entity
     }
 
     /* A good test case is the place#Order service which is used in the AssetReservationMultipleThreads.groovy tests:
@@ -348,6 +377,78 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
         // support a single wait/retry on error creating semaphore record
         AtomicBoolean retrySemaphore = new AtomicBoolean(false);
 
+<<<<<<< HEAD
+=======
+        eci.transactionFacade.runRequireNew(txTimeout, "Error in check/add service semaphore", new Closure<EntityValue>(this, this) {
+            EntityValue doCall(Object it) {
+                boolean authzDisabled = eci.artifactExecutionFacade.disableAuthz();
+                try {
+                    final long startTime = System.currentTimeMillis();
+
+                    // look up semaphore, note that is no forUpdate, we want to loop wait below instead of doing a database lock wait
+                    EntityValue serviceSemaphore = null;
+                    // if there is an active semaphore but lockTime is too old reset and ignore it
+                    if (serviceSemaphore != null && (serviceSemaphore.getNoCheckSimple("lockThread") != null || serviceSemaphore.getNoCheckSimple("lockTime") != null)) {
+                        Timestamp lockTime = serviceSemaphore.getTimestamp("lockTime");
+                        if (startTime > (lockTime.getTime() + semaphoreIgnoreMillis)) {
+                            serviceSemaphore.set("lockThread", null).set("lockTime", null).update();
+                        }
+                    }
+
+                    if (serviceSemaphore != null && (serviceSemaphore.getNoCheckSimple("lockThread") != null || serviceSemaphore.getNoCheckSimple("lockTime") != null)) {
+                        if ("fail".equals(semaphore)) {
+                            throw new ServiceException("An instance of service semaphore " + semaphoreName + " with parameter value " +
+                                    "[" + parameterValue + "] is already running (thread [" + serviceSemaphore.get("lockThread") +
+                                    "], locked at " + serviceSemaphore.get("lockTime") + ") and it is setup to fail on semaphore conflict.");
+                        } else {
+                            boolean semaphoreCleared = false;
+                            while (System.currentTimeMillis() < (startTime + semaphoreTimeoutTime)) {
+                                // sleep, watch for interrupt
+                                try { Thread.sleep(semaphoreSleepTime); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+                                // get updated semaphore and see if it has been cleared
+                                serviceSemaphore = null;
+                                if (serviceSemaphore == null || (serviceSemaphore.getNoCheckSimple("lockThread") == null && serviceSemaphore.getNoCheckSimple("lockTime") == null)) {
+                                    semaphoreCleared = true;
+                                    break;
+                                }
+                            }
+                            if (!semaphoreCleared) {
+                                throw new ServiceException("An instance of service semaphore " + semaphoreName + " with parameter value [" +
+                                        parameterValue + "] is already running (thread [" + serviceSemaphore.get("lockThread") +
+                                        "], locked at " + serviceSemaphore.get("lockTime") + ") and it is setup to wait on semaphore conflict, but the semaphore did not clear in " +
+                                        (semaphoreTimeoutTime / 1000) + " seconds.");
+                            }
+                        }
+                    }
+
+                    // if we got to here the semaphore didn't exist or has cleared, so update existing or create new
+                    // do a for-update find now to make sure we own the record if one exists
+                    serviceSemaphore = null;
+
+                    final Timestamp lockTime = new Timestamp(System.currentTimeMillis());
+                    if (serviceSemaphore != null) {
+                        return serviceSemaphore.set("lockThread", lockThreadName).set("lockTime", lockTime).update();
+                    } else {
+                        try {
+                            return null;
+                        } catch (EntitySqlException e) {
+                            if ("23505".equals(e.getSQLState())) {
+                                logger.warn("Record exists error creating semaphore " + semaphoreName + " parameter " + parameterValue + ", retrying: " + e.toString());
+                                retrySemaphore.set(true);
+                                return null;
+                            } else {
+                                throw new ServiceException("Error creating semaphore " + semaphoreName + " with parameter value [" + parameterValue + "]", e);
+                            }
+                        }
+                    }
+                } finally {
+                    if (!authzDisabled) eci.artifactExecutionFacade.enableAuthz();
+                }
+            }
+            public EntityValue doCall() { return doCall(null); }
+        });
+
+>>>>>>> remove-entity
         if (allowRetry && retrySemaphore.get()) {
             checkAddSemaphore(eci, currentParameters, false);
         }
@@ -378,7 +479,7 @@ public class ServiceCallSyncImpl extends ServiceCallImpl implements ServiceCallS
                 // if error(s) in pre-service or anything else before actual run then return now with no results
 
                 try {
-                    EntityDefinition ed = eci.getEntityFacade().getEntityDefinition(noun);
+                    EntityDefinition ed = null;
                     if ("create".equals(verb)) {
                         EntityAutoServiceRunner.createEntity(eci, ed, currentParameters, result, null);
                     } else if ("update".equals(verb)) {

@@ -35,22 +35,18 @@ import java.util.*;
 
 public class EntityListImpl implements EntityList {
     protected static final Logger logger = LoggerFactory.getLogger(EntityConditionFactoryImpl.class);
-    private transient EntityFacadeImpl efiTransient;
     private ArrayList<EntityValue> valueList;
     private boolean fromCache = false;
     protected Integer offset = null;
     protected Integer limit = null;
 
     /** Default constructor for deserialization ONLY. */
-    public EntityListImpl() { }
 
-    public EntityListImpl(EntityFacadeImpl efi) {
-        this.efiTransient = efi;
+    public EntityListImpl() {
         valueList = new ArrayList<>(30);// default size, at least enough for common pagination
     }
 
-    public EntityListImpl(EntityFacadeImpl efi, int initialCapacity) {
-        this.efiTransient = efi;
+    public EntityListImpl(int initialCapacity) {
         valueList = new ArrayList<>(initialCapacity);
     }
 
@@ -62,13 +58,6 @@ public class EntityListImpl implements EntityList {
     @SuppressWarnings("unchecked")
     @Override public void readExternal(ObjectInput objectInput) throws IOException, ClassNotFoundException {
         valueList = (ArrayList<EntityValue>) objectInput.readObject();
-    }
-
-    @SuppressWarnings("unchecked")
-    public EntityFacadeImpl getEfi() {
-        if (efiTransient == null)
-            efiTransient = ((ExecutionContextFactoryImpl) Moqui.getExecutionContextFactory()).entityFacade;
-        return efiTransient;
     }
 
     @Override public EntityValue getFirst() { return valueList != null && valueList.size() > 0 ? valueList.get(0) : null; }
@@ -289,7 +278,7 @@ public class EntityListImpl implements EntityList {
     }
 
     @Override public EntityList findAll(Closure<Boolean> closure) {
-        EntityListImpl newList = new EntityListImpl(getEfi());
+        EntityListImpl newList = new EntityListImpl();
         int valueListSize = valueList.size();
         for (int i = 0; i < valueListSize; i++) {
             EntityValue value = valueList.get(i);
@@ -341,9 +330,7 @@ public class EntityListImpl implements EntityList {
 
     @Override public EntityList filterByLimit(String inputFieldsMapName, boolean alwaysPaginate) {
         if (fromCache) return this.cloneList().filterByLimit(inputFieldsMapName, alwaysPaginate);
-        Map inf = inputFieldsMapName != null && inputFieldsMapName.length() > 0 ?
-                (Map) getEfi().ecfi.getEci().contextStack.get(inputFieldsMapName) :
-                getEfi().ecfi.getEci().contextStack;
+        Map inf = inputFieldsMapName != null && inputFieldsMapName.length() > 0 ? (Map) null : (Map) null;
         if (alwaysPaginate || inf.get("pageIndex") != null) {
             final Object pageIndexObj = inf.get("pageIndex");
             int pageIndex;
@@ -461,13 +448,13 @@ public class EntityListImpl implements EntityList {
     @Override public Object clone() { return this.cloneList(); }
 
     @Override public EntityList cloneList() {
-        EntityListImpl newObj = new EntityListImpl(this.getEfi(), valueList.size());
+        EntityListImpl newObj = new EntityListImpl(valueList.size());
         newObj.valueList.addAll(valueList);
         // NOTE: when cloning don't clone the fromCache value (normally when from cache will be cloned before filtering)
         return newObj;
     }
     public EntityListImpl deepCloneList() {
-        EntityListImpl newObj = new EntityListImpl(this.getEfi(), valueList.size());
+        EntityListImpl newObj = new EntityListImpl(valueList.size());
         int valueListSize = valueList.size();
         for (int i = 0; i < valueListSize; i++) {
             EntityValue ev = valueList.get(i);

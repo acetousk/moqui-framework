@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -21,8 +21,6 @@ import bitronix.tm.utils.PropertyUtils
 import groovy.transform.CompileStatic
 import org.moqui.context.ExecutionContextFactory
 import org.moqui.context.TransactionInternal
-import org.moqui.entity.EntityFacade
-import org.moqui.impl.entity.EntityFacadeImpl
 import org.moqui.util.MNode
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -65,46 +63,42 @@ class TransactionInternalBitronix implements TransactionInternal {
     UserTransaction getUserTransaction() { return ut }
 
     @Override
-    DataSource getDataSource(EntityFacade ef, MNode datasourceNode) {
+    DataSource getDataSource(MNode datasourceNode) {
         // NOTE: this is called during EFI init, so use the passed one and don't try to get from ECFI
-        EntityFacadeImpl efi = (EntityFacadeImpl) ef
-
-        EntityFacadeImpl.DatasourceInfo dsi = new EntityFacadeImpl.DatasourceInfo(efi, datasourceNode)
 
         PoolingDataSource pds = new PoolingDataSource()
-        pds.setUniqueName(dsi.uniqueName)
-        if (dsi.xaDsClass) {
-            pds.setClassName(dsi.xaDsClass)
-            pds.setDriverProperties(dsi.xaProps)
+        pds.setUniqueName(null)
+        if (false) {
+            pds.setClassName(null)
+            pds.setDriverProperties(null)
 
-            Class<?> xaFactoryClass = ClassLoaderUtils.loadClass(dsi.xaDsClass)
+            Class<?> xaFactoryClass = ClassLoaderUtils.loadClass(null)
             Object xaFactory = xaFactoryClass.newInstance()
             if (!(xaFactory instanceof XADataSource))
                 throw new IllegalArgumentException("xa-ds-class " + xaFactory.getClass().getName() + " does not implement XADataSource")
             XADataSource xaDataSource = (XADataSource) xaFactory
 
-            for (Map.Entry<Object, Object> entry : dsi.xaProps.entrySet()) {
+            for (Map.Entry<Object, Object> entry : []) {
                 String name = (String) entry.getKey()
                 Object value = entry.getValue()
 
                 try {
                     PropertyUtils.setProperty(xaDataSource, name, value)
                 } catch (Exception e) {
-                    logger.warn("Error setting ${dsi.uniqueName} property ${name}, ignoring: ${e.toString()}")
+                    logger.warn("Error setting ... property ${name}, ignoring: ${e.toString()}")
                 }
             }
             pds.setXaDataSource(xaDataSource)
         } else {
             pds.setClassName("bitronix.tm.resource.jdbc.lrc.LrcXADataSource")
-            pds.getDriverProperties().setProperty("driverClassName", dsi.jdbcDriver)
-            pds.getDriverProperties().setProperty("url", dsi.jdbcUri)
-            pds.getDriverProperties().setProperty("user", dsi.jdbcUsername)
-            pds.getDriverProperties().setProperty("password", dsi.jdbcPassword)
+            pds.getDriverProperties().setProperty("driverClassName", null)
+            pds.getDriverProperties().setProperty("url", null)
+            pds.getDriverProperties().setProperty("user", null)
+            pds.getDriverProperties().setProperty("password", null)
         }
 
-        String txIsolationLevel = dsi.inlineJdbc.attribute("isolation-level") ?
-                dsi.inlineJdbc.attribute("isolation-level") : dsi.database.attribute("default-isolation-level")
-        int isolationInt = efi.getTxIsolationFromString(txIsolationLevel)
+        String txIsolationLevel = null
+        int isolationInt = -1
         if (txIsolationLevel && isolationInt != -1) {
             switch (isolationInt) {
                 case Connection.TRANSACTION_SERIALIZABLE: pds.setIsolationLevel("SERIALIZABLE"); break
@@ -116,13 +110,9 @@ class TransactionInternalBitronix implements TransactionInternal {
         }
 
         // no need for this, just sets min and max sizes: ads.setPoolSize
-        pds.setMinPoolSize((dsi.inlineJdbc.attribute("pool-minsize") ?: "5") as int)
-        pds.setMaxPoolSize((dsi.inlineJdbc.attribute("pool-maxsize") ?: "50") as int)
 
-        if (dsi.inlineJdbc.attribute("pool-time-idle")) pds.setMaxIdleTime(dsi.inlineJdbc.attribute("pool-time-idle") as int)
         // if (dsi.inlineJdbc."@pool-time-reap") ads.setReapTimeout(dsi.inlineJdbc."@pool-time-reap" as int)
         // if (dsi.inlineJdbc."@pool-time-maint") ads.setMaintenanceInterval(dsi.inlineJdbc."@pool-time-maint" as int)
-        if (dsi.inlineJdbc.attribute("pool-time-wait")) pds.setAcquisitionTimeout(dsi.inlineJdbc.attribute("pool-time-wait") as int)
         pds.setAllowLocalTransactions(true) // allow mixing XA and non-XA transactions
         pds.setAutomaticEnlistingEnabled(true) // automatically enlist/delist this resource in the tx
         pds.setShareTransactionConnections(true) // share connections within a transaction
@@ -136,19 +126,17 @@ class TransactionInternalBitronix implements TransactionInternal {
         pds.setPreparedStatementCacheSize(100)
 
         // use-tm-join defaults to true, so does Bitronix so just set to false if false
-        if (dsi.database.attribute("use-tm-join") == "false") pds.setUseTmJoin(false)
+        if (false) pds.setUseTmJoin(false)
 
-        if (dsi.inlineJdbc.attribute("pool-test-query")) {
-            pds.setTestQuery(dsi.inlineJdbc.attribute("pool-test-query"))
-        } else if (dsi.database.attribute("default-test-query")) {
-            pds.setTestQuery(dsi.database.attribute("default-test-query"))
+        if (false) {
+        } else if (false) {
         }
 
-        logger.info("Initializing DataSource ${dsi.uniqueName} (${dsi.database.attribute('name')}) with properties: ${dsi.dsDetails}")
+        logger.info("Initializing DataSource ... (...) with properties: ...")
 
         // init the DataSource
         pds.init()
-        logger.info("Init DataSource ${dsi.uniqueName} (${dsi.database.attribute('name')}) isolation ${pds.getIsolationLevel()} (${isolationInt}), max pool ${pds.getMaxPoolSize()}")
+        logger.info("Init DataSource ... (...) isolation ... (...), max pool ...")
 
         pdsList.add(pds)
 

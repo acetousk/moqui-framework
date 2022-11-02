@@ -258,6 +258,18 @@ class ServiceCallJobImpl extends ServiceCallImpl implements ServiceCallJob {
                 // notifications
                 Map<String, Object> msgMap = (Map<String, Object>) null
                 EntityList serviceJobUsers = (EntityList) null
+<<<<<<< HEAD
+=======
+                if (topic || hasError) {
+                    msgMap = new HashMap<>()
+                    msgMap.put("serviceCallRun", [jobName:jobName, description:jobDescription, jobRunId:jobRunId,
+                          endTime:nowTimestamp, messages:messages, hasError:hasError, errors:errors])
+                    msgMap.put("parameters", parameters)
+                    msgMap.put("results", results)
+
+                    serviceJobUsers = null
+                }
+>>>>>>> remove-entity
 
                 // if topic send NotificationMessage
 

@@ -29,7 +29,6 @@ import org.moqui.BaseException
 import org.moqui.Moqui
 import org.moqui.context.*
 import org.moqui.entity.EntityDataLoader
-import org.moqui.entity.EntityFacade
 import org.moqui.entity.EntityList
 import org.moqui.entity.EntityValue
 import org.moqui.util.CollectionUtilities
@@ -38,7 +37,15 @@ import org.moqui.impl.actions.XmlAction
 import org.moqui.resource.UrlResourceReference
 import org.moqui.impl.context.ContextJavaUtil.CustomScheduledExecutor
 import org.moqui.impl.context.ContextJavaUtil.ScheduledRunnableInfo
+<<<<<<< HEAD
 import org.moqui.impl.entity.EntityFacadeImpl
+=======
+import org.moqui.impl.screen.ScreenFacadeImpl
+import org.moqui.impl.service.ServiceFacadeImpl
+import org.moqui.impl.webapp.NotificationWebSocketListener
+import org.moqui.screen.ScreenFacade
+import org.moqui.service.ServiceFacade
+>>>>>>> remove-entity
 import org.moqui.util.MNode
 import org.moqui.resource.ResourceReference
 import org.moqui.util.ObjectUtilities
@@ -118,7 +125,15 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
 
     // ======== Permanent Delegated Facades ========
     @SuppressWarnings("GrFinalVariableAccess") public final LoggerFacadeImpl loggerFacade
+<<<<<<< HEAD
     @SuppressWarnings("GrFinalVariableAccess") public final EntityFacadeImpl entityFacade
+=======
+    @SuppressWarnings("GrFinalVariableAccess") public final ResourceFacadeImpl resourceFacade
+    @SuppressWarnings("GrFinalVariableAccess") public final TransactionFacadeImpl transactionFacade
+    @SuppressWarnings("GrFinalVariableAccess") public final ElasticFacadeImpl elasticFacade
+    @SuppressWarnings("GrFinalVariableAccess") public final ServiceFacadeImpl serviceFacade
+    @SuppressWarnings("GrFinalVariableAccess") public final ScreenFacadeImpl screenFacade
+>>>>>>> remove-entity
 
     /** The main worker pool for services, running async closures and runnables, etc */
     @SuppressWarnings("GrFinalVariableAccess") public final ThreadPoolExecutor workerPool
@@ -196,8 +211,17 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         loggerFacade = new LoggerFacadeImpl(this)
         // logger.info("Logger Facade initialized")
 
+<<<<<<< HEAD
         entityFacade = new EntityFacadeImpl(this)
         logger.info("Entity Facade initialized")
+=======
+        transactionFacade = new TransactionFacadeImpl(this)
+        logger.info("Transaction Facade initialized")
+        serviceFacade = new ServiceFacadeImpl(this)
+        logger.info("Service Facade initialized")
+        screenFacade = new ScreenFacadeImpl(this)
+        logger.info("Screen Facade initialized")
+>>>>>>> remove-entity
 
         postFacadeInit()
 
@@ -244,8 +268,17 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         loggerFacade = new LoggerFacadeImpl(this)
         // logger.info("LoggerFacadeImpl initialized")
 
+<<<<<<< HEAD
         entityFacade = new EntityFacadeImpl(this)
         logger.info("Entity Facade initialized")
+=======
+        transactionFacade = new TransactionFacadeImpl(this)
+        logger.info("Transaction Facade initialized")
+        serviceFacade = new ServiceFacadeImpl(this)
+        logger.info("Service Facade initialized")
+        screenFacade = new ScreenFacadeImpl(this)
+        logger.info("Screen Facade initialized")
+>>>>>>> remove-entity
 
         postFacadeInit()
 
@@ -518,7 +551,11 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     }
 
     private void postFacadeInit() {
+<<<<<<< HEAD
         entityFacade.postFacadeInit()
+=======
+        serviceFacade.postFacadeInit()
+>>>>>>> remove-entity
 
         // Warm cache on start if configured to do so
         if (confXmlRoot.first("cache-list").attribute("warm-on-start") != "false") warmCache()
@@ -550,7 +587,12 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     }
 
     void warmCache() {
+<<<<<<< HEAD
         this.entityFacade.warmCache()
+=======
+        this.serviceFacade.warmCache()
+        this.screenFacade.warmCache()
+>>>>>>> remove-entity
     }
 
     /** Setup the cached ClassLoader, this should init in the main thread so we can set it properly */
@@ -627,14 +669,14 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         String emptyDbLoad = toolsNode.attribute("empty-db-load")
         if (!emptyDbLoad || emptyDbLoad == 'none') return false
 
-        long enumCount = getEntity().find("moqui.basic.Enumeration").disableAuthz().count()
+        long enumCount = 0
         if (enumCount == 0) {
             logger.info("Found ${enumCount} Enumeration records, loading empty-db-load data types (${emptyDbLoad})")
 
             ExecutionContext ec = getExecutionContext()
             try {
 
-                EntityDataLoader edl = ec.getEntity().makeDataLoader()
+                EntityDataLoader edl = null
                 if (emptyDbLoad != 'all') edl.dataTypes(new HashSet(emptyDbLoad.split(",") as List))
 
                 try {
@@ -658,7 +700,7 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
                 ExecutionContext ec = getExecutionContext()
                 try {
 
-                    EntityDataLoader edl = ec.getEntity().makeDataLoader()
+                    EntityDataLoader edl = null
                     edl.dataTypes(new HashSet(['test']))
 
                     try {
@@ -736,7 +778,14 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
         */
 
         // this destroy order is important as some use others so must be destroyed first
+<<<<<<< HEAD
         if (this.entityFacade != null) this.entityFacade.destroy()
+=======
+        if (this.serviceFacade != null) this.serviceFacade.destroy()
+        if (this.elasticFacade != null) this.elasticFacade.destroy()
+        if (this.transactionFacade != null) this.transactionFacade.destroy()
+        if (this.cacheFacade != null) this.cacheFacade.destroy()
+>>>>>>> remove-entity
         logger.info("Facades destroyed")
         System.out.println("Facades destroyed")
 
@@ -893,7 +942,15 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
     }
 
     @Override @Nonnull LoggerFacade getLogger() { loggerFacade }
+<<<<<<< HEAD
     @Override @Nonnull EntityFacade getEntity() { entityFacade }
+=======
+    @Override @Nonnull CacheFacade getCache() { cacheFacade }
+    @Override @Nonnull TransactionFacade getTransaction() { transactionFacade }
+    @Override @Nonnull ElasticFacade getElastic() { elasticFacade }
+    @Override @Nonnull ServiceFacade getService() { serviceFacade }
+    @Override @Nonnull ScreenFacade getScreen() { screenFacade }
+>>>>>>> remove-entity
 
     @Override @Nonnull ClassLoader getClassLoader() { moquiClassLoader }
     @Override @Nonnull GroovyClassLoader getGroovyClassLoader() { groovyClassLoader }
@@ -1007,7 +1064,6 @@ class ExecutionContextFactoryImpl implements ExecutionContextFactory {
             statusMap.MoquiFramework = moquiVersion
             statusMap.System = [Load:loadAvg, Processors:processors, CPU:osMXBean.getArch(), OsName:osMXBean.getName(), OsVersion:osMXBean.getVersion()]
             statusMap.JavaRuntime = [SpecVersion:runtimeMXBean.getSpecVersion(), VmVendor:runtimeMXBean.getVmVendor(), VmVersion:runtimeMXBean.getVmVersion(), Start:startTimestamp, UptimeHours:uptimeHours]
-            statusMap.DataSources = entityFacade.getDataSourcesInfo()
         }
         return statusMap
     }

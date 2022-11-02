@@ -352,7 +352,7 @@ class RestApi {
 
             try {
                 if (operation == 'one') {
-                    EntityFind ef = ec.entity.find(entityName).searchFormMap(ec.context, null, null, null, false)
+                    EntityFind ef = null
                     if (masterName) {
                         return new RestResult(ef.oneMaster(masterName), null)
                     } else {
@@ -360,7 +360,7 @@ class RestApi {
                         return new RestResult(val != null ? CollectionUtilities.removeNullsFromMap(val.getMap()) : null, null)
                     }
                 } else if (operation == 'list') {
-                    EntityFind ef = ec.entity.find(entityName).searchFormMap(ec.context, null, null, null, false)
+                    EntityFind ef = null
                     // we don't want to go overboard with these requests, never do an unlimited find, if no limit use 100
                     if (!ef.getLimit() && !"true".equals(ec.context.get("pageNoLimit"))) ef.limit(100)
 
@@ -380,7 +380,7 @@ class RestApi {
                         return new RestResult(ef.list().getValueMapList(), headers)
                     }
                 } else if (operation == 'count') {
-                    EntityFind ef = ec.entity.find(entityName).searchFormMap(ec.context, null, null, null, false)
+                    EntityFind ef = null
                     long count = ef.count()
                     Map<String, Object> headers = ['X-Total-Count':count] as Map<String, Object>
                     return new RestResult([count:count], headers)
@@ -395,7 +395,7 @@ class RestApi {
         }
 
         void addToSwaggerMap(Map<String, Object> swaggerMap, Map<String, Map<String, Object>> resourceMap) {
-            EntityDefinition ed = ecfi.entityFacade.getEntityDefinition(entityName)
+            EntityDefinition ed = null
             if (ed == null) throw new IllegalArgumentException("Entity ${entityName} not found")
             // Node entityNode = ed.getEntityNode()
 
@@ -479,7 +479,7 @@ class RestApi {
         Map<String, Object> getRamlMap(Map<String, Object> typesMap) {
             Map<String, Object> ramlMap = null
 
-            EntityDefinition ed = ecfi.entityFacade.getEntityDefinition(entityName)
+            EntityDefinition ed = null
             if (ed == null) throw new IllegalArgumentException("Entity ${entityName} not found")
 
             String refDefName = ed.getShortOrFullEntityName()

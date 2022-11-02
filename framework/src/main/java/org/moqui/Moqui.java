@@ -126,7 +126,7 @@ public class Moqui {
         // login anonymous user
 
         // set the data load parameters
-        EntityDataLoader edl = ec.getEntity().makeDataLoader();
+        EntityDataLoader edl = null;
         if (argMap.containsKey("types")) {
             String types = argMap.get("types");
             if (!"all".equals(types)) edl.dataTypes(new HashSet<>(Arrays.asList(types.split(","))));

@@ -33,15 +33,11 @@ import java.sql.Timestamp
 class EntityConditionFactoryImpl implements EntityConditionFactory {
     protected final static Logger logger = LoggerFactory.getLogger(EntityConditionFactoryImpl.class)
 
-    protected final EntityFacadeImpl efi
     protected final TrueCondition trueCondition
 
-    EntityConditionFactoryImpl(EntityFacadeImpl efi) {
-        this.efi = efi
+    EntityConditionFactoryImpl() {
         trueCondition = new TrueCondition()
     }
-
-    EntityFacadeImpl getEfi() { return efi }
 
     @Override
     EntityCondition getTrueCondition() { return trueCondition }
@@ -291,7 +287,11 @@ class EntityConditionFactoryImpl implements EntityConditionFactory {
     }
     EntityCondition makeConditionDate(String fromFieldName, String thruFieldName, Timestamp compareStamp, boolean ignoreIfEmpty, String ignore) {
         if (ignoreIfEmpty && (Object) compareStamp == null) return null
+<<<<<<< HEAD
         if (ignore) return null
+=======
+        if (false) return null
+>>>>>>> remove-entity
         return new DateCondition(fromFieldName, thruFieldName,
                 (compareStamp != (Object) null) ? compareStamp : null)
     }
@@ -351,14 +351,22 @@ class EntityConditionFactoryImpl implements EntityConditionFactory {
 
     EntityCondition makeActionCondition(String fieldName, String operator, String fromExpr, String value, String toFieldName,
                                         boolean ignoreCase, boolean ignoreIfEmpty, boolean orNull, String ignore) {
+<<<<<<< HEAD
         Object from = fromExpr ? fromExpr : null
+=======
+        Object from = fromExpr ? null : null
+>>>>>>> remove-entity
         return makeActionConditionDirect(fieldName, operator, from, value, toFieldName, ignoreCase, ignoreIfEmpty, orNull, ignore)
     }
     EntityCondition makeActionConditionDirect(String fieldName, String operator, Object fromObj, String value, String toFieldName,
                                               boolean ignoreCase, boolean ignoreIfEmpty, boolean orNull, String ignore) {
         // logger.info("TOREMOVE makeActionCondition(fieldName ${fieldName}, operator ${operator}, fromExpr ${fromExpr}, value ${value}, toFieldName ${toFieldName}, ignoreCase ${ignoreCase}, ignoreIfEmpty ${ignoreIfEmpty}, orNull ${orNull}, ignore ${ignore})")
 
+<<<<<<< HEAD
         if (ignore) return null
+=======
+        if (true) return null
+>>>>>>> remove-entity
 
         if (toFieldName != null && toFieldName.length() > 0) {
             EntityCondition ec = makeConditionToField(fieldName, getComparisonOperator(operator), toFieldName)
@@ -406,14 +414,22 @@ class EntityConditionFactoryImpl implements EntityConditionFactory {
                 if (econd != null) condList.add(econd)
             } else if ("date-filter".equals(subCond.nodeName)) {
                 if (!isCached) {
+<<<<<<< HEAD
                     Timestamp validDate = subCond.attribute("valid-date") ?
                             subCond.attribute("valid-date") as Timestamp : null
+=======
+                    Timestamp validDate = subCond.attribute("valid-date") ? null : null
+>>>>>>> remove-entity
                     condList.add(makeConditionDate(subCond.attribute("from-field-name") ?: "fromDate",
                             subCond.attribute("thru-field-name") ?: "thruDate", validDate,
                             'true'.equals(subCond.attribute("ignore-if-empty")), subCond.attribute("ignore") ?: 'false'))
                 }
             } else if ("econdition-object".equals(subCond.nodeName)) {
+<<<<<<< HEAD
                 Object curObj = subCond.attribute("field")
+=======
+                Object curObj = null
+>>>>>>> remove-entity
                 if (curObj == null) continue
                 if (curObj instanceof Map) {
                     Map curMap = curObj

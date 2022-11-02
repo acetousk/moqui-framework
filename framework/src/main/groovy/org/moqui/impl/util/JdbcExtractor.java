@@ -64,7 +64,7 @@ public class JdbcExtractor implements SimpleEtl.Extractor {
         Statement stmt = null;
         ResultSet rs = null;
         try {
-            xacon = eci.getEntityFacade().getConfConnection(confMap);
+            xacon = null;
             con = xacon.getConnection();
             stmt = con.createStatement();
             rs = stmt.executeQuery(selectSql);

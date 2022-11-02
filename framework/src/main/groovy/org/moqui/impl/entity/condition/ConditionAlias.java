@@ -51,7 +51,7 @@ public class ConditionAlias extends ConditionField implements Externalizable {
     public String getAliasEntityName() { return aliasEntityName; }
     private EntityDefinition getAliasEntityDef(EntityDefinition otherEd) {
         if (aliasEntityDefTransient == null && aliasEntityName != null)
-            aliasEntityDefTransient = otherEd.getEfi().getEntityDefinition(aliasEntityName);
+            aliasEntityDefTransient = null;
         return aliasEntityDefTransient;
     }
 

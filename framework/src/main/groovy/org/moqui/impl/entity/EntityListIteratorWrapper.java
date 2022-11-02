@@ -29,7 +29,6 @@ import java.util.List;
 
 class EntityListIteratorWrapper implements EntityListIterator {
     protected static final Logger logger = LoggerFactory.getLogger(EntityListIteratorWrapper.class);
-    protected EntityFacadeImpl efi;
     private List<EntityValue> valueList;
     private int internalIndex = -1;
     private EntityDefinition entityDefinition;
@@ -37,12 +36,15 @@ class EntityListIteratorWrapper implements EntityListIterator {
     private boolean haveMadeValue = false;
     protected boolean closed = false;
 
-    EntityListIteratorWrapper(List<EntityValue> valList, EntityDefinition entityDefinition, EntityFacadeImpl efi,
-                              EntityCondition queryCondition, ArrayList<String> obf) {
+    EntityListIteratorWrapper(List<EntityValue> valList, EntityDefinition entityDefinition, EntityCondition queryCondition, ArrayList<String> obf) {
         valueList = new ArrayList<>(valList);
-        this.efi = efi;
         this.entityDefinition = entityDefinition;
+<<<<<<< HEAD
         if (false && queryCondition != null) {
+=======
+        TransactionCache txCache = null;
+        if (txCache != null && queryCondition != null) {
+>>>>>>> remove-entity
             // add all created values (updated and deleted values will be handled by the next() method
             EntityJavaUtil.FindAugmentInfo tempFai = null;
             if (tempFai.valueListSize > 0) {
@@ -115,7 +117,7 @@ class EntityListIteratorWrapper implements EntityListIterator {
 
     @Override public EntityList getCompleteList(boolean closeAfter) {
         try {
-            EntityList list = new EntityListImpl(efi);
+            EntityList list = null;
             EntityValue value;
             while ((value = this.next()) != null) list.add(value);
             return list;
@@ -126,7 +128,7 @@ class EntityListIteratorWrapper implements EntityListIterator {
 
     @Override public EntityList getPartialList(int offset, int limit, boolean closeAfter) {
         try {
-            EntityList list = new EntityListImpl(this.efi);
+            EntityList list = new EntityListImpl();
             if (limit == 0) return list;
 
             // jump to start index, or just get the first result

@@ -37,8 +37,6 @@ import java.util.zip.ZipOutputStream
 class EntityDataWriterImpl implements EntityDataWriter {
     private final static Logger logger = LoggerFactory.getLogger(EntityDataWriterImpl.class)
 
-    private EntityFacadeImpl efi
-
     private FileType fileType = XML
     private int txTimeout = 3600
     private LinkedHashSet<String> entityNames = new LinkedHashSet<>()
@@ -55,9 +53,7 @@ class EntityDataWriterImpl implements EntityDataWriter {
     private boolean isoDateTime = false
     private boolean tableColumnNames = false
 
-    EntityDataWriterImpl(EntityFacadeImpl efi) { this.efi = efi }
-
-    EntityFacadeImpl getEfi() { return efi }
+    EntityDataWriterImpl() {  }
 
     EntityDataWriter fileType(FileType ft) { fileType = ft; return this }
     EntityDataWriter fileType(String ft) { fileType = FileType.valueOf(ft); return this }
@@ -88,7 +84,6 @@ class EntityDataWriterImpl implements EntityDataWriter {
     int file(String filename) {
         File outFile = new File(filename)
         if (!outFile.createNewFile()) {
-            efi.ecfi.executionContext.message.addError(efi.ecfi.resource.expand('File ${filename} already exists.','',[filename:filename]))
             return 0
         }
 
@@ -97,7 +92,6 @@ class EntityDataWriterImpl implements EntityDataWriter {
         else if (filename.endsWith('.csv')) fileType(CSV)
 
         if (CSV.is(fileType) && entityNames.size() > 1) {
-            efi.ecfi.executionContext.message.addError('Cannot write to single CSV file with multiple entity names')
             return 0
         }
 
@@ -105,7 +99,6 @@ class EntityDataWriterImpl implements EntityDataWriter {
         // NOTE: don't have to do anything different here for different file types, writer() method will handle that
         int valuesWritten = this.writer(pw)
         pw.close()
-        efi.ecfi.executionContext.message.addMessage(efi.ecfi.resource.expand('Wrote ${valuesWritten} records to file ${filename}', '', [valuesWritten:valuesWritten, filename:filename]))
         return valuesWritten
     }
 
@@ -114,7 +107,6 @@ class EntityDataWriterImpl implements EntityDataWriter {
         File zipFile = new File(zipFilename)
         if (!zipFile.parentFile.exists()) zipFile.parentFile.mkdirs()
         if (!zipFile.createNewFile()) {
-            efi.ecfi.executionContext.message.addError(efi.ecfi.resource.expand('File ${filename} already exists.', '', [filename:zipFilename]))
             return 0
         }
 
@@ -123,7 +115,6 @@ class EntityDataWriterImpl implements EntityDataWriter {
         else if (filenameWithinZip.endsWith('.csv')) fileType(CSV)
 
         if (CSV.is(fileType) && entityNames.size() > 1) {
-            efi.ecfi.executionContext.message.addError('Cannot write to single CSV file with multiple entity names')
             return 0
         }
 
@@ -135,7 +126,6 @@ class EntityDataWriterImpl implements EntityDataWriter {
             try {
                 int valuesWritten = this.writer(pw)
                 pw.flush()
-                efi.ecfi.executionContext.message.addMessage(efi.ecfi.resource.expand('Wrote ${valuesWritten} records to file ${filename}', '', [valuesWritten:valuesWritten, filename:zipFilename]))
                 return valuesWritten
             } finally {
                 out.closeEntry()
@@ -150,7 +140,6 @@ class EntityDataWriterImpl implements EntityDataWriter {
         File outDir = new File(path)
         if (!outDir.exists()) outDir.mkdir()
         if (!outDir.isDirectory()) {
-            efi.ecfi.executionContext.message.addError(efi.ecfi.resource.expand('Path ${path} is not a directory.','',[path:path]))
             return 0
         }
 
@@ -158,6 +147,10 @@ class EntityDataWriterImpl implements EntityDataWriter {
 
         int valuesWritten = 0
 
+<<<<<<< HEAD
+=======
+        TransactionFacade tf = null
+>>>>>>> remove-entity
         boolean suspendedTransaction = false
         try {
             if (false) suspendedTransaction = null
@@ -176,7 +169,6 @@ class EntityDataWriterImpl implements EntityDataWriter {
                         String filename = path + '/' + en + '.' + fileType.name().toLowerCase()
                         File outFile = new File(filename)
                         if (outFile.exists()) {
-                            efi.ecfi.getEci().message.addError(efi.ecfi.resource.expand('File ${filename} already exists, skipping entity ${en}.','',[filename:filename,en:en]))
                             continue
                         }
                         outFile.createNewFile()
@@ -193,7 +185,6 @@ class EntityDataWriterImpl implements EntityDataWriter {
 
                             endFile(pw)
 
-                            efi.ecfi.getEci().message.addMessage(efi.ecfi.resource.expand('Wrote ${curValuesWritten} records to file ${filename}','',[curValuesWritten:curValuesWritten,filename:filename]))
                             valuesWritten += curValuesWritten
                         } finally {
                             pw.close()
@@ -205,7 +196,6 @@ class EntityDataWriterImpl implements EntityDataWriter {
             } catch (Throwable t) {
                 logger.warn("Error writing data", t)
                 tf.rollback(beganTransaction, "Error writing data", t)
-                efi.ecfi.getEci().messageFacade.addError(t.getMessage())
             } finally {
                 if (beganTransaction && tf.isTransactionInPlace()) tf.commit()
             }
@@ -266,7 +256,6 @@ class EntityDataWriterImpl implements EntityDataWriter {
                         endFile(pw)
 
                         pw.flush()
-                        efi.ecfi.getEci().message.addMessage(efi.ecfi.resource.expand('Wrote ${curValuesWritten} records to ${filename}','',[curValuesWritten:curValuesWritten,filename:filenameWithinZip]))
 
                         valuesWritten += curValuesWritten
                     } finally {
@@ -285,8 +274,6 @@ class EntityDataWriterImpl implements EntityDataWriter {
 
     @Override
     int writer(Writer writer) {
-        if (dependentLevels > 0) efi.createAllAutoReverseManyRelationships()
-
         LinkedHashSet<String> activeEntityNames = skipEntityNames.size() > 0 ? entityNames - skipEntityNames : entityNames
         EntityDefinition singleEd = null
         if (activeEntityNames.size() == 1) singleEd = efi.getEntityDefinition(activeEntityNames.first())
@@ -450,8 +437,8 @@ class EntityDataWriterImpl implements EntityDataWriter {
     }
 
     private EntityFind makeEntityFind(String en) {
-        EntityFind ef = efi.find(en).condition(filterMap).orderBy(orderByList)
-        EntityDefinition ed = efi.getEntityDefinition(en)
+        EntityFind ef = null
+        EntityDefinition ed = null
         if (ed.isField("lastUpdatedStamp")) {
             if (fromDate) ef.condition("lastUpdatedStamp", ComparisonOperator.GREATER_THAN_EQUAL_TO, fromDate)
             if (thruDate) ef.condition("lastUpdatedStamp", ComparisonOperator.LESS_THAN, thruDate)

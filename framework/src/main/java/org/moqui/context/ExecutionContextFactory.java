@@ -14,7 +14,12 @@
 package org.moqui.context;
 
 import groovy.lang.GroovyClassLoader;
+<<<<<<< HEAD
 import org.moqui.entity.EntityFacade;
+=======
+import org.moqui.screen.ScreenFacade;
+import org.moqui.service.ServiceFacade;
+>>>>>>> remove-entity
 
 import javax.annotation.Nonnull;
 import javax.servlet.ServletContext;
@@ -63,7 +68,6 @@ public interface ExecutionContextFactory {
     /** For transaction operations use this facade instead of the JTA UserTransaction and TransactionManager. See javadoc comments there for examples of code usage. */
 
     /** For interactions with a relational database. */
-    @Nonnull EntityFacade getEntity();
 
     /** For interactions with ElasticSearch using the built in HTTP REST client. */
 

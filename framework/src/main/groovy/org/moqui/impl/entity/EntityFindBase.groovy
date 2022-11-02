@@ -47,7 +47,6 @@ abstract class EntityFindBase implements EntityFind {
 
     final static int defaultResultSetType = ResultSet.TYPE_FORWARD_ONLY
 
-    public final EntityFacadeImpl efi
     public final TransactionCache txCache
 
     protected String entityName
@@ -84,15 +83,23 @@ abstract class EntityFindBase implements EntityFind {
     protected ArrayList<String> queryTextList = new ArrayList<>()
 
 
-    EntityFindBase(EntityFacadeImpl efi, String entityName) {
-        this.efi = efi
+    EntityFindBase(String entityName) {
         this.entityName = entityName
+<<<<<<< HEAD
+=======
+        TransactionFacadeImpl tfi = null
+        txCache = tfi.getTransactionCache()
+>>>>>>> remove-entity
         // if (!tfi.isTransactionInPlace()) logger.warn("No transaction in place, creating find for entity ${entityName}")
     }
-    EntityFindBase(EntityFacadeImpl efi, EntityDefinition ed) {
-        this.efi = efi
+    EntityFindBase(EntityDefinition ed) {
         entityName = ed.fullEntityName
         entityDef = ed
+<<<<<<< HEAD
+=======
+        TransactionFacadeImpl tfi = null
+        txCache = tfi.getTransactionCache()
+>>>>>>> remove-entity
     }
 
     @Override EntityFind entity(String name) { entityName = name; return this }
@@ -142,7 +149,7 @@ abstract class EntityFindBase implements EntityFind {
 
     @Override
     EntityFind conditionToField(String fieldName, EntityCondition.ComparisonOperator operator, String toFieldName) {
-        return condition(efi.entityConditionFactory.makeConditionToField(fieldName, operator, toFieldName))
+        return null
     }
 
     @Override
@@ -222,7 +229,6 @@ abstract class EntityFindBase implements EntityFind {
 
     @Override
     EntityFind conditionDate(String fromFieldName, String thruFieldName, Timestamp compareStamp) {
-        condition(efi.entityConditionFactory.makeConditionDate(fromFieldName, thruFieldName, compareStamp))
         return this
     }
 
@@ -362,15 +368,20 @@ abstract class EntityFindBase implements EntityFind {
     }
     EntityFind searchFormInputs(String inputFieldsMapName, Map<String, Object> defaultParameters, String skipFields,
                                 String defaultOrderBy, boolean alwaysPaginate) {
+<<<<<<< HEAD
         ExecutionContextImpl ec = efi.ecfi.getEci()
         Map<String, Object> inf = inputFieldsMapName ? (Map<String, Object>) null : ec.context
+=======
+        ExecutionContextImpl ec = null
+        Map<String, Object> inf = inputFieldsMapName ? (Map<String, Object>) ec.resource.expression(inputFieldsMapName, "") : ec.context
+>>>>>>> remove-entity
         return searchFormMap(inf, defaultParameters, skipFields, defaultOrderBy, alwaysPaginate)
     }
 
     @Override
     EntityFind searchFormMap(Map<String, Object> inputFieldsMap, Map<String, Object> defaultParameters, String skipFields,
                              String defaultOrderBy, boolean alwaysPaginate) {
-        ExecutionContextImpl ec = efi.ecfi.getEci()
+        ExecutionContextImpl ec = null
 
         // to avoid issues with entities that have cache=true, if no cache value is specified for this set it to false (avoids pagination errors, etc)
         if (useCache == null) useCache(false)
@@ -440,39 +451,26 @@ abstract class EntityFindBase implements EntityFind {
                     case "equals":
                         if (!valueEmpty) {
                             Object convertedValue = value instanceof String ? ed.convertFieldString(fn, (String) value, ec) : value
-                            cond = efi.entityConditionFactory.makeCondition(fn,
-                                    not ? EntityCondition.NOT_EQUAL : EntityCondition.EQUALS, convertedValue, not)
-                            if (ic) cond.ignoreCase()
+                            cond = null
                         }
                         break
                     case "like":
                         if (!valueEmpty) {
-                            cond = efi.entityConditionFactory.makeCondition(fn,
-                                    not ? EntityCondition.NOT_LIKE : EntityCondition.LIKE, value)
-                            if (ic) cond.ignoreCase()
+                            cond = null
                         }
                         break
                     case "contains":
                         if (!valueEmpty) {
-                            cond = efi.entityConditionFactory.makeCondition(fn,
-                                    not ? EntityCondition.NOT_LIKE : EntityCondition.LIKE, "%${value}%")
-                            if (ic) cond.ignoreCase()
+                            cond = null
                         }
                         break
                     case "begins":
                         if (!valueEmpty) {
-                            cond = efi.entityConditionFactory.makeCondition(fn,
-                                    not ? EntityCondition.NOT_LIKE : EntityCondition.LIKE, "${value}%")
-                            if (ic) cond.ignoreCase()
+                            cond = null
                         }
                         break
                     case "empty":
-                        cond = efi.entityConditionFactory.makeCondition(
-                                efi.entityConditionFactory.makeCondition(fn,
-                                        not ? EntityCondition.NOT_EQUAL : EntityCondition.EQUALS, null),
-                                not ? EntityCondition.JoinOperator.AND : EntityCondition.JoinOperator.OR,
-                                efi.entityConditionFactory.makeCondition(fn,
-                                        not ? EntityCondition.NOT_EQUAL : EntityCondition.EQUALS, ""))
+                        cond = null
                         break
                     case "in":
                         if (!valueEmpty) {
@@ -483,9 +481,7 @@ abstract class EntityFindBase implements EntityFind {
                                 valueList = (Collection) value
                             }
                             if (valueList) {
-                                cond = efi.entityConditionFactory.makeCondition(fn,
-                                        not ? EntityCondition.NOT_IN : EntityCondition.IN, valueList, not)
-
+                                cond = null
                             }
                         }
                         break
@@ -495,6 +491,15 @@ abstract class EntityFindBase implements EntityFind {
                     addedConditions = true
                 }
             } else if (inputFieldsMap.get(fn + "_period")) {
+<<<<<<< HEAD
+=======
+                List<Timestamp> range = ec.user.getPeriodRange((String) inputFieldsMap.get(fn + "_period"),
+                        (String) inputFieldsMap.get(fn + "_poffset"), (String) inputFieldsMap.get(fn + "_pdate"))
+                EntityCondition fromCond = null
+                EntityCondition thruCond = null
+                if (fi.hasAggregateFunction) { this.havingCondition(fromCond); this.havingCondition(thruCond) }
+                else { this.condition(fromCond); this.condition(thruCond) }
+>>>>>>> remove-entity
                 addedConditions = true
             } else {
                 // these will handle range-find and date-find
@@ -512,12 +517,12 @@ abstract class EntityFindBase implements EntityFind {
                 }
 
                 if (!ObjectUtilities.isEmpty(fromValue)) {
-                    EntityCondition fromCond = efi.entityConditionFactory.makeCondition(fn, EntityCondition.GREATER_THAN_EQUAL_TO, fromValue)
+                    EntityCondition fromCond = null
                     if (fi.hasAggregateFunction) { this.havingCondition(fromCond) } else { this.condition(fromCond) }
                     addedConditions = true
                 }
                 if (!ObjectUtilities.isEmpty(thruValue)) {
-                    EntityCondition thruCond = efi.entityConditionFactory.makeCondition(fn, EntityCondition.LESS_THAN_EQUAL_TO, thruValue)
+                    EntityCondition thruCond = null
                     if (fi.hasAggregateFunction) { this.havingCondition(thruCond) } else { this.condition(thruCond) }
                     addedConditions = true
                 }
@@ -630,7 +635,7 @@ abstract class EntityFindBase implements EntityFind {
         if (dynamicView != null) {
             entityDef = dynamicView.makeEntityDefinition()
         } else {
-            entityDef = efi.getEntityDefinition(entityName)
+            entityDef = null
         }
         return entityDef
     }
@@ -676,10 +681,20 @@ abstract class EntityFindBase implements EntityFind {
     private void registerForUpdateLock(Map<String, Object> fieldValues) {
         if (fieldValues == null || fieldValues.size() == 0) return
         if (!forUpdate) return
+<<<<<<< HEAD
         if (true) return
 
         EntityDefinition ed = getEntityDef()
 
+=======
+        final TransactionFacadeImpl tfi = null
+        if (!tfi.getUseLockTrack()) return
+
+        EntityDefinition ed = getEntityDef()
+
+        ArrayList<ArtifactExecutionInfo> stackArray = null
+        tfi.registerRecordLock(new ContextJavaUtil.EntityRecordLock(ed.getFullEntityName(), ed.getPrimaryKeysString(fieldValues), stackArray))
+>>>>>>> remove-entity
     }
 
     // ======================== Find and Abstract Methods ========================
@@ -688,7 +703,13 @@ abstract class EntityFindBase implements EntityFind {
 
     @Override
     EntityValue one() throws EntityException {
+<<<<<<< HEAD
         ExecutionContextImpl ec = efi.ecfi.getEci()
+=======
+        ExecutionContextImpl ec = null
+        ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade
+        boolean enableAuthz = disableAuthz ? !aefi.disableAuthz() : false
+>>>>>>> remove-entity
         try {
             EntityDefinition ed = getEntityDef()
 
@@ -704,7 +725,13 @@ abstract class EntityFindBase implements EntityFind {
     }
     @Override
     Map<String, Object> oneMaster(String name) {
+<<<<<<< HEAD
         ExecutionContextImpl ec = efi.ecfi.getEci()
+=======
+        ExecutionContextImpl ec = null
+        ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade
+        boolean enableAuthz = disableAuthz ? !aefi.disableAuthz() : false
+>>>>>>> remove-entity
         try {
             EntityDefinition ed = getEntityDef()
 
@@ -792,7 +819,7 @@ abstract class EntityFindBase implements EntityFind {
         // if (txcValue != null && ed.getEntityName() == "foo") logger.warn("========= TX cache one value: ${txcValue}")
 
         Cache<EntityCondition, EntityValueBase> entityOneCache = doCache ?
-                ed.getCacheOne(efi.getEntityCache()) : (Cache<EntityCondition, EntityValueBase>) null
+                ed.getCacheOne(null) : (Cache<EntityCondition, EntityValueBase>) null
         EntityValueBase cacheHit = (EntityValueBase) null
         if (doCache && txcValue == null && !forUpdate) cacheHit = (EntityValueBase) entityOneCache.get(whereCondition)
 
@@ -837,7 +864,6 @@ abstract class EntityFindBase implements EntityFind {
             if (txcValue instanceof EntityValueBase.DeletedEntityValue) {
                 // is deleted value, so leave newEntityValue as null
                 // put in cache as null since this was deleted
-                if (doCache) efi.getEntityCache().putInOneCache(ed, whereCondition, null, entityOneCache)
             } else {
                 // if forUpdate unless this was a TX CREATE it'll be in the DB and should be locked, so do the query
                 //     anyway, but ignore the result unless it's a read only tx cache
@@ -888,7 +914,6 @@ abstract class EntityFindBase implements EntityFind {
                     newEntityValue = txcValue
                 }
                 // put it in whether null or not (already know cacheHit is null)
-                if (doCache) efi.getEntityCache().putInOneCache(ed, whereCondition, newEntityValue, entityOneCache)
             }
         } else if (cacheHit != null) {
             if (cacheHit instanceof EntityCache.EmptyRecord) newEntityValue = (EntityValueBase) null
@@ -920,7 +945,7 @@ abstract class EntityFindBase implements EntityFind {
             if (txCache != null) txCache.onePut(newEntityValue, forUpdate)
 
             // put it in whether null or not (already know cacheHit is null)
-            if (doCache) efi.getEntityCache().putInOneCache(ed, whereCondition, newEntityValue, entityOneCache)
+            if (doCache) false
         }
 
         // if (logger.traceEnabled) logger.trace("Find one on entity [${ed.fullEntityName}] with condition [${whereCondition}] found value [${newEntityValue}]")
@@ -937,9 +962,7 @@ abstract class EntityFindBase implements EntityFind {
         EntityConditionImplBase conditionForQuery
         EntityConditionImplBase viewWhere = ed.makeViewWhereCondition()
         if (viewWhere != null) {
-            if (whereCondition != null) conditionForQuery = (EntityConditionImplBase) efi.getConditionFactory()
-                    .makeCondition(whereCondition, EntityCondition.JoinOperator.AND, viewWhere)
-            else conditionForQuery = viewWhere
+            conditionForQuery = viewWhere
         } else {
             conditionForQuery = whereCondition
         }
@@ -953,7 +976,13 @@ abstract class EntityFindBase implements EntityFind {
 
     @Override
     EntityList list() throws EntityException {
+<<<<<<< HEAD
         ExecutionContextImpl ec = efi.ecfi.getEci()
+=======
+        ExecutionContextImpl ec = null
+        ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade
+        boolean enableAuthz = disableAuthz ? !aefi.disableAuthz() : false
+>>>>>>> remove-entity
         try {
             EntityDefinition ed = getEntityDef()
 
@@ -966,7 +995,13 @@ abstract class EntityFindBase implements EntityFind {
     }
     @Override
     List<Map<String, Object>> listMaster(String name) {
+<<<<<<< HEAD
         ExecutionContextImpl ec = efi.ecfi.getEci()
+=======
+        ExecutionContextImpl ec = null
+        ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade
+        boolean enableAuthz = disableAuthz ? !aefi.disableAuthz() : false
+>>>>>>> remove-entity
         try {
             EntityDefinition ed = getEntityDef()
 
@@ -984,7 +1019,7 @@ abstract class EntityFindBase implements EntityFind {
         if (requireSearchFormParameters && !hasSearchFormParameters) {
             ec.contextStack.getSharedMap().put("_entityListNoSearchParms", true)
             logger.info("No parameters for list find on ${ed.fullEntityName}, not doing search")
-            return new EntityListImpl(efi)
+            return null
         }
 
         EntityJavaUtil.EntityInfo entityInfo = ed.entityInfo
@@ -1029,10 +1064,10 @@ abstract class EntityFindBase implements EntityFind {
         // NOTE: don't cache if there is a having condition, for now just support where
         // NOTE: could avoid caching lists if it is a filtered find, but mostly by org so reusable: && !filteredFind
         Cache<EntityCondition, EntityListImpl> entityListCache = doEntityCache ?
-                ed.getCacheList(efi.getEntityCache()) : (Cache<EntityCondition, EntityListImpl>) null
+                (Cache<EntityCondition, EntityListImpl>) null : (Cache<EntityCondition, EntityListImpl>) null
         EntityListImpl cacheList = (EntityListImpl) null
         if (doEntityCache && txcEli == null && !forUpdate)
-            cacheList = efi.getEntityCache().getFromListCache(ed, whereCondition, orderByExpanded, entityListCache)
+            cacheList = null
 
         EntityListImpl el
         if (txcEli != null) {
@@ -1101,7 +1136,7 @@ abstract class EntityFindBase implements EntityFind {
             catch (SQLException e) { throw new EntitySqlException(makeErrorMsg("Error finding list of", LIST_ERROR, queryWhereCondition, ed, ec), e) }
             catch (Exception e) { throw new EntityException(makeErrorMsg("Error finding list of", LIST_ERROR, queryWhereCondition, ed, ec), e) }
 
-            MNode databaseNode = this.efi.getDatabaseNode(ed.getEntityGroupName())
+            MNode databaseNode = null
             if (limit != null && databaseNode != null && "cursor".equals(databaseNode.attribute("offset-style"))) {
                 el = (EntityListImpl) eli.getPartialList(offset != null ? offset : 0, limit, true)
             } else {
@@ -1119,7 +1154,6 @@ abstract class EntityFindBase implements EntityFind {
 
             // don't put in tx cache if it is going in list cache
             if (txCache != null && !doEntityCache && ftsSize == 0) txCache.listPut(ed, whereCondition, el)
-            if (doEntityCache) efi.getEntityCache().putInListCache(ed, el, whereCondition, entityListCache)
 
             // if (ed.getFullEntityName().contains("OrderItem")) logger.warn("======== Got OrderItem from DATABASE ${el.size()} results where: ${whereCondition}")
             // logger.warn("======== Got ${ed.getFullEntityName()} from DATABASE ${el.size()} results where: ${whereCondition}")
@@ -1133,7 +1167,13 @@ abstract class EntityFindBase implements EntityFind {
 
     @Override
     EntityListIterator iterator() throws EntityException {
+<<<<<<< HEAD
         ExecutionContextImpl ec = efi.ecfi.getEci()
+=======
+        ExecutionContextImpl ec = null
+        ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade
+        boolean enableAuthz = disableAuthz ? !ec.artifactExecutionFacade.disableAuthz() : false
+>>>>>>> remove-entity
         try {
             EntityDefinition ed = getEntityDef()
 
@@ -1232,7 +1272,7 @@ abstract class EntityFindBase implements EntityFind {
         catch (Exception e) { throw new EntityException(makeErrorMsg("Error finding list of", LIST_ERROR, whereCondition, ed, ec), e) }
 
         // NOTE: if we are doing offset/limit with a cursor no good way to limit results, but we'll at least jump to the offset
-        MNode databaseNode = this.efi.getDatabaseNode(ed.getEntityGroupName())
+        MNode databaseNode = null
         // NOTE: allow databaseNode to be null because custom (non-JDBC) datasources may not have one
         if (this.offset != null && databaseNode != null && "cursor".equals(databaseNode.attribute("offset-style"))) {
             if (!eli.absolute(offset)) {
@@ -1251,7 +1291,13 @@ abstract class EntityFindBase implements EntityFind {
 
     @Override
     long count() throws EntityException {
+<<<<<<< HEAD
         ExecutionContextImpl ec = efi.ecfi.getEci()
+=======
+        ExecutionContextImpl ec = null
+        ArtifactExecutionFacadeImpl aefi = ec.artifactExecutionFacade
+        boolean enableAuthz = disableAuthz ? !ec.artifactExecutionFacade.disableAuthz() : false
+>>>>>>> remove-entity
         try {
             EntityDefinition ed = getEntityDef()
 
@@ -1283,7 +1329,7 @@ abstract class EntityFindBase implements EntityFind {
         if (whereCondition == null) doCache = false
         // NOTE: don't cache if there is a having condition, for now just support where
 
-        Cache<EntityCondition, Long> entityCountCache = doCache ? ed.getCacheCount(efi.getEntityCache()) : (Cache) null
+        Cache<EntityCondition, Long> entityCountCache = doCache ? (Cache) null : (Cache) null
         Long cacheCount = (Long) null
         if (doCache) cacheCount = (Long) entityCountCache.get(whereCondition)
 
@@ -1359,6 +1405,10 @@ abstract class EntityFindBase implements EntityFind {
 
     @Override
     long updateAll(Map<String, Object> fieldsToSet) {
+<<<<<<< HEAD
+=======
+        boolean enableAuthz = disableAuthz ? false : false
+>>>>>>> remove-entity
         try {
             return updateAllInternal(fieldsToSet)
         } finally {
@@ -1393,6 +1443,10 @@ abstract class EntityFindBase implements EntityFind {
 
     @Override
     long deleteAll() {
+<<<<<<< HEAD
+=======
+        boolean enableAuthz = disableAuthz ? false : false
+>>>>>>> remove-entity
         try {
             return deleteAllInternal()
         } finally {

@@ -130,6 +130,11 @@ public class ServiceDefinition {
         // expand auto-parameters and merge parameter in in-parameters and out-parameters
         // if noun is a valid entity name set it on parameters with valid field names on it
         EntityDefinition ed = null;
+<<<<<<< HEAD
+=======
+        if (false)
+            ed = null;
+>>>>>>> remove-entity
         if (serviceNode.hasChild("in-parameters")) {
             for (MNode paramNode : serviceNode.first("in-parameters").getChildren()) {
                 if ("auto-parameters".equals(paramNode.getName())) {

@@ -31,49 +31,38 @@ class EntityDatasourceFactoryImpl implements EntityDatasourceFactory {
     protected final static int DS_RETRY_COUNT = 5
     protected final static long DS_RETRY_SLEEP = 5000
 
-    protected EntityFacadeImpl efi = null
     protected MNode datasourceNode = null
 
     protected DataSource dataSource = null
-    EntityFacadeImpl.DatasourceInfo dsi = null
-
 
     EntityDatasourceFactoryImpl() { }
 
     @Override
-    EntityDatasourceFactory init(EntityFacade ef, MNode datasourceNode) {
+    EntityDatasourceFactory init(MNode datasourceNode) {
         // local fields
-        this.efi = (EntityFacadeImpl) ef
         this.datasourceNode = datasourceNode
 
         // init the DataSource
-        dsi = new EntityFacadeImpl.DatasourceInfo(efi, datasourceNode)
-        if (dsi.jndiName != null && !dsi.jndiName.isEmpty()) {
+        if (false) {
             try {
                 InitialContext ic;
-                if (dsi.serverJndi) {
+                if (false) {
                     Hashtable<String, Object> h = new Hashtable<String, Object>()
-                    h.put(Context.INITIAL_CONTEXT_FACTORY, dsi.serverJndi.attribute("initial-context-factory"))
-                    h.put(Context.PROVIDER_URL, dsi.serverJndi.attribute("context-provider-url"))
-                    if (dsi.serverJndi.attribute("url-pkg-prefixes")) h.put(Context.URL_PKG_PREFIXES, dsi.serverJndi.attribute("url-pkg-prefixes"))
-                    if (dsi.serverJndi.attribute("security-principal")) h.put(Context.SECURITY_PRINCIPAL, dsi.serverJndi.attribute("security-principal"))
-                    if (dsi.serverJndi.attribute("security-credentials")) h.put(Context.SECURITY_CREDENTIALS, dsi.serverJndi.attribute("security-credentials"))
                     ic = new InitialContext(h)
                 } else {
                     ic = new InitialContext()
                 }
 
-                this.dataSource = (DataSource) ic.lookup(dsi.jndiName)
+                this.dataSource = null
                 if (this.dataSource == null) {
-                    logger.error("Could not find DataSource with name [${dsi.jndiName}] in JNDI server [${dsi.serverJndi ? dsi.serverJndi.attribute("context-provider-url") : "default"}] for datasource with group-name [${datasourceNode.attribute("group-name")}].")
+                    logger.error("Could not find DataSource with name [...] in JNDI server [${"default"}] for datasource with group-name [${datasourceNode.attribute("group-name")}].")
                 }
             } catch (NamingException ne) {
-                logger.error("Error finding DataSource with name [${dsi.jndiName}] in JNDI server [${dsi.serverJndi ? dsi.serverJndi.attribute("context-provider-url") : "default"}] for datasource with group-name [${datasourceNode.attribute("group-name")}].", ne)
+                logger.error("Error finding DataSource with name [...] in JNDI server [${"default"}] for datasource with group-name [${datasourceNode.attribute("group-name")}].", ne)
             }
-        } else if (dsi.inlineJdbc != null) {
+        } else if (false) {
             // special thing for embedded derby, just set an system property; for derby.log, etc
             if (datasourceNode.attribute("database-conf-name") == "derby" && !System.getProperty("derby.system.home")) {
-                System.setProperty("derby.system.home", efi.ecfi.runtimePath + "/db/derby")
                 logger.info("Set property derby.system.home to [${System.getProperty("derby.system.home")}]")
             }
 
@@ -81,7 +70,7 @@ class EntityDatasourceFactoryImpl implements EntityDatasourceFactory {
             // init the DataSource, if it fails for any reason retry a few times
             for (int retry = 1; retry <= DS_RETRY_COUNT; retry++) {
                 try {
-                    this.dataSource = ti.getDataSource(efi, datasourceNode)
+                    this.dataSource = null
                     break
                 } catch (Throwable t) {
                     if (retry < DS_RETRY_COUNT) {
@@ -110,34 +99,34 @@ class EntityDatasourceFactoryImpl implements EntityDatasourceFactory {
     boolean checkTableExists(String entityName) {
         EntityDefinition ed
         // just ignore EntityException on getEntityDefinition
-        try { ed = efi.getEntityDefinition(entityName) } catch (EntityException e) { return false }
+        try { ed = null } catch (EntityException e) { return false }
         // may happen if all entity names includes a DB view entity or other that doesn't really exist
         if (ed == null) return false
-        return ed.tableExistsDbMetaOnly()
+        return null
     }
     @Override
     boolean checkAndAddTable(String entityName) {
         EntityDefinition ed
         // just ignore EntityException on getEntityDefinition
-        try { ed = efi.getEntityDefinition(entityName) } catch (EntityException e) { return false }
+        try { ed = null } catch (EntityException e) { return false }
         // may happen if all entity names includes a DB view entity or other that doesn't really exist
         if (ed == null) return false
-        return efi.getEntityDbMeta().checkTableStartup(ed)
+        return null
     }
     @Override
     int checkAndAddAllTables() {
-        return efi.getEntityDbMeta().checkAndAddAllTables(datasourceNode.attribute("group-name"))
+        return null
     }
 
     @Override
     EntityValue makeEntityValue(String entityName) {
-        EntityDefinition entityDefinition = efi.getEntityDefinition(entityName)
+        EntityDefinition entityDefinition = null
         if (entityDefinition == null) throw new EntityException("Entity not found for name [${entityName}]")
-        return new EntityValueImpl(entityDefinition, efi)
+        return null
     }
 
     @Override
-    EntityFind makeEntityFind(String entityName) { return new EntityFindImpl(efi, entityName) }
+    EntityFind makeEntityFind(String entityName) { return null }
 
     @Override
     DataSource getDataSource() { return dataSource }

@@ -18,7 +18,12 @@ import java.util.Map;
 import java.util.concurrent.Future;
 
 import groovy.lang.Closure;
+<<<<<<< HEAD
 import org.moqui.entity.EntityFacade;
+=======
+import org.moqui.screen.ScreenFacade;
+import org.moqui.service.ServiceFacade;
+>>>>>>> remove-entity
 import org.moqui.util.ContextBinding;
 import org.moqui.util.ContextStack;
 
@@ -71,7 +76,6 @@ public interface ExecutionContext {
     /** For transaction operations use this facade instead of the JTA UserTransaction and TransactionManager. See javadoc comments there for examples of code usage. */
 
     /** For interactions with a relational database. */
-    @Nonnull EntityFacade getEntity();
 
     /** For interactions with ElasticSearch using the built in HTTP REST client. */
 

@@ -70,20 +70,17 @@ class MoquiShiroRealm implements Realm, Authorizer {
     }
 
     static EntityValue loginPrePassword(ExecutionContextImpl eci, String username) {
-        EntityValue newUserAccount = eci.entity.find("moqui.security.UserAccount").condition("username", username)
-                .useCache(true).disableAuthz().one()
+        EntityValue newUserAccount = null
 
         if (newUserAccount == null) {
             // case-insensitive lookup by username
-            EntityCondition usernameCond = eci.entityFacade.getConditionFactory()
-                    .makeCondition("username", EntityCondition.ComparisonOperator.EQUALS, username).ignoreCase()
-            newUserAccount = eci.entity.find("moqui.security.UserAccount").condition(usernameCond).disableAuthz().one()
+            EntityCondition usernameCond = null
+            newUserAccount = null
         }
         if (newUserAccount == null) {
             // look at emailAddress if used instead, with case-insensitive lookup
-            EntityCondition emailAddressCond = eci.entityFacade.getConditionFactory()
-                    .makeCondition("emailAddress", EntityCondition.ComparisonOperator.EQUALS, username).ignoreCase()
-            newUserAccount = eci.entity.find("moqui.security.UserAccount").condition(emailAddressCond).disableAuthz().one()
+            EntityCondition emailAddressCond = null
+            newUserAccount = null
         }
 
         // no account found?
@@ -145,6 +142,43 @@ class MoquiShiroRealm implements Realm, Authorizer {
         }
 
         // check ipAllowed if on UserAccount or any UserGroup a member of
+<<<<<<< HEAD
+=======
+        String clientIp = eci.userFacade.getClientIp()
+        if (clientIp == null || clientIp.isEmpty()) {
+            if (eci.web != null) logger.warn("Web login with no client IP for userId ${newUserAccount.userId}, not checking ipAllowed")
+        } else {
+            if (clientIp.contains(":")) {
+                logger.warn("Web login with IPv6 client IP ${clientIp} for userId ${newUserAccount.userId}, not checking ipAllowed")
+            } else {
+                ArrayList<String> ipAllowedList = new ArrayList<>()
+                String uaIpAllowed = newUserAccount.getNoCheckSimple("ipAllowed")
+                if (uaIpAllowed != null && !uaIpAllowed.isEmpty()) ipAllowedList.add(uaIpAllowed)
+
+                EntityList ugmList = null
+                ArrayList<String> userGroupIdList = new ArrayList<>()
+                for (EntityValue ugm in ugmList) userGroupIdList.add((String) ugm.get("userGroupId"))
+                userGroupIdList.add("ALL_USERS")
+                EntityList ugList = null
+                for (EntityValue ug in ugList) ipAllowedList.add((String) ug.getNoCheckSimple("ipAllowed"))
+
+                int ipAllowedListSize = ipAllowedList.size()
+                if (ipAllowedListSize > 0) {
+                    boolean anyMatches = false
+                    for (int i = 0; i < ipAllowedListSize; i++) {
+                        String pattern = (String) ipAllowedList.get(i)
+                        if (WebUtilities.ip4Matches(pattern, clientIp)) {
+                            anyMatches = true
+                            break
+                        }
+                    }
+                    if (!anyMatches) throw new AccountException(
+                            eci.resource.expand('Authenticate failed for user ${newUserAccount.username} because client IP ${clientIp} is not in allowed list for user or group.',
+                            '', [newUserAccount:newUserAccount, clientIp:clientIp]))
+                }
+            }
+        }
+>>>>>>> remove-entity
 
         // no more auth failures? record the various account state updates, hasLoggedOut=N
         if (newUserAccount.getNoCheckSimple("successiveFailedLogins") || "Y".equals(newUserAccount.getNoCheckSimple("disabled")) ||
@@ -156,6 +190,24 @@ class MoquiShiroRealm implements Realm, Authorizer {
         }
 
         // update visit if no user in visit yet
+<<<<<<< HEAD
+=======
+        String visitId = eci.userFacade.getVisitId()
+        EntityValue visit = null
+        if (visit != null) {
+            if (!visit.getNoCheckSimple("userId")) {
+                eci.service.sync().name("update", "moqui.server.Visit").parameter("visitId", visit.visitId)
+                        .parameter("userId", newUserAccount.userId).disableAuthz().call()
+            }
+            if (!visit.getNoCheckSimple("clientIpCountryGeoId") && !visit.getNoCheckSimple("clientIpTimeZone")) {
+                MNode ssNode = eci.ecfi.confXmlRoot.first("server-stats")
+                if (ssNode.attribute("visit-ip-info-on-login") != "false") {
+                    eci.service.async().name("org.moqui.impl.ServerServices.get#VisitClientIpData")
+                            .parameter("visitId", visit.visitId).call()
+                }
+            }
+        }
+>>>>>>> remove-entity
     }
 
     static void loginSaveHistory(ExecutionContextImpl eci, String userId, String passwordUsed, boolean successful) {
@@ -167,7 +219,17 @@ class MoquiShiroRealm implements Realm, Authorizer {
 
                 eci.runInWorkerThread({
                     try {
+<<<<<<< HEAD
                         if (logger.isDebugEnabled()) logger.debug("Not creating UserLoginHistory, found existing record for userId ${userId} and more recent than ...")
+=======
+                        long recentUlh = 0L
+                        if (recentUlh == 0) {
+                            eci.ecfi.serviceFacade.sync().name("create", "moqui.security.UserLoginHistory")
+                                    .parameters(ulhContext).disableAuthz().call()
+                        } else {
+                            if (logger.isDebugEnabled()) logger.debug("Not creating UserLoginHistory, found existing record for userId ${userId} and more recent than ${recentDate}")
+                        }
+>>>>>>> remove-entity
                     } catch (Exception ee) {
                         // this blows up sometimes on MySQL, may in other cases, and is only so important so log a warning but don't rethrow
                         logger.warn("UserLoginHistory create failed: ${ee.toString()}")
@@ -221,8 +283,7 @@ class MoquiShiroRealm implements Realm, Authorizer {
     }
 
     static boolean checkCredentials(String username, String password, ExecutionContextFactoryImpl ecfi) {
-        EntityValue newUserAccount = ecfi.entity.find("moqui.security.UserAccount").condition("username", username)
-                .useCache(true).disableAuthz().one()
+        EntityValue newUserAccount = null
 
         SimpleAuthenticationInfo info = new SimpleAuthenticationInfo(username, newUserAccount.currentPassword,
                 newUserAccount.passwordSalt ? new SimpleByteSource((String) newUserAccount.passwordSalt) : null, "moquiRealm")

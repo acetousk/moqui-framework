@@ -41,8 +41,8 @@ public class EntityJavaUtil {
     protected final static boolean isTraceEnabled = logger.isTraceEnabled();
 
     private static final int saltBytes = 8;
-    static String enDeCrypt(String value, boolean encrypt, EntityFacadeImpl efi) {
-        MNode entityFacadeNode = efi.ecfi.getConfXmlRoot().first("entity-facade");
+    static String enDeCrypt(String value, boolean encrypt) {
+        MNode entityFacadeNode = null;
         if (encrypt) {
             return enDeCrypt(value, true, entityFacadeNode);
         } else {
@@ -250,7 +250,6 @@ public class EntityJavaUtil {
 
     public static class EntityInfo {
         private final EntityDefinition ed;
-        private final EntityFacadeImpl efi;
         public final String internalEntityName, fullEntityName, shortAlias, groupName;
         public final String tableName, schemaName, fullTableName;
 
@@ -280,9 +279,7 @@ public class EntityJavaUtil {
 
         EntityInfo(EntityDefinition ed, boolean memberNeverCache) {
             this.ed = ed;
-            this.efi = ed.efi;
             MNode internalEntityNode = ed.internalEntityNode;
-            EntityFacadeImpl efi = ed.efi;
             ArrayList<FieldInfo> allFieldInfoList = ed.allFieldInfoList;
 
             internalEntityName = internalEntityNode.attribute("entity-name");
@@ -298,10 +295,10 @@ public class EntityJavaUtil {
             isInvalidViewEntity = isView && (!internalEntityNode.hasChild("member-entity") || !internalEntityNode.hasChild("alias"));
 
             groupName = ed.groupName;
-            datasourceFactory = efi.getDatasourceFactory(groupName);
+            datasourceFactory = null;
             isEntityDatasourceFactoryImpl = datasourceFactory instanceof EntityDatasourceFactoryImpl;
-            MNode datasourceNode = efi.getDatasourceNode(groupName);
-            MNode databaseNode = efi.getDatabaseNode(groupName);
+            MNode datasourceNode = null;
+            MNode databaseNode = null;
 
             String tableNameAttr = internalEntityNode.attribute("table-name");
             if (tableNameAttr == null || tableNameAttr.isEmpty()) tableNameAttr = EntityJavaUtil.camelCaseToUnderscored(internalEntityName);
@@ -325,10 +322,9 @@ public class EntityJavaUtil {
 
             String sbsAttr = internalEntityNode.attribute("sequence-bank-size");
             if (sbsAttr != null && !sbsAttr.isEmpty()) sequenceBankSize = Long.parseLong(sbsAttr);
-            else sequenceBankSize = EntityFacadeImpl.defaultBankSize;
+            else sequenceBankSize = 0;
 
-            sequencePrimaryUseUuid = "true".equals(internalEntityNode.attribute("sequence-primary-use-uuid")) ||
-                    (datasourceNode != null && "true".equals(datasourceNode.attribute("sequence-primary-use-uuid")));
+            sequencePrimaryUseUuid = "true".equals(internalEntityNode.attribute("sequence-primary-use-uuid")) || false;
 
             optimisticLock = "true".equals(internalEntityNode.attribute("optimistic-lock"));
 
@@ -415,7 +411,7 @@ public class EntityJavaUtil {
         void setFields(Map<String, Object> src, Map<String, Object> dest, boolean setIfEmpty, String namePrefix, Boolean pks) {
             if (src == null || dest == null) return;
 
-            ExecutionContextImpl eci = efi.ecfi.getEci();
+            ExecutionContextImpl eci = null;
             boolean destIsEntityValueBase = dest instanceof EntityValueBase;
             EntityValueBase destEvb = destIsEntityValueBase ? (EntityValueBase) dest : null;
 
@@ -484,7 +480,7 @@ public class EntityJavaUtil {
             // like above with setIfEmpty=true, namePrefix=null, pks=null
             if (src == null || dest == null) return;
 
-            ExecutionContextImpl eci = efi.ecfi.getEci();
+            ExecutionContextImpl eci = null;
             boolean srcIsEntityValueBase = src instanceof EntityValueBase;
             EntityValueBase srcEvb = srcIsEntityValueBase ? (EntityValueBase) src : null;
             FieldInfo[] fieldInfoArray = pks == null ? allFieldInfoArray :
@@ -561,7 +557,7 @@ public class EntityJavaUtil {
         public final ArrayList<String> keyFieldList, keyFieldValueList;
         public final boolean dependent, mutable, isAutoReverse;
 
-        RelationshipInfo(MNode relNode, EntityDefinition fromEd, EntityFacadeImpl efi) {
+        RelationshipInfo(MNode relNode, EntityDefinition fromEd) {
             this.relNode = relNode;
             this.fromEd = fromEd;
             type = relNode.attribute("type");
@@ -573,7 +569,7 @@ public class EntityJavaUtil {
             title = titleAttr != null && !titleAttr.isEmpty() ? titleAttr : null;
             String relatedAttr = relNode.attribute("related");
             if (relatedAttr == null || relatedAttr.isEmpty()) relatedAttr = relNode.attribute("related-entity-name");
-            relatedEd = efi.getEntityDefinition(relatedAttr);
+            relatedEd = null;
             if (relatedEd == null) throw new EntityNotFoundException("Invalid entity relationship, " + relatedAttr + " not found in definition for entity " + fromEd.getFullEntityName());
             relatedEntityName = relatedEd.getFullEntityName();
 
@@ -725,7 +721,7 @@ public class EntityJavaUtil {
             this.entityName = entityName;
             this.sql = sql;
         }
-        public void countHit(EntityFacadeImpl efi, long runTimeNanos, boolean isError) {
+        public void countHit(long runTimeNanos, boolean isError) {
             hitCount++;
             if (isError) errorCount++;
             if (runTimeNanos < minTimeNanos) minTimeNanos = runTimeNanos;
@@ -733,6 +729,16 @@ public class EntityJavaUtil {
             totalTimeNanos += runTimeNanos;
             totalSquaredTime += runTimeNanos * runTimeNanos;
             // this gets much more expensive, consider commenting in the future
+<<<<<<< HEAD
+=======
+            ArtifactExecutionInfo aei = null;
+            if (aei != null) aei = aei.getParent();
+            if (aei != null) {
+                String artifactName = aei.getName();
+                Integer artifactCount = artifactCounts.get(artifactName);
+                artifactCounts.put(artifactName, artifactCount != null ? artifactCount + 1 : 1);
+            }
+>>>>>>> remove-entity
         }
         public String getEntityName() { return entityName; }
         public String getSql() { return sql; }

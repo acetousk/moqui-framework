@@ -15,11 +15,17 @@ package org.moqui.impl.context;
 
 import groovy.lang.Closure;
 import org.moqui.context.*;
-import org.moqui.entity.EntityFacade;
 import org.moqui.entity.EntityFind;
 import org.moqui.entity.EntityList;
 import org.moqui.entity.EntityValue;
+<<<<<<< HEAD
 import org.moqui.impl.entity.EntityFacadeImpl;
+=======
+import org.moqui.impl.screen.ScreenFacadeImpl;
+import org.moqui.impl.service.ServiceFacadeImpl;
+import org.moqui.screen.ScreenFacade;
+import org.moqui.service.ServiceFacade;
+>>>>>>> remove-entity
 import org.moqui.util.ContextBinding;
 import org.moqui.util.ContextStack;
 import org.slf4j.Logger;
@@ -41,7 +47,17 @@ public class ExecutionContextImpl implements ExecutionContext {
     public final ContextStack contextStack = new ContextStack();
     public final ContextBinding contextBindingInternal = new ContextBinding(contextStack);
 
+<<<<<<< HEAD
     private EntityFacadeImpl activeEntityFacade;
+=======
+    private WebFacade webFacade = (WebFacade) null;
+    private WebFacadeImpl webFacadeImpl = (WebFacadeImpl) null;
+
+    public final UserFacadeImpl userFacade;
+    public final MessageFacadeImpl messageFacade;
+    public final ArtifactExecutionFacadeImpl artifactExecutionFacade;
+    public final L10nFacadeImpl l10nFacade;
+>>>>>>> remove-entity
 
     // local references to ECFI fields
     public final LoggerFacadeImpl loggerFacade;
@@ -63,7 +79,14 @@ public class ExecutionContextImpl implements ExecutionContext {
         forThreadId = forThread.getId();
         // createLoc = new BaseException("ec create");
 
+<<<<<<< HEAD
         activeEntityFacade = ecfi.entityFacade;
+=======
+        userFacade = new UserFacadeImpl(this);
+        messageFacade = new MessageFacadeImpl();
+        artifactExecutionFacade = new ArtifactExecutionFacadeImpl(this);
+        l10nFacade = new L10nFacadeImpl(this);
+>>>>>>> remove-entity
 
         loggerFacade = ecfi.loggerFacade;
 
@@ -93,8 +116,39 @@ public class ExecutionContextImpl implements ExecutionContext {
 
     @Override public @Nonnull LoggerFacade getLogger() { return loggerFacade; }
 
+<<<<<<< HEAD
     @Override public @Nonnull EntityFacade getEntity() { return activeEntityFacade; }
     public @Nonnull EntityFacadeImpl getEntityFacade() { return activeEntityFacade; }
+=======
+    @Override public @Nonnull ElasticFacade getElastic() { return ecfi.elasticFacade; }
+    @Override public @Nonnull ServiceFacade getService() { return serviceFacade; }
+    @Override public @Nonnull ScreenFacade getScreen() { return screenFacade; }
+
+    @Override public @Nonnull NotificationMessage makeNotificationMessage() { return new NotificationMessageImpl(ecfi); }
+
+    @Override
+    public @Nonnull List<NotificationMessage> getNotificationMessages(@Nullable String topic) {
+        String userId = userFacade.getUserId();
+        if (userId == null || userId.isEmpty()) return new ArrayList<>();
+
+        List<NotificationMessage> nmList = new ArrayList<>();
+        boolean alreadyDisabled = artifactExecutionFacade.disableAuthz();
+        try {
+            EntityFind nmbuFind = null;
+            if (topic != null && !topic.isEmpty()) nmbuFind.condition("topic", topic);
+            EntityList nmbuList = nmbuFind.list();
+            for (EntityValue nmbu : nmbuList) {
+                NotificationMessageImpl nmi = new NotificationMessageImpl(ecfi);
+                nmi.populateFromValue(nmbu);
+                nmList.add(nmi);
+            }
+        } finally {
+            if (!alreadyDisabled) artifactExecutionFacade.enableAuthz();
+        }
+
+        return nmList;
+    }
+>>>>>>> remove-entity
 
     @Override
     public void initWebFacade(@Nonnull String webappMoquiName, @Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response) {

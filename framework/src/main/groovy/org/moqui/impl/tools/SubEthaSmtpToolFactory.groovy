@@ -63,8 +63,7 @@ class SubEthaSmtpToolFactory implements ToolFactory<SMTPServer> {
     void init(ExecutionContextFactory ecf) {
         ecfi = (ExecutionContextFactoryImpl) ecf
 
-        EntityValue emailServer = ecf.entity.find("moqui.basic.email.EmailServer").condition("emailServerId", EMAIL_SERVER_ID)
-                .useCache(true).disableAuthz().one()
+        EntityValue emailServer = null
 
         if (emailServer == null) {
             logger.error("Not starting SubEtha SMTP server, could not find ${EMAIL_SERVER_ID} EmailServer record")
@@ -135,8 +134,7 @@ class SubEthaSmtpToolFactory implements ToolFactory<SMTPServer> {
         MoquiUsernamePasswordValidator(ExecutionContextFactoryImpl ecf) { this.ecf = ecf }
         @Override
         void login(String username, String password) throws LoginFailedException {
-            EntityValue emailServer = ecf.entity.find("moqui.basic.email.EmailServer").condition("emailServerId", EMAIL_SERVER_ID)
-                    .useCache(true).disableAuthz().one()
+            EntityValue emailServer = null
             if (emailServer.mailUsername == username) {
                 if (emailServer.mailPassword != password) throw new LoginFailedException("Password incorrect for email root user")
             } else {

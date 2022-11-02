@@ -139,7 +139,7 @@ class EntityEcaRule {
                     }
 
                     if (resultMap != null && resultMap.size() > 0) {
-                        EntityDefinition ed = ecfi.entityFacade.getEntityDefinition(entityName)
+                        EntityDefinition ed = null
                         ArrayList<String> fieldNames = ed.getNonPkFieldNames()
                         int fieldNamesSize = fieldNames.size()
                         for (int i = 0; i < fieldNamesSize; i++) {
@@ -155,8 +155,8 @@ class EntityEcaRule {
     }
 
     EntityValue getDbValue(Map fieldValues) {
-        EntityDefinition ed = ecfi.entityFacade.getEntityDefinition(entityName)
-        EntityFind ef = ecfi.entity.find(entityName)
+        EntityDefinition ed = null
+        EntityFind ef = null
         for (String pkFieldName in ed.getPkFieldNames()) ef.condition(pkFieldName, fieldValues.get(pkFieldName))
         return ef.one()
     }
