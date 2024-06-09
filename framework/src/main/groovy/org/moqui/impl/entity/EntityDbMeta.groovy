@@ -107,7 +107,7 @@ class EntityDbMeta {
         String schemaName = datasourceNode != null ? datasourceNode.attribute("schema-name") : null
         Set<String> groupEntityNames = efi.getAllEntityNamesInGroup(groupName)
 
-        String[] types = ["TABLE", "VIEW", "ALIAS", "SYNONYM"]
+        String[] types = ["TABLE", "VIEW", "ALIAS", "SYNONYM", "PARTITIONED TABLE"]
         Set<String> existingTableNames = new HashSet<>()
 
         boolean beganTx = useTxForMetaData ? efi.ecfi.transactionFacade.begin(300) : false
@@ -455,10 +455,15 @@ class EntityDbMeta {
             ResultSet tableSet2 = null
             boolean beganTx = useTxForMetaData ? efi.ecfi.transactionFacade.begin(5) : false
             try {
-                con = efi.getConnection(groupName)
+                try {
+                    con = efi.getConnection(groupName)
+                } catch (EntityException ee) {
+                    logger.warn("Could not get connection so treating entity ${ed.fullEntityName} in group ${groupName} as table does not exist: ${ee.toString()}")
+                    return false
+                }
                 DatabaseMetaData dbData = con.getMetaData()
 
-                String[] types = ["TABLE", "VIEW", "ALIAS", "SYNONYM"]
+                String[] types = ["TABLE", "VIEW", "ALIAS", "SYNONYM", "PARTITIONED TABLE"]
                 tableSet1 = dbData.getTables(con.getCatalog(), ed.getSchemaName(), ed.getTableName(), types)
                 if (tableSet1.next()) {
                     dbResult = true
