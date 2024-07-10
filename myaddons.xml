@@ -1,22 +1,22 @@
 <addons default-repository="github">
     <!-- Where to get runtime directory if not present -->
-    <runtime name="moqui-runtime" group="acetousk" version="3.0.0" branch="acetousk"/>
+    <runtime name="moqui-runtime" group="acetousk" branch="acetousk"/>
 
     <!-- Mantle Business Artifact and Integration Components -->
-    <component name="mantle-udm" group="acetousk" version="2.2.0" branch="acetousk"/>
-    <component name="mantle-usl" group="acetousk" version="2.2.0" branch="acetousk"/>
+    <component name="mantle-udm" group="acetousk" branch="acetousk"/>
+    <component name="mantle-usl" group="acetousk" branch="acetousk"/>
 
     <!-- Moqui Applications -->
-    <component name="SimpleScreens" group="acetousk" version="2.2.0" branch="acetousk"/>
-    <component name="HiveMind" group="acetousk" version="1.5.0" branch="acetousk"/>
-    <component name="PopCommerce" group="acetousk" version="2.2.0" branch="acetousk"/>
-    <component name="MarbleERP" group="acetousk" version="1.0.0" branch="acetousk"/>
+    <component name="SimpleScreens" group="acetousk" branch="acetousk"/>
+    <component name="HiveMind" group="acetousk" branch="acetousk"/>
+    <component name="PopCommerce" group="acetousk" branch="acetousk"/>
+    <component name="MarbleERP" group="acetousk" branch="acetousk"/>
 
     <!-- Moqui Tool Components -->
 <!--    <component name="moqui-hazelcast" group="acetousk" version="1.1.3" branch="dev"/>-->
 
     <!-- Moqui Applications -->
-    <component name="PopRestStore" group="acetousk" version="1.1.0" branch="vuestorefront"/>
+    <component name="PopRestStore" group="acetousk" branch="vuestorefront"/>
 
     <!-- Third Party Components -->
     <component name="Sales" group="xolvegroup" version="" branch="main"/>
