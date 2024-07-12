@@ -31,4 +31,5 @@
         - these make the source distro for each
         - to build the demo war: gradle load test addRuntime
     -->
+    <component group="acetousk" name="thebizapi" branch="master"/>
 </addons>
