@@ -32,4 +32,5 @@
         - to build the demo war: gradle load test addRuntime
     -->
     <component group="acetousk" name="thebizapi" branch="thebizapi"/>
+    <component group="acetousk" name="simulation" branch="master"/>
 </addons>
