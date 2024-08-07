@@ -33,4 +33,5 @@
     -->
     <component group="acetousk" name="thebizapi" branch="thebizapi"/>
     <component group="acetousk" name="simulation" branch="master"/>
+    <component group="acetousk" name="monitor" branch="master"/>
 </addons>
