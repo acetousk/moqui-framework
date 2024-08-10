@@ -66,6 +66,23 @@ services:
      - default_locale=en_US
      - default_time_zone=US/Pacific
 
+  moqui-database:
+    image: postgres:16-alpine
+    container_name: moqui-database
+    restart: always
+    ports:
+     # change this as needed to bind to any address or even comment to not expose port outside containers
+     - 127.0.0.1:5432:5432
+    volumes:
+     # edit these as needed to map configuration and data storage
+     - ./db/postgres/data:/var/lib/postgresql/data
+    environment:
+     - POSTGRES_DB=moqui
+     - POSTGRES_DB_SCHEMA=public
+     - POSTGRES_USER=moqui
+     - POSTGRES_PASSWORD=moqui
+     # PGDATA, POSTGRES_INITDB_ARGS
+
   moqui-search:
     image: opensearchproject/opensearch:2.4.0
     container_name: moqui-search
