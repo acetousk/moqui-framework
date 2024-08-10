@@ -12,9 +12,6 @@ COMPONENT_SET=${COMPONENT_SET:=""}
 
 RUN_LOCAL_SEARCH=${RUN_LOCAL_SEARCH:="true"}
 search_name=${search_name:="opensearch"}
-get_hazelcast () { if [ $USE_HAZELCAST = "true" ]; then echo "Getting moqui-hazelcast"; gradle $GRADLE_ARGS getComponent -Pcomponent=moqui-hazelcast; fi  }
-get_component () { if [ -n "$COMPONENT" ]; then echo "Getting $COMPONENT"; gradle $GRADLE_ARGS getComponent -Pcomponent=$COMPONENT; fi  }
-get_component_set () { if [ -n "$COMPONENT_SET" ]; then echo "Getting $COMPONENT_SET"; gradle $GRADLE_ARGS getComponentSet -PcomponentSet=$COMPONENT_SET; fi  }
 
 if [ -f $MOQUI_HOME/moqui-plus-runtime.war ]; then echo "Using already built moqui-plus-runtime.war"
 else
@@ -31,9 +28,9 @@ else
 
   if [ -n "$GRADLE_COMMAND" ]; then echo "Running gradle $GRADLE_ARGS $GRADLE_COMMAND"; gradle $GRADLE_ARGS "$GRADLE_COMMAND"; fi
 
-  get_hazelcast
-  get_component
-  get_component_set
+  if [ $USE_HAZELCAST == "true" ]; then echo "Getting moqui-hazelcast"; gradle $GRADLE_ARGS getComponent -Pcomponent=moqui-hazelcast; fi
+  if [ -n "$COMPONENT" ]; then echo "Getting $COMPONENT"; gradle $GRADLE_ARGS getComponent -Pcomponent=$COMPONENT; fi
+  if [ -n "$COMPONENT_SET" ]; then echo "Getting $COMPONENT_SET"; gradle $GRADLE_ARGS getComponentSet -PcomponentSet=$COMPONENT_SET; fi
 
   echo "Getting Dependencies"; gradle $GRADLE_ARGS getDepends
   echo "Add runtime"; gradle $GRADLE_ARGS addRuntime

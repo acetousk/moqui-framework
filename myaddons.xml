@@ -1,4 +1,4 @@
-<addons default-repository="github-ssh">
+<addons default-repository="github">
     <!-- Where to get runtime directory if not present -->
     <runtime name="moqui-runtime" group="acetousk" branch="acetousk"/>
 

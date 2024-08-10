@@ -10,7 +10,7 @@ LABEL org.opencontainers.image.authors="moqui@googlegroups.com"
 ARG GRADLE_COMMAND=""
 ARG GRADLE_ARGS="--info --no-daemon --parallel"
 ARG COMPONENT=""
-ARG COMPONENT_SET=""
+ARG COMPONENT_SET="acetousk"
 ARG RUN_LOCAL_SEARCH="true"
 ARG search_name="opensearch"
 
