@@ -23,7 +23,7 @@
     <component name="WorkManagement" group="xolvegroup" version="" branch="main"/>
 
     <!-- Component Sets -->
-    <component-set name="acetousk" components="PopCommerce,HiveMind,MarbleERP,Sales,WorkManagement"/>
+    <component-set name="acetousk" components="PopCommerce,HiveMind,MarbleERP,Sales,WorkManagement,sentry"/>
     <component-set name="vue-storefront" components="PopCommerce,MarbleERP,PopRestStore"/>
 
     <!-- Release builds:
