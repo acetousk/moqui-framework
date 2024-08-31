@@ -24,14 +24,14 @@ services:
       - JAVA_TOOL_OPTIONS=-Xms1024m -Xmx1024m
       - instance_purpose=production
       - entity_ds_db_conf=postgres
-      - entity_ds_host=moqui-database
+      - entity_ds_host=localhost
       - entity_ds_port=5432
       - entity_ds_database=moqui
       - entity_ds_schema=public
       - entity_ds_user=moqui
       - entity_ds_password=moqui
       - entity_ds_crypt_pass='DEFAULT_CHANGE_ME!!!'
-      - elasticsearch_url=https://moqui-search:9200
+      - elasticsearch_url=https://localhost:9200
       - elasticsearch_index_prefix=default_
       - elasticsearch_user=admin
       - elasticsearch_password=admin
