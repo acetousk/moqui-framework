@@ -30,7 +30,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       # edit these as needed to map configuration and data storage
-      - ./opensearch/data/nodes:/usr/share/opensearch/data/nodes
+      # - ./opensearch/data/nodes:/usr/share/opensearch/data/nodes
       # - ./opensearch/config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml
       # - ./opensearch/logs:/usr/share/opensearch/logs
     environment:
