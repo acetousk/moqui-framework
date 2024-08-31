@@ -23,6 +23,8 @@ services:
     container_name: moqui-server
     command: conf=conf/MoquiProductionConf.xml
     restart: always
+    ports:
+      - "127.0.0.1:80:80"
     links:
      - moqui-database
      - moqui-search
@@ -51,8 +53,8 @@ services:
      # prefix for index names, use something distinct and not 'moqui_' or 'mantle_' which match the beginning of OOTB index names
      - elasticsearch_index_prefix=default_
      - elasticsearch_user=admin
-     - elasticsearch_password=admin
-     # CHANGE ME - note that VIRTUAL_HOST is for nginx-proxy so it picks up this container as one it should reverse proxy
+     - elasticsearch_password=Admin123!
+      # CHANGE ME - note that VIRTUAL_HOST is for nginx-proxy so it picks up this container as one it should reverse proxy
      # this can be a comma separate list of hosts like 'example.com,www.example.com'
      - VIRTUAL_HOST=moqui.local
      # moqui will accept traffic from other hosts but these are the values used for URL writing when specified:
@@ -99,6 +101,7 @@ services:
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
       - discovery.type=single-node
       - network.host=_site_
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=Admin123!
     ulimits:
       memlock:
         soft: -1
