@@ -18,46 +18,45 @@ command_exists() {
   command -v "$1" &> /dev/null
 }
 
+# Function to install SDKMAN!
+install_sdkman() {
+  echo "Installing SDKMAN!..."
+  curl -s "https://get.sdkman.io" | bash
+  source "$HOME/.sdkman/bin/sdkman-init.sh"
+}
+
 # Function to source SDKMAN!
 source_sdkman() {
-  if [ -d "$HOME/.sdkman" ]; then
+  if [ -f "$HOME/.sdkman/bin/sdkman-init.sh" ]; then
     source "$HOME/.sdkman/bin/sdkman-init.sh"
   else
-    echo "SDKMAN! not found. Exiting..."
-    exit 1
+    echo "SDKMAN! not found. Attempting to install SDKMAN!..."
+    install_sdkman
   fi
 }
 
 # Check if Java 11 Temurin is installed
-JAVA_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f1-2)
-if [[ "$JAVA_VERSION" != "11.0" ]]; then
-  JAVA_INSTALLED=false
-else
-  JAVA_INSTALLED=true
+JAVA_INSTALLED=false
+if command_exists java; then
+  JAVA_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f1-2)
+  if [[ "$JAVA_VERSION" == "11.0" ]]; then
+    JAVA_INSTALLED=true
+  fi
 fi
 
 # Check if Gradle 7.4.1 is installed
+GRADLE_INSTALLED=false
 if command_exists gradle; then
   GRADLE_VERSION=$(gradle -v | awk '/Gradle/ {print $2}')
-  if [[ "$GRADLE_VERSION" != "7.4.1" ]]; then
-    GRADLE_INSTALLED=false
-  else
+  if [[ "$GRADLE_VERSION" == "7.4.1" ]]; then
     GRADLE_INSTALLED=true
   fi
-else
-  GRADLE_INSTALLED=false
 fi
 
 # Install SDKMAN! and required packages if necessary
 if [ "$JAVA_INSTALLED" = false ] || [ "$GRADLE_INSTALLED" = false ]; then
-  # Check if SDKMAN! is installed
-  if [ ! -d "$HOME/.sdkman" ]; then
-    echo "SDKMAN! not found. Installing SDKMAN!..."
-    curl -s "https://get.sdkman.io" | bash
-    source_sdkman
-  else
-    source_sdkman
-  fi
+  # Ensure SDKMAN! is installed and sourced
+  source_sdkman
 
   # Install Java 11 Temurin if not installed
   if [ "$JAVA_INSTALLED" = false ]; then
