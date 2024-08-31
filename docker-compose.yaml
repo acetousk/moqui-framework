@@ -17,7 +17,6 @@
 # To import data from the docker host using port 5432 mapped for 127.0.0.1 only use something like this:
 # $ psql -h 127.0.0.1 -p 5432 -U moqui -W moqui < pg-dump.sql
 
-version: "2"
 services:
   moqui-server:
     image: moqui
