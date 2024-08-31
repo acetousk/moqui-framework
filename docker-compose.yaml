@@ -7,8 +7,8 @@ services:
     command: conf=conf/MoquiProductionConf.xml
     restart: always
     ports:
-      - "80:80"
-      - "443:443"
+      - "80"
+      - "443"
     links:
       - moqui-database
       - moqui-search
@@ -48,7 +48,7 @@ services:
     container_name: moqui-database
     restart: always
     ports:
-      - "5432:5432"
+      - "5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
@@ -61,8 +61,8 @@ services:
     container_name: moqui-search
     restart: always
     ports:
-      - "9200:9200"
-      - "9300:9300"
+      - "9200"
+      - "9300"
     volumes:
       - opensearch_data:/usr/share/opensearch/data
     environment:
