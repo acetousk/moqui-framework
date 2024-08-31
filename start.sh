@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 echo "Usage: start.sh [<moqui directory like . >]"; echo
 
@@ -13,7 +13,36 @@ COMPONENT_SET=${COMPONENT_SET:=""}
 RUN_LOCAL_SEARCH=${RUN_LOCAL_SEARCH:="true"}
 search_name=${search_name:="opensearch"}
 
-if [ -f $MOQUI_HOME/moqui-plus-runtime.war ]; then echo "Using already built moqui-plus-runtime.war"
+# Check if SDKMAN! is installed, if not, install it
+if [ ! -d "$HOME/.sdkman" ]; then
+  echo "SDKMAN! not found. Installing SDKMAN!..."
+  curl -s "https://get.sdkman.io" | bash
+  source "$HOME/.sdkman/bin/sdkman-init.sh"
+fi
+
+# Load SDKMAN!
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+# Check if Gradle 7.4.1 is installed, if not, install it
+if ! sdk list gradle | grep -q "7.4.1"; then
+  echo "Gradle 7.4.1 not found. Installing Gradle 7.4.1..."
+  sdk install gradle 7.4.1
+fi
+
+# Check if Java 11 Temurin is installed, if not, install it
+if ! sdk list java | grep -q "11-tem"; then
+  echo "Java 11 Temurin not found. Installing Java 11 Temurin..."
+  sdk install java 11.0.17-tem
+fi
+
+# Set Java 11 Temurin as default
+sdk use java 11.0.17-tem
+
+echo "Gradle and Java setup complete."
+
+# Rest of your script
+if [ -f $MOQUI_HOME/moqui-plus-runtime.war ]; then
+  echo "Using already built moqui-plus-runtime.war"
 else
   echo "cd into the $MOQUI_HOME directory"; START_PATH=$(pwd); cd $MOQUI_HOME
 
