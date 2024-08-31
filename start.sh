@@ -13,32 +13,66 @@ COMPONENT_SET=${COMPONENT_SET:=""}
 RUN_LOCAL_SEARCH=${RUN_LOCAL_SEARCH:="true"}
 search_name=${search_name:="opensearch"}
 
-# Check if SDKMAN! is installed, if not, install it
-if [ ! -d "$HOME/.sdkman" ]; then
-  echo "SDKMAN! not found. Installing SDKMAN!..."
-  curl -s "https://get.sdkman.io" | bash
-  source "$HOME/.sdkman/bin/sdkman-init.sh"
+# Function to check if a command is available
+command_exists() {
+  command -v "$1" &> /dev/null
+}
+
+# Check if Java 11 Temurin is installed
+JAVA_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d'.' -f1-2)
+if [[ "$JAVA_VERSION" != "11.0" ]]; then
+  JAVA_INSTALLED=false
+else
+  JAVA_INSTALLED=true
 fi
 
-# Load SDKMAN!
-source "$HOME/.sdkman/bin/sdkman-init.sh"
-
-# Check if Gradle 7.4.1 is installed, if not, install it
-if ! sdk list gradle | grep -q "7.4.1"; then
-  echo "Gradle 7.4.1 not found. Installing Gradle 7.4.1..."
-  sdk install gradle 7.4.1
+# Check if Gradle 7.4.1 is installed
+if command_exists gradle; then
+  GRADLE_VERSION=$(gradle -v | awk '/Gradle/ {print $2}')
+  if [[ "$GRADLE_VERSION" != "7.4.1" ]]; then
+    GRADLE_INSTALLED=false
+  else
+    GRADLE_INSTALLED=true
+  fi
+else
+  GRADLE_INSTALLED=false
 fi
 
-# Check if Java 11 Temurin is installed, if not, install it
-if ! sdk list java | grep -q "11-tem"; then
-  echo "Java 11 Temurin not found. Installing Java 11 Temurin..."
-  sdk install java 11.0.17-tem
+# Install SDKMAN! and required packages if necessary
+if [ "$JAVA_INSTALLED" = false ] || [ "$GRADLE_INSTALLED" = false ]; then
+  # Check if SDKMAN! is installed
+  if [ ! -d "$HOME/.sdkman" ]; then
+    echo "SDKMAN! not found. Installing SDKMAN!..."
+    curl -s "https://get.sdkman.io" | bash
+    source "$HOME/.sdkman/bin/sdkman-init.sh"
+  else
+    source "$HOME/.sdkman/bin/sdkman-init.sh"
+  fi
+
+  # Install Java 11 Temurin if not installed
+  if [ "$JAVA_INSTALLED" = false ]; then
+    if ! sdk list java | grep -q "11.0.17-tem"; then
+      echo "Java 11 Temurin not found. Installing Java 11 Temurin..."
+      sdk install java 11.0.17-tem
+    else
+      echo "Java 11 Temurin is available but not in use. Setting as default..."
+      sdk use java 11.0.17-tem
+    fi
+  fi
+
+  # Install Gradle 7.4.1 if not installed
+  if [ "$GRADLE_INSTALLED" = false ]; then
+    if ! sdk list gradle | grep -q "7.4.1"; then
+      echo "Gradle 7.4.1 not found. Installing Gradle 7.4.1..."
+      sdk install gradle 7.4.1
+    else
+      echo "Gradle 7.4.1 is available but not in use. Setting as default..."
+      sdk use gradle 7.4.1
+    fi
+  fi
 fi
 
-# Set Java 11 Temurin as default
-sdk use java 11.0.17-tem
-
-echo "Gradle and Java setup complete."
+echo "Java and Gradle setup complete."
 
 # Rest of your script
 if [ -f $MOQUI_HOME/moqui-plus-runtime.war ]; then
