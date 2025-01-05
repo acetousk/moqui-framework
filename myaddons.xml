@@ -24,6 +24,10 @@
     <component group="acetousk" name="thebizapi" branch="thebizapi"/>
     <component group="acetousk" name="simulation" branch="master"/>
     <component group="acetousk" name="sentry" branch="master"/>
+
+    <!-- Other -->
+    <component name="coarchy" group="coarchy" branch="coarchy"/>
+
     
     <!-- Component Sets -->
     <component-set name="acetousk" components="PopCommerce,HiveMind,MarbleERP,Sales,WorkManagement,sentry"/>
