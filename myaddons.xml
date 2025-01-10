@@ -21,16 +21,18 @@
     <!-- Third Party Components -->
     <component name="Sales" group="xolvegroup" version="" branch="main"/>
     <component name="WorkManagement" group="xolvegroup" version="" branch="main"/>
+
+    <!-- Internal Components -->
+    <component name="coarchy" group="coarchy" branch="coarchy"/>
     <component group="acetousk" name="thebizapi" branch="thebizapi"/>
     <component group="acetousk" name="simulation" branch="master"/>
     <component group="acetousk" name="sentry" branch="master"/>
+    <component group="acetousk" name="ai" branch="master"/>
+    <component group="acetousk" name="getXml" branch="master"/>
 
-    <!-- Other -->
-    <component name="coarchy" group="coarchy" branch="coarchy"/>
-
-    
     <!-- Component Sets -->
     <component-set name="acetousk" components="PopCommerce,HiveMind,MarbleERP,Sales,WorkManagement,sentry"/>
+    <component-set name="ai" components="PopCommerce,MarbleERP,Sales,WorkManagement,sentry,getXml,coarchy,simulation,ai"/>
     <component-set name="vue-storefront" components="PopCommerce,MarbleERP,PopRestStore"/>
 
     <!-- Release builds:
