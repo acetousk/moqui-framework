@@ -29,6 +29,7 @@
     <component group="acetousk" name="sentry" branch="master"/>
     <component group="acetousk" name="ai" branch="master"/>
     <component group="acetousk" name="getXml" branch="master"/>
+    <component name="stripe" group="coarchy" version="" branch="master"/>
 
     <!-- Component Sets -->
     <component-set name="acetousk" components="PopCommerce,HiveMind,MarbleERP,Sales,WorkManagement,sentry"/>
