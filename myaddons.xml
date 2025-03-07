@@ -32,7 +32,7 @@
     <component name="stripe" group="coarchy" version="" branch="master"/>
 
     <!-- Component Sets -->
-    <component-set name="acetousk" components="PopCommerce,HiveMind,MarbleERP,Sales,WorkManagement,sentry,getXml"/>
+    <component-set name="acetousk" components="PopCommerce,HiveMind,MarbleERP,Sales,WorkManagement,sentry,getXml,simulation"/>
     <component-set name="ai" components="PopCommerce,MarbleERP,Sales,WorkManagement,sentry,getXml,coarchy,simulation,ai"/>
     <component-set name="vue-storefront" components="PopCommerce,MarbleERP,PopRestStore"/>
 
