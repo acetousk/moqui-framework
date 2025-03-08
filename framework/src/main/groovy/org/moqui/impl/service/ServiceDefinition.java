@@ -385,6 +385,8 @@ public class ServiceDefinition {
         // logger.warn("AFTER ${serviceName} convertValidateCleanParameters: ${parameters.toString()}")
     }
 
+    public LinkedHashMap<String, ParameterInfo> getOutParameterInfoMap() { return outParameterInfoMap; }
+
     @SuppressWarnings("unchecked")
     private Map<String, Object> nestedParameterClean(String namePrefix, Map<String, Object> parameters,
                                       ParameterInfo[] parameterInfoArray, ExecutionContextImpl eci) {
