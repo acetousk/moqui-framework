@@ -1,4 +1,4 @@
-<addons default-repository="github">
+<addons default-repository="github-ssh">
     <!-- Where to get runtime directory if not present -->
     <runtime name="moqui-runtime" group="acetousk" branch="acetousk"/>
 
@@ -32,7 +32,7 @@
     <component name="stripe" group="coarchy" version="" branch="master"/>
 
     <!-- Component Sets -->
-    <component-set name="acetousk" components="PopCommerce,HiveMind,MarbleERP,Sales,WorkManagement,sentry"/>
+    <component-set name="acetousk" components="PopCommerce,HiveMind,MarbleERP,Sales,WorkManagement,sentry,getXml,simulation"/>
     <component-set name="ai" components="PopCommerce,MarbleERP,Sales,WorkManagement,sentry,getXml,coarchy,simulation,ai"/>
     <component-set name="vue-storefront" components="PopCommerce,MarbleERP,PopRestStore"/>
 
@@ -41,5 +41,4 @@
         - these make the source distro for each
         - to build the demo war: gradle load test addRuntime
     -->
-    <component group="acetousk" name="aistartup" branch="master"/>
 </addons>
