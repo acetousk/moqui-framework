@@ -42,7 +42,7 @@ services:
   moqui-server:
     image: moqui
     container_name: moqui-server
-    command: conf=conf/MoquiProductionConf.xml
+    command: conf=conf/MoquiProductionConf.xml --add-opens=java.base/java.lang=ALL-UNNAMED
     restart: always
     links:
      - moqui-database
