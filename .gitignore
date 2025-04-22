@@ -70,3 +70,6 @@ Desktop.ini
 
 # Linux auto files
 *~
+
+# Private files
+.env
