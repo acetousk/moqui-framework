@@ -70,3 +70,8 @@ Desktop.ini
 
 # Linux auto files
 *~
+
+# Other
+.vscode
+.env
+
