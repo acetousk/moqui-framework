@@ -332,7 +332,7 @@ task gitPullAll {
         if (file("runtime/.git").exists()) { doGitPullWithStatus(file('runtime').path) }
         // all directories under runtime/component
         for (File compDir in file('runtime/component').listFiles().findAll { it.isDirectory() && it.listFiles().find { it.name == '.git' } }) {
-            doGitPullWithStatus(compDir.path)
+            Thread.start { doGitPullWithStatus(compDir.path) }
         }
     }
 }

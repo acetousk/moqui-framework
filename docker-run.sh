@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Usage: docker-run.sh [<moqui directory like . >]"; echo
+echo "Usage: docker-run.sh"; echo
 
 ./gradlew gitPullAll
 ./gradlew addRuntime
