@@ -36,7 +36,7 @@
     <component-set name="acetousk" components="PopCommerce,HiveMind,MarbleERP,Sales,WorkManagement,sentry,getXml,simulation"/>
     <component-set name="ai" components="PopCommerce,MarbleERP,Sales,WorkManagement,sentry,getXml,simulation,ai"/>
     <component-set name="vue-storefront" components="PopCommerce,MarbleERP,PopRestStore"/>
-    <component-set name="aistartup" components="PopCommerce,MarbleERP,Sales,WorkManagement,sentry,getXml,simulation,ai,aistartup"/>
+    <component-set name="aistartup" components="PopCommerce,MarbleERP,Sales,WorkManagement,sentry,getXml,simulation,ai,aistartup,WeCreate,stripe"/>
 
     <!-- Release builds:
         gradle getComponentSet -PcomponentSet=custom -PlocationType=release
