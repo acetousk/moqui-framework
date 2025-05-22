@@ -878,6 +878,7 @@ class ScreenDefinition {
         String getName() { return name }
         String getMethod() { return method }
         String getSingleServiceName() { return singleServiceName }
+        MNode getTransitionNode() { return transitionNode }
         List<String> getPathParameterList() { return pathParameterList }
         Map<String, ParameterItem> getParameterMap() { return parameterByName }
         boolean hasActionsOrSingleService() { return actions != null || serviceActions != null}

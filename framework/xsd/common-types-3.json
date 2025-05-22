@@ -1,0 +1,158 @@
+{
+    "$schema": "http://json-schema.org/draft/2020-12/schema",
+    "properties": {
+        "description": {"type": "string"}
+    },
+    "$defs": {
+        "operatorentity": {
+            "type": "string",
+            "enum": [
+                "less",
+                "greater",
+                "less-equals",
+                "greater-equals",
+                "equals",
+                "not-equals",
+                "in",
+                "not-in",
+                "between",
+                "not-between",
+                "like",
+                "not-like",
+                "is-null",
+                "is-not-null"
+            ]
+        },
+        "objecttypenew": {
+            "type": "string",
+            "enum": [
+                "String",
+                "BigDecimal",
+                "Double",
+                "Float",
+                "List",
+                "Long",
+                "Integer",
+                "Date",
+                "Time",
+                "Timestamp",
+                "Boolean",
+                "Object",
+                "NewList",
+                "NewMap"
+            ]
+        },
+        "transactionoptions": {
+            "type": "string",
+            "enum": [
+                "ignore",
+                "use-or-begin",
+                "force-new",
+                "cache",
+                "force-cache"
+            ]
+        },
+        "operator": {
+            "type": "string",
+            "enum": [
+                "less",
+                "greater",
+                "less-equals",
+                "greater-equals",
+                "not-equals",
+                "not-contains",
+                "not-empty",
+                "not-matches",
+                "equals",
+                "contains",
+                "empty",
+                "matches"
+            ]
+        },
+        "colorcontext": {
+            "type": "string",
+            "enum": [
+                "default",
+                "primary",
+                "success",
+                "info",
+                "warning",
+                "danger"
+            ]
+        },
+        "boolean": {
+            "type": "string",
+            "enum": [
+                "true",
+                "false"
+            ]
+        },
+        "urltype": {
+            "type": "string",
+            "enum": [
+                "transition",
+                "screen",
+                "content",
+                "plain"
+            ]
+        },
+        "authcoptions": {
+            "type": "string",
+            "enum": [
+                "true",
+                "false",
+                "anonymous-all",
+                "anonymous-view"
+            ]
+        },
+        "objecttype": {
+            "type": "string",
+            "enum": [
+                "String",
+                "BigDecimal",
+                "Float",
+                "Integer",
+                "Date",
+                "Time",
+                "Timestamp",
+                "Boolean",
+                "Object"
+            ]
+        },
+        "messagetype": {
+            "type": "string",
+            "enum": [
+                "success",
+                "info",
+                "warning",
+                "danger"
+            ]
+        },
+        "aggregatefunction": {
+            "type": "string",
+            "enum": [
+                "min",
+                "max",
+                "sum",
+                "avg",
+                "count",
+                "count-distinct",
+                "round",
+                "upper",
+                "lower",
+                "concat",
+                "concat_ws"
+            ]
+        },
+        "isolationlevel": {
+            "type": "string",
+            "enum": [
+                "None",
+                "ReadCommitted",
+                "ReadUncommitted",
+                "RepeatableRead",
+                "Serializable"
+            ]
+        }
+    }
+}

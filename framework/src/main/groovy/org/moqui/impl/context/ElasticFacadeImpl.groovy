@@ -18,6 +18,7 @@ import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.module.SimpleModule
 import groovy.json.JsonOutput
 import groovy.transform.CompileStatic
@@ -55,6 +56,11 @@ class ElasticFacadeImpl implements ElasticFacade {
 
     public final static ObjectMapper jacksonMapper = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.ALWAYS)
+            .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+            .configure(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN, true)
+    public final static ObjectMapper jacksonJsonlMapper = new ObjectMapper()
+            .setSerializationInclusion(JsonInclude.Include.ALWAYS)
+            .disable(SerializationFeature.INDENT_OUTPUT)
             .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
             .configure(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN, true)
     static {
@@ -745,6 +751,19 @@ class ElasticFacadeImpl implements ElasticFacade {
     static String objectToJson(Object jsonObject) {
         if (jsonObject instanceof String) return (String) jsonObject
         return jacksonMapper.writeValueAsString(jsonObject)
+    }
+    static String objectToJsonl(Object jsonlObject) {
+        if (jsonlObject instanceof String) return (String) jsonlObject
+        // if is iterable, write each object on a separate line
+        if (jsonlObject instanceof Iterable) {
+           // iterate over jsonlObject
+            StringWriter writer = new StringWriter()
+            for (Object obj : (Iterable) jsonlObject) {
+                writer.append(jacksonJsonlMapper.writeValueAsString(obj)).append('\n')
+            }
+            return writer.toString()
+        }
+        return jacksonJsonlMapper.writeValueAsString(jsonlObject)
     }
     static Object jsonToObject(String jsonString) {
         try {

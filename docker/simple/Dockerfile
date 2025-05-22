@@ -2,7 +2,7 @@
 # NOTE: add components, build and if needed load data before building a docker image with this
 ARG RUNTIME_IMAGE=eclipse-temurin:17-jdk
 FROM ${RUNTIME_IMAGE}
-MAINTAINER Moqui Framework <moqui@googlegroups.com>
+LABEL org.opencontainers.image.authors="moqui@googlegroups.com"
 
 WORKDIR /opt/moqui
 

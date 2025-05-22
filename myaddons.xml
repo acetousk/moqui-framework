@@ -1,0 +1,44 @@
+<addons default-repository="github-ssh">
+    <!-- Where to get runtime directory if not present -->
+    <runtime name="moqui-runtime" group="acetousk" branch="acetousk"/>
+
+    <!-- Mantle Business Artifact and Integration Components -->
+    <component name="mantle-udm" group="acetousk" branch="acetousk"/>
+    <component name="mantle-usl" group="acetousk" branch="acetousk"/>
+
+    <!-- Moqui Applications -->
+    <component name="SimpleScreens" group="acetousk" branch="acetousk"/>
+    <component name="HiveMind" group="acetousk" branch="acetousk"/>
+    <component name="PopCommerce" group="acetousk" branch="acetousk"/>
+    <component name="MarbleERP" group="acetousk" branch="acetousk"/>
+
+    <!-- Moqui Tool Components -->
+<!--    <component name="moqui-hazelcast" group="acetousk" version="1.1.3" branch="dev"/>-->
+
+    <!-- Moqui Applications -->
+    <component name="PopRestStore" group="acetousk" branch="vuestorefront"/>
+
+    <!-- Third Party Components -->
+    <component name="Sales" group="xolvegroup" version="" branch="main"/>
+    <component name="WorkManagement" group="xolvegroup" version="" branch="main"/>
+
+    <!-- Internal Components -->
+    <component name="coarchy" group="coarchy" branch="coarchy"/>
+    <component group="acetousk" name="thebizapi" branch="thebizapi"/>
+    <component group="acetousk" name="simulation" branch="master"/>
+    <component group="acetousk" name="sentry" branch="master"/>
+    <component group="acetousk" name="ai" branch="master"/>
+    <component group="acetousk" name="getXml" branch="master"/>
+    <component name="stripe" group="coarchy" version="" branch="master"/>
+
+    <!-- Component Sets -->
+    <component-set name="acetousk" components="PopCommerce,HiveMind,MarbleERP,Sales,WorkManagement,sentry,getXml,simulation"/>
+    <component-set name="ai" components="PopCommerce,MarbleERP,Sales,WorkManagement,sentry,getXml,coarchy,simulation,ai"/>
+    <component-set name="vue-storefront" components="PopCommerce,MarbleERP,PopRestStore"/>
+
+    <!-- Release builds:
+        gradle getComponentSet -PcomponentSet=custom -PlocationType=release
+        - these make the source distro for each
+        - to build the demo war: gradle load test addRuntime
+    -->
+</addons>

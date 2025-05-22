@@ -1,0 +1,90 @@
+version: "3.8"
+
+services:
+  moqui-server:
+    image: moqui
+    container_name: moqui-server
+    command: conf=conf/MoquiProductionConf.xml
+    restart: always
+    ports:
+      - "80"
+      - "443"
+    links:
+      - moqui-database
+      - moqui-search
+    volumes:
+      - conf:/opt/moqui/runtime/conf
+      - lib:/opt/moqui/runtime/lib
+      - classes:/opt/moqui/runtime/classes
+      - ecomponent:/opt/moqui/runtime/ecomponent
+      - log:/opt/moqui/runtime/log
+      - txlog:/opt/moqui/runtime/txlog
+      - sessions:/opt/moqui/runtime/sessions
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xms1024m -Xmx1024m
+      - instance_purpose=production
+      - entity_ds_db_conf=postgres
+      - entity_ds_host=localhost
+      - entity_ds_port=5432
+      - entity_ds_database=moqui
+      - entity_ds_schema=public
+      - entity_ds_user=moqui
+      - entity_ds_password=moqui
+      - entity_ds_crypt_pass='DEFAULT_CHANGE_ME!!!'
+      - elasticsearch_url=https://localhost:9200
+      - elasticsearch_index_prefix=default_
+      - elasticsearch_user=admin
+      - elasticsearch_password=admin
+#      - VIRTUAL_HOST=moqui.local
+      - webapp_http_port=80
+      - webapp_https_port=443
+      - webapp_https_enabled=true
+      - webapp_client_ip_header=X-Real-IP
+      - default_locale=en_US
+      - default_time_zone=US/Pacific
+
+  moqui-database:
+    image: postgres:16-alpine
+    container_name: moqui-database
+    restart: always
+    ports:
+      - "5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=moqui
+      - POSTGRES_USER=moqui
+      - POSTGRES_PASSWORD=moqui
+
+  moqui-search:
+    image: opensearchproject/opensearch:2.4.0
+    container_name: moqui-search
+    restart: always
+    ports:
+      - "9200"
+      - "9300"
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    environment:
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+      - discovery.type=single-node
+      - network.host=_site_
+#      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=Admin123!
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+
+volumes:
+  conf:
+  lib:
+  classes:
+  ecomponent:
+  log:
+  txlog:
+  sessions:
+  postgres_data:
+  opensearch_data:

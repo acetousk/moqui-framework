@@ -2286,6 +2286,11 @@ class EntityFacadeImpl implements EntityFacade {
         if (typeInt == null) throw new EntityException("Java type " + javaType + " not supported for entity fields")
         return typeInt
     }
+    static String getJavaType(String fieldType) {
+        String javaType = fieldTypeJavaMap.get(fieldType)
+        if (javaType == null) throw new EntityException("Field type " + fieldType + " not supported for entity fields")
+        return javaType
+    }
 
     final Map<String, EntityJavaUtil.QueryStatsInfo> queryStatsInfoMap = new HashMap<>()
     void saveQueryStats(EntityDefinition ed, String sql, long queryTime, boolean isError) {
