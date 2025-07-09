@@ -30,10 +30,11 @@
     <component group="acetousk" name="ai" branch="master"/>
     <component group="acetousk" name="getXml" branch="master"/>
     <component group="acetousk" name="aistartup" branch="master"/>
+    <component group="acetousk" name="consult" branch="master"/>
     <component name="stripe" group="coarchy" version="" branch="master"/>
 
     <!-- Component Sets -->
-    <component-set name="acetousk" components="PopCommerce,HiveMind,MarbleERP,Sales,WorkManagement,sentry,getXml,simulation"/>
+    <component-set name="acetousk" components="PopCommerce,HiveMind,MarbleERP,Sales,WorkManagement,sentry,getXml,simulation,consult"/>
     <component-set name="ai" components="PopCommerce,MarbleERP,Sales,WorkManagement,sentry,getXml,simulation,ai"/>
     <component-set name="vue-storefront" components="PopCommerce,MarbleERP,PopRestStore"/>
     <component-set name="aistartup" components="PopCommerce,MarbleERP,Sales,WorkManagement,sentry,getXml,simulation,ai,aistartup,WeCreate,stripe"/>
