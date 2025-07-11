@@ -2289,8 +2289,8 @@ class ScreenRenderImpl implements ScreenRender {
         return iconClass
     }
 
-    List<Map> getMenuData(ArrayList<String> pathNameList) {
-        if (!ec.user.userId) { ec.web.sendJsonError(401, "Authentication required", null); return null }
+    List<Map> getMenuData(ArrayList<String> pathNameList, String qvt2Path, String screenMountedPath, Boolean requireUser=true) {
+        if (!ec.user.userId && requireUser) { ec.web.sendJsonError(401, "Authentication required", null); return null }
         ScreenUrlInfo fullUrlInfo = ScreenUrlInfo.getScreenUrlInfo(this, rootScreenDef, pathNameList, null, 0)
         if (!fullUrlInfo.targetExists) { ec.web.sendJsonError(404, "Screen not found for path ${pathNameList}", null); return null }
         UrlInstance fullUrlInstance = fullUrlInfo.getInstance(this, null)
@@ -2368,6 +2368,10 @@ class ScreenRenderImpl implements ScreenRender {
                     image = buildUrl(image).url
 
                 boolean active = (nextItem == subscreensItem.name)
+                if (qvt2Path != null && qvt2Path != "" && screenPath.startsWith("/"+screenMountedPath)) {
+                    screenPath = screenPath.replaceFirst(screenMountedPath, qvt2Path)
+                    pathWithParams = pathWithParams.replaceFirst(screenMountedPath, qvt2Path)
+                }
                 Map itemMap = [name:subscreensItem.name, title:ec.resource.expand(subscreensItem.menuTitle, ""),
                                path:screenPath, pathWithParams:pathWithParams, image:image, imageType:imageType]
                 if (subscreensItem.menuInclude) itemMap.menuInclude = true
@@ -2389,6 +2393,11 @@ class ScreenRenderImpl implements ScreenRender {
             if (image != null && !image.isEmpty() && (imageType == null || imageType.isEmpty() || "url-screen".equals(imageType)))
                 image = buildUrl(image).url
             String menuTitle = ec.l10n.localize(curSsi.menuTitle) ?: curScreen.getDefaultMenuName()
+
+            if (qvt2Path != null && qvt2Path != "" && curScreenPath.startsWith("/"+screenMountedPath)) {
+                curScreenPath = curScreenPath.replaceFirst(screenMountedPath, qvt2Path)
+                curPathWithParams = curPathWithParams.replaceFirst(screenMountedPath, qvt2Path)
+            }
 
             menuDataList.add([name:pathItem, title:menuTitle, subscreens:subscreensList, path:curScreenPath,
                     pathWithParams:curPathWithParams, hasTabMenu:curScreen.hasTabMenu(), renderModes:curScreen.renderModes, image:image, imageType:imageType])
@@ -2439,13 +2448,19 @@ class ScreenRenderImpl implements ScreenRender {
             int extraPathListSize = extraPathList.size()
             for (int i = 0; i < extraPathListSize; i++) extraPathList.set(i, StringUtilities.urlEncodeIfNeeded((String) extraPathList.get(i)))
         }
-        Map lastMap = [name:lastPathItem, title:lastTitle, path:lastPath, pathWithParams:currentPath.toString(),
+        String lastPathWithParams = currentPath.toString()
+        if (qvt2Path != null && qvt2Path != "" && lastPath.startsWith("/"+screenMountedPath)) {
+            lastPath = lastPath.replaceFirst(screenMountedPath, qvt2Path)
+            lastPathWithParams = lastPathWithParams.replaceFirst(screenMountedPath, qvt2Path)
+        }
+        Map lastMap = [name:lastPathItem, title:lastTitle, path:lastPath, pathWithParams:lastPathWithParams,
                 image:lastImage, imageType:lastImageType, extraPathList:extraPathList, screenDocList:screenDocList,
                 renderModes:fullUrlInfo.targetScreen.renderModes, savedFinds:savedFindsList]
         menuDataList.add(lastMap)
         // not needed: screenStatic:fullUrlInfo.targetScreen.isServerStatic(renderMode)
 
         // for (Map info in menuDataList) logger.warn("menu data item: ${info}")
+        return menuDataList
         return menuDataList
     }
 }
